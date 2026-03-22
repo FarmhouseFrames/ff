@@ -78,8 +78,8 @@ nav a:hover {
     );
     display: flex;
     flex-direction: column;
-    justify-content: center;   /* center vertically */
-    align-items: center;       /* center horizontally */
+    justify-content: center;
+    align-items: center;
     text-align: center;
     padding: 40px;
 }
@@ -92,7 +92,7 @@ nav a:hover {
     margin: 0;
     color: #5e452b;
     letter-spacing: 1px;
-    text-transform: none; /* no forced uppercase */
+    text-transform: none;
     text-shadow: 0px 2px 4px rgba(0,0,0,0.12);
 }
 
@@ -133,12 +133,14 @@ nav a:hover {
 }
 
 /* =========================================================
-   COLLECTIONS — FLIP CARD GRID
+   COLLECTIONS — 3 PER ROW + FLIP CARDS
 ========================================================= */
 .collection-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(3, 1fr); /* EXACTLY 3 per row */
     gap: 25px;
+    max-width: 900px;
+    margin: 0 auto;
 }
 
 /* Flip Card Container */
