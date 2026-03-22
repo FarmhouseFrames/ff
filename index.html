@@ -4,191 +4,103 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Farmhouse Frames</title>
-<link rel="stylesheet" href="css/style.css">
-    <style>
-        body {
-            margin: 0;
-            font-family: Georgia, serif;
-            background-color: #faf8f5;
-            color: #333;
-        }
-        header {
-            background-color: #e8dfd3;
-            padding: 20px;
-            text-align: center;
-            font-size: 28px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-        nav {
-            background-color: #d4c7b8;
-            padding: 10px;
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            font-size: 18px;
-        }
-        nav a {
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-        }
-        nav a:hover {
-            color: #7a5c3a;
-        }
-        .section {
-            padding: 40px;
-            max-width: 900px;
-            margin: auto;
-        }
-        h2 {
-            border-bottom: 2px solid #d4c7b8;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            color: #7a5c3a;
-        }
-        .product-list, .collection-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-        }
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-        footer {
-            background-color: #e8dfd3;
-            padding: 20px;
-            text-align: center;
-            margin-top: 40px;
-        }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
-<header>Farmhouse Frames</header>
+    <!-- ============================
+         HEADER
+    ============================= -->
+    <header>
+        Farmhouse Frames
+    </header>
 
-<nav>
-    <a href="#collections">Collections</a>
-    <a href="#products">Products</a>
-    <a href="#fulfillment">Pickup & Shipping</a>
-    <a href="#certificates">Certificates</a>
-</nav>
+    <!-- ============================
+         NAVIGATION
+    ============================= -->
+    <nav>
+        <a href="#collections">Collections</a>
+        <a href="products/products.html">Products</a>
+        <a href="pickup.html">Pickup & Shipping</a>
+        <a href="certificates.html">Certificates</a>
+    </nav>
 
-<section class="banner">
-    <div class="banner-overlay">
-        <h1>Farmhouse Frames</h1>
-        <p>Fine Art Photography • Captured in Kentucky</p>
-        <a href="collections/springs.html" class="banner-btn">View Collections</a>
-    </div>
-</section>
+    <!-- ============================
+         BANNER WITH LOGO OVERLAY
+    ============================= -->
+    <div class="banner">
+        <div class="banner-overlay">
 
-<div class="collection-list">
+            <!-- LOGO OVERLAY -->
+            <img src="images/logo.png" alt="Farmhouse Frames Logo" class="banner-logo">
 
-    <a href="collections/springs.html" class="flip-card">
-        <div class="flip-inner">
-            <div class="flip-front">Southern Springs & Still Waters</div>
-            <div class="flip-back">View Collection →</div>
+            <h1>Farmhouse Frames</h1>
+            <p>Fine Art Photography • Captured in Kentucky</p>
+
+            <a href="#collections" class="banner-btn">View Collections</a>
         </div>
-    </a>
-
-    <a href="collections/FALLS.HTML" class="flip-card">
-        <div class="flip-inner">
-            <div class="flip-front">Woodland Falls</div>
-            <div class="flip-back">View Collection →</div>
-        </div>
-    </a>
-
-    <a href="collections/WINTER.HTML" class="flip-card">
-        <div class="flip-inner">
-            <div class="flip-front">Winter Roads & Rural Frost</div>
-            <div class="flip-back">View Collection →</div>
-        </div>
-    </a>
-
-    <a href="collections/structures.html" class="flip-card">
-        <div class="flip-inner">
-            <div class="flip-front">Forgotten Structures</div>
-            <div class="flip-back">View Collection →</div>
-        </div>
-    </a>
-
-    <a href="collections/giants.html" class="flip-card">
-        <div class="flip-inner">
-            <div class="flip-front">Woodland Giants</div>
-            <div class="flip-back">View Collection →</div>
-        </div>
-    </a>
-
-    <a href="collections/lakeside.html" class="flip-card">
-        <div class="flip-inner">
-            <div class="flip-front">Lakeside Horizons</div>
-            <div class="flip-back">View Collection →</div>
-        </div>
-    </a>
-
-</div>
-
-<section class="section" id="products">
-    <h2>Products</h2>
-
-    <h3>Premium Gallery-Wrapped Canvas</h3>
-    <div class="product-list">
-        <div class="card">8×10 — $49</div>
-        <div class="card">12×16 — $69</div>
-        <div class="card">12×18 — $72</div>
-        <div class="card">16×24 — $90</div>
-        <div class="card">12×36 — $105</div>
-        <div class="card">24×36 — $132</div>
-        <div class="card">20×60 — $159</div>
     </div>
 
-    <h3>Puzzles</h3>
-    <div class="product-list">
-        <div class="card">8×10 Puzzle — 110 Pieces</div>
-        <div class="card">11×14 Puzzle — 252 Pieces</div>
-    </div>
+    <!-- ============================
+         COLLECTIONS SECTION
+    ============================= -->
+    <section class="section" id="collections">
+        <h2>Collections</h2>
 
-    <h3>Mounted Prints</h3>
-    <p>Available in multiple sizes. Same-day Walmart fulfillment.</p>
+        <div class="collection-list">
 
-    <h3>Desk Canvas</h3>
-    <p>5×7 and 8×10 same-day options.</p>
-</section>
+            <a href="collections/springs.html" class="flip-card">
+                <div class="flip-inner">
+                    <div class="flip-front">Southern Springs & Still Waters</div>
+                    <div class="flip-back">View Collection →</div>
+                </div>
+            </a>
 
-<section class="section" id="fulfillment">
-    <h2>Pickup & Shipping</h2>
-    <p><strong>Pickup Locations:</strong></p>
-    <ul>
-        <li>Cadiz — Monday & Wednesday (2–3 PM)</li>
-        <li>Hopkinsville — Tuesday & Thursday (2–3 PM)</li>
-    </ul>
-    <p>Multiple customers may be present during the same pickup window.</p>
+            <a href="collections/FALLS.HTML" class="flip-card">
+                <div class="flip-inner">
+                    <div class="flip-front">Woodland Falls</div>
+                    <div class="flip-back">View Collection →</div>
+                </div>
+            </a>
 
-    <p><strong>Shipping:</strong> Available for all products. Tracking provided once shipped.</p>
+            <a href="collections/WINTER.HTML" class="flip-card">
+                <div class="flip-inner">
+                    <div class="flip-front">Winter Roads & Rural Frost</div>
+                    <div class="flip-back">View Collection →</div>
+                </div>
+            </a>
 
-    <p><strong>Delivery:</strong> Not offered.</p>
-</section>
+            <a href="collections/structures.html" class="flip-card">
+                <div class="flip-inner">
+                    <div class="flip-front">Forgotten Structures</div>
+                    <div class="flip-back">View Collection →</div>
+                </div>
+            </a>
 
-<section class="section" id="certificates">
-    <h2>Certificates of Authenticity</h2>
-    <p>Every premium canvas and mounted print includes a certificate with:</p>
-    <ul>
-        <li>Artwork title</li>
-        <li>Location</li>
-        <li>Collection</li>
-        <li>Date captured</li>
-        <li>Product type</li>
-        <li>Artist signature</li>
-    </ul>
-</section>
+            <a href="collections/giants.html" class="flip-card">
+                <div class="flip-inner">
+                    <div class="flip-front">Woodland Giants</div>
+                    <div class="flip-back">View Collection →</div>
+                </div>
+            </a>
 
-<footer>
-    © 2026 Farmhouse Frames — Authentic Kentucky Photography
-</footer>
+            <a href="collections/lakeside.html" class="flip-card">
+                <div class="flip-inner">
+                    <div class="flip-front">Lakeside Horizons</div>
+                    <div class="flip-back">View Collection →</div>
+                </div>
+            </a>
+
+        </div>
+    </section>
+
+    <!-- ============================
+         FOOTER
+    ============================= -->
+    <footer>
+        © 2026 Farmhouse Frames — Fine Art Photography in Kentucky
+    </footer>
 
 </body>
 </html>
