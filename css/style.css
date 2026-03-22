@@ -57,7 +57,7 @@ nav a:hover {
 }
 
 /* =========================================================
-   BANNER — CENTERED, LOGO‑STYLE TYPOGRAPHY
+   BANNER — SIGNATURE FONT
 ========================================================= */
 .banner {
     width: 100%;
@@ -84,16 +84,15 @@ nav a:hover {
     padding: 40px;
 }
 
-/* Banner Title — matches your logo’s elegant serif look */
+/* Signature-style banner title */
 .banner-overlay h1 {
-    font-family: "Playfair Display", serif;
-    font-size: 58px;
-    font-weight: 700;
+    font-family: "Great Vibes", cursive;
+    font-size: 110px;
+    font-weight: normal;
     margin: 0;
     color: #5e452b;
+    line-height: 0.8;
     letter-spacing: 1px;
-    text-transform: none;
-    text-shadow: 0px 2px 4px rgba(0,0,0,0.12);
 }
 
 /* Banner Subtitle */
@@ -137,7 +136,7 @@ nav a:hover {
 ========================================================= */
 .collection-list {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* EXACTLY 3 per row */
+    grid-template-columns: repeat(3, 1fr);
     gap: 25px;
     max-width: 900px;
     margin: 0 auto;
