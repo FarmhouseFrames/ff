@@ -183,6 +183,7 @@ nav a:hover {
 .flip-front {
     background: #ffffff;
     color: #7a5c3a;
+    overflow: hidden;
 }
 
 /* Back side */
@@ -190,6 +191,18 @@ nav a:hover {
     background: #7a5c3a;
     color: #ffffff;
     transform: rotateY(180deg);
+    text-align: center;
+    padding: 10px;
+}
+
+/* =========================================================
+   GALLERY IMAGES INSIDE FLIP CARDS
+========================================================= */
+.gallery-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
 }
 
 /* =========================================================
