@@ -46,3 +46,26 @@
 .banner-btn:hover {
     background-color: #5e452b;
 }
+/* Clickable Collection Cards */
+.collection-list a.card {
+    display: block;
+    background: #ffffff;
+    padding: 22px;
+    border-radius: 10px;
+    border: 1px solid #d8cfc4;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #7a5c3a;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.collection-list a.card:hover {
+    background: #f3ece4;
+    border-color: #bfae9c;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    cursor: pointer;
+}
