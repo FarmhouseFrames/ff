@@ -57,7 +57,6 @@ uploadButton.addEventListener("click", async () => {
 
   const filePath = `${Date.now()}-${file.name}`;
 
-  // 1. Upload to storage
   const { error: storageError } = await supabase.storage
     .from("photos")
     .upload(filePath, file);
@@ -67,7 +66,6 @@ uploadButton.addEventListener("click", async () => {
     return;
   }
 
-  // 2. Insert DB row
   const { error: dbError } = await supabase
     .from("photos")
     .insert({ file_path: filePath });
@@ -133,3 +131,4 @@ async function loadPhotos() {
     loadPhotos();
   }
 })();
+
