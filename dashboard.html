@@ -56,4 +56,40 @@
 
   <!-- LOGIN -->
   <section id="login-section" class="section">
-    <h2>Admin Login
+    <h2>Admin Login</h2>
+    <p id="login-status"></p>
+
+    <label>Email</label>
+    <input type="email" id="login-email" />
+
+    <label>Password</label>
+    <input type="password" id="login-password" />
+
+    <button id="login-button">Log In</button>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard-section" class="section">
+    <h2>Welcome, Admin</h2>
+    <p id="dashboard-status"></p>
+
+    <div class="section">
+      <h3>Upload Photo</h3>
+      <input type="file" id="photo-input" accept="image/*" />
+      <button id="upload-button">Upload</button>
+      <p id="upload-status"></p>
+    </div>
+
+    <div class="section">
+      <h3>Uploaded Photos</h3>
+      <div id="photo-gallery">No photos loaded yet.</div>
+    </div>
+  </section>
+
+</main>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="app.js?v=1001"></script>
+
+</body>
+</html>
