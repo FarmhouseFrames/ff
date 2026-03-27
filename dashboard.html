@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Farmhouse Frames Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<h1>Farmhouse Frames Admin Dashboard</h1>
+
+<!-- LOGIN SECTION -->
+<div id="login-section">
+  <h2>Admin Login</h2>
+  <input type="email" id="login-email" placeholder="Email">
+  <input type="password" id="login-password" placeholder="Password">
+  <button id="login-btn">Log In</button>
+</div>
+
+<!-- DASHBOARD SECTION (hidden until login) -->
+<div id="dashboard-section" style="display:none;">
+  <h2>Welcome, Admin</h2>
+
+  <h3>Upload Photo</h3>
+  <input type="file" id="photo-input" accept="image/*">
+  <button id="upload-photo-btn">Upload Photo</button>
+
+  <p id="upload-status"></p>
+
+  <!-- More tools will go here later -->
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
