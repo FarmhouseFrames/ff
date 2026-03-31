@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { 
+            margin: 0; font-family: Arial, sans-serif; background: #f4f6f8; color: #222; 
+        }
+        .sidebar {
+            position: fixed;
+            left: 0; top: 0; bottom: 0; width: 200px;
+            background: #263238; color: #fff;
+            padding: 20px 0;
+        }
+        .sidebar h2 { margin: 0 0 20px 20px; }
+        .sidebar ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar ul li { margin: 20px 0; }
+        .sidebar ul li a { color: #fff; text-decoration: none; padding: 10px 20px; display: block; border-radius: 4px; }
+        .sidebar ul li a:hover { background: #455a64; }
+        .main {
+            margin-left: 220px;
+            padding: 30px;
+        }
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 20px 30px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .widgets {
+            display: flex; gap: 30px; margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .widget {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            padding: 20px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .widget h3 { margin-top: 0; }
+        @media (max-width: 800px) {
+            .widgets { flex-direction: column; }
+            .main { margin-left: 0; }
+            .sidebar { position: relative; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Admin</h2>
+        <ul>
+            <li><a href="#">Dashboard</a></li>
+            <li><a href="#">Users</a></li>
+            <li><a href="#">Orders</a></li>
+            <li><a href="#">Settings</a></li>
+            <li><a href="#">Log Out</a></li>
+        </ul>
+    </div>
+    <div class="main">
+        <div class="header">Dashboard Overview</div>
+        <div class="widgets">
+            <div class="widget">
+                <h3>Users</h3>
+                <p>1,234</p>
+            </div>
+            <div class="widget">
+                <h3>Orders</h3>
+                <p>567</p>
+            </div>
+            <div class="widget">
+                <h3>Revenue</h3>
+                <p>$12,345</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
