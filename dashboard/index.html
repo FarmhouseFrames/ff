@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Farmhouse Frames Admin</title>
+  <link rel="stylesheet" href="./css/admin.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-title">Farmhouse Frames</div>
+        <div class="brand-subtitle">Admin</div>
+      </div>
+
+      <nav class="nav">
+        <a href="#dashboard" data-route="dashboard" class="active">Dashboard</a>
+        <a href="#products" data-route="products">Products</a>
+        <a href="#uploads" data-route="uploads">Uploads</a>
+        <a href="#orders" data-route="orders">Orders</a>
+        <a href="#clients" data-route="clients">Clients</a>
+        <a href="#logs" data-route="logs">Logs</a>
+        <a href="#settings" data-route="settings">Settings</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div id="whoami" class="muted small"></div>
+        <button id="logoutBtn" class="btn">Log out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="topbar-actions">
+          <span id="statusPill" class="pill">Loading…</span>
+        </div>
+      </header>
+
+      <section id="content" class="content">
+        <div class="card">
+          <h2>Welcome</h2>
+          <p class="muted">
+            This is a Supabase-backed admin panel scaffold. Use the left nav to switch pages.
+          </p>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h3>Total products</h3>
+            <div id="metricProducts" class="metric">—</div>
+          </div>
+          <div class="card">
+            <h3>Total orders</h3>
+            <div id="metricOrders" class="metric">—</div>
+          </div>
+          <div class="card">
+            <h3>Recent uploads</h3>
+            <div id="metricUploads" class="metric">—</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Quick Actions</h2>
+          <div class="row">
+            <button class="btn primary" id="seedDemoBtn">Seed demo data</button>
+            <button class="btn" id="refreshBtn">Refresh metrics</button>
+          </div>
+          <p class="muted small">
+            “Seed demo data” inserts a few rows into products/orders/uploads so you can confirm RLS + allowlist works.
+          </p>
+          <div id="message" class="message" hidden></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { requireAdminSession, signOut, getCurrentUser } from './js/auth.js';
+    import { supabase } from './js/supabaseClient.js';
+
+    const $ = (sel) => document.querySelector(sel);
+    const msg = $('#message');
+
+    function showMessage(text, kind = 'ok') {
+      msg.hidden = false;
+      msg.className = `message ${kind}`;
+      msg.textContent = text;
+    }
+
+    function setStatus(text, kind = 'neutral') {
+      const pill = $('#statusPill');
+      pill.textContent = text;
+      pill.className = `pill ${kind}`;
+    }
+
+    function setTitleFromHash() {
+      const route = (location.hash || '#dashboard').slice(1);
+      const map = {
+        dashboard: 'Dashboard',
+        products: 'Products',
+        uploads: 'Uploads',
+        orders: 'Orders',
+        clients: 'Clients',
+        logs: 'Logs',
+        settings: 'Settings'
+      };
+      $('#pageTitle').textContent = map[route] || 'Dashboard';
+      document.querySelectorAll('.nav a').forEach(a => {
+        a.classList.toggle('active', a.dataset.route === route);
+      });
+    }
+
+    async function refreshMetrics() {
+      setStatus('Loading metrics…', 'neutral');
+
+      const [{ count: productsCount }, { count: ordersCount }, { count: uploadsCount }] = await Promise.all([
+        supabase.from('products').select('*', { count: 'exact', head: true }),
+        supabase.from('orders').select('*', { count: 'exact', head: true }),
+        supabase.from('uploads').select('*', { count: 'exact', head: true }),
+      ]);
+
+      $('#metricProducts').textContent = productsCount ?? '0';
+      $('#metricOrders').textContent = ordersCount ?? '0';
+      $('#metricUploads').textContent = uploadsCount ?? '0';
+
+      setStatus('Ready', 'ok');
+    }
+
+    async function seedDemoData() {
+      msg.hidden = true;
+      setStatus('Seeding…', 'neutral');
+
+      const { data: prod, error: prodErr } = await supabase
+        .from('products')
+        .insert({
+          name: 'Demo Frame',
+          price: 49.99,
+          category: 'Demo',
+          description: 'Seeded demo product',
+          active: true
+        })
+        .select()
+        .single();
+
+      if (prodErr) throw prodErr;
+
+      const { data: client, error: clientErr } = await supabase
+        .from('clients')
+        .insert({
+          name: 'Demo Client',
+          email: 'demo@example.com',
+          phone: '555-0100',
+          notes: 'Seeded demo client'
+        })
+        .select()
+        .single();
+
+      if (clientErr) throw clientErr;
+
+      const { data: order, error: orderErr } = await supabase
+        .from('orders')
+        .insert({
+          client_id: client.id,
+          status: 'pending',
+          total: 49.99
+        })
+        .select()
+        .single();
+
+      if (orderErr) throw orderErr;
+
+      const user = await getCurrentUser();
+      const { error: uploadErr } = await supabase
+        .from('uploads')
+        .insert({
+          file_url: 'https://example.com/demo.jpg',
+          label: 'Seeded demo upload',
+          category: 'Demo',
+          case_id: null,
+          uploaded_by: user.id
+        });
+
+      if (uploadErr) throw uploadErr;
+
+      showMessage('Seeded demo rows successfully. Refresh metrics to confirm counts increased.', 'ok');
+      setStatus('Ready', 'ok');
+    }
+
+    await requireAdminSession();
+
+    const user = await getCurrentUser();
+    $('#whoami').textContent = user?.email ? `Signed in as ${user.email}` : 'Signed in';
+
+    setTitleFromHash();
+    window.addEventListener('hashchange', setTitleFromHash);
+
+    $('#logoutBtn').addEventListener('click', async () => {
+      await signOut();
+      window.location.href = './login.html';
+    });
+
+    $('#refreshBtn').addEventListener('click', async () => {
+      msg.hidden = true;
+      try {
+        await refreshMetrics();
+      } catch (e) {
+        showMessage(e?.message || String(e), 'error');
+        setStatus('Error', 'error');
+      }
+    });
+
+    $('#seedDemoBtn').addEventListener('click', async () => {
+      try {
+        await seedDemoData();
+        await refreshMetrics();
+      } catch (e) {
+        showMessage(e?.message || String(e), 'error');
+        setStatus('Error', 'error');
+      }
+    });
+
+    try {
+      await refreshMetrics();
+    } catch (e) {
+      showMessage(e?.message || String(e), 'error');
+      setStatus('Error', 'error');
+    }
+  </script>
+</body>
+</html>
