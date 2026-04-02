@@ -97,6 +97,22 @@ create table if not exists public.order_request_items (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.supplier_order_packets (
+  id uuid primary key default gen_random_uuid(),
+  order_request_id uuid not null references public.order_requests(id) on delete cascade,
+  supplier_name text not null,
+  supplier_url text,
+  packet_text text not null,
+  customer_total numeric not null default 0,
+  customer_shipping numeric not null default 0,
+  supplier_estimate numeric not null default 0,
+  internal_shipping numeric not null default 0,
+  status text not null default 'prepared',
+  notes text,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.order_items (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references public.orders(id) on delete cascade,
@@ -167,6 +183,8 @@ create index if not exists idx_orders_created_at on public.orders(created_at des
 create index if not exists idx_products_created_at on public.products(created_at desc);
 create index if not exists idx_order_requests_created_at on public.order_requests(created_at desc);
 create index if not exists idx_order_request_items_order_id on public.order_request_items(order_request_id);
+create index if not exists idx_supplier_order_packets_order_id on public.supplier_order_packets(order_request_id);
+create index if not exists idx_supplier_order_packets_created_at on public.supplier_order_packets(created_at desc);
 
 insert into storage.buckets (id, name, public)
 values ('photo-uploads', 'photo-uploads', true)

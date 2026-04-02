@@ -227,6 +227,11 @@
             <h3>Supplier Order Packet</h3>
             <div id="supplierPacketContent" class="muted">Generate a packet from an order to prepare supplier checkout details.</div>
           </div>
+
+          <div class="card">
+            <h3>Supplier PO History</h3>
+            <div id="supplierOrdersWrap" class="muted">Loading supplier records…</div>
+          </div>
         </div>
 
         <div id="page-other" style="display: none;">
@@ -396,6 +401,7 @@
           }
           if (route === 'orders') {
             loadOrderRequests();
+            loadSupplierOrderHistory();
           }
         } else {
           document.getElementById('page-other').style.display = 'block';
@@ -684,6 +690,88 @@
       await refreshMetrics();
     }
 
+    async function saveSupplierOrderPacket(record) {
+      const user = await getCurrentUser();
+      const { error } = await supabase
+        .from('supplier_order_packets')
+        .insert({
+          order_request_id: record.order_request_id,
+          supplier_name: record.supplier_name,
+          supplier_url: record.supplier_url || null,
+          packet_text: record.packet_text,
+          customer_total: Number(record.customer_total || 0),
+          customer_shipping: Number(record.customer_shipping || 0),
+          supplier_estimate: Number(record.supplier_estimate || 0),
+          internal_shipping: Number(record.internal_shipping || 0),
+          status: 'prepared',
+          created_by: user?.id || null
+        });
+
+      if (error) {
+        showMessage(error.message, 'error');
+        return;
+      }
+
+      showMessage(`Supplier PO saved for ${record.supplier_name}.`, 'ok');
+      await loadSupplierOrderHistory();
+    }
+
+    async function loadSupplierOrderHistory() {
+      const wrap = $('#supplierOrdersWrap');
+      if (!wrap) return;
+      wrap.textContent = 'Loading supplier records…';
+
+      const { data, error } = await supabase
+        .from('supplier_order_packets')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        wrap.innerHTML = `<div class="message error">${error.message}</div>`;
+        return;
+      }
+
+      if (!data || !data.length) {
+        wrap.innerHTML = '<p class="muted">No supplier packet records yet.</p>';
+        return;
+      }
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Supplier</th>
+              <th>Order Request</th>
+              <th>Customer Total</th>
+              <th>Cust. Ship</th>
+              <th>Supplier Est.</th>
+              <th>Int. Ship</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map((row) => `
+              <tr>
+                <td>${new Date(row.created_at).toLocaleString()}</td>
+                <td>
+                  ${escapeHtml(row.supplier_name || '—')}<br>
+                  ${row.supplier_url ? `<a href="${escapeHtml(row.supplier_url)}" target="_blank" rel="noopener">Open Link</a>` : '<span class="muted">No link</span>'}
+                </td>
+                <td><code>${escapeHtml(row.order_request_id)}</code></td>
+                <td>${money(row.customer_total)}</td>
+                <td>${money(row.customer_shipping)}</td>
+                <td>${money(row.supplier_estimate)}</td>
+                <td>${money(row.internal_shipping)}</td>
+                <td>${escapeHtml(row.status || 'prepared')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
     async function generateSupplierPacket(orderId) {
       const packetWrap = $('#supplierPacketWrap');
       const packetContent = $('#supplierPacketContent');
@@ -781,6 +869,17 @@
       ].filter(Boolean).join('\n');
 
       const groupedMarkup = Array.from(grouped.values()).map((group) => {
+        const groupPacketText = [
+          `Order ID: ${order.id}`,
+          `Supplier: ${group.supplierName}`,
+          group.supplierUrl ? `Link: ${group.supplierUrl}` : 'Link: Add supplier link in Products admin',
+          ...group.lines.map((line) => `- ${line.title}${line.size ? ` (${line.size})` : ''} x${line.quantity}`),
+          `Customer total: ${money(group.customerTotal)}`,
+          `Customer shipping estimate: ${money(group.customerShipping)}`,
+          `Supplier cost estimate: ${money(group.supplierEstimate)}`,
+          `Internal shipping estimate: ${money(group.internalShipping)}`
+        ].join('\n');
+
         const rows = group.lines.map((line) => `
           <tr>
             <td>${escapeHtml(line.title)}${line.size ? ` <span class="muted">(${escapeHtml(line.size)})</span>` : ''}</td>
@@ -805,6 +904,20 @@
                 <div>Supplier estimate: ${money(group.supplierEstimate)}</div>
                 <div>Internal shipping est.: ${money(group.internalShipping)}</div>
               </div>
+            </div>
+            <div class="row" style="margin-top:10px;">
+              <button
+                class="btn"
+                data-save-supplier-packet="${escapeHtml(order.id)}"
+                data-supplier-name="${escapeHtml(group.supplierName)}"
+                data-supplier-url="${escapeHtml(group.supplierUrl || '')}"
+                data-customer-total="${group.customerTotal}"
+                data-customer-shipping="${group.customerShipping}"
+                data-supplier-estimate="${group.supplierEstimate}"
+                data-internal-shipping="${group.internalShipping}"
+                data-packet-text="${escapeHtml(encodeURIComponent(groupPacketText))}">
+                Save Supplier PO Record
+              </button>
             </div>
             <div style="overflow:auto; margin-top:10px;">
               <table>
@@ -841,6 +954,21 @@
         } catch {
           showMessage('Could not copy packet automatically. Select and copy manually.', 'error');
         }
+      });
+
+      packetContent.querySelectorAll('button[data-save-supplier-packet]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          await saveSupplierOrderPacket({
+            order_request_id: button.dataset.saveSupplierPacket,
+            supplier_name: button.dataset.supplierName,
+            supplier_url: button.dataset.supplierUrl,
+            customer_total: Number(button.dataset.customerTotal || 0),
+            customer_shipping: Number(button.dataset.customerShipping || 0),
+            supplier_estimate: Number(button.dataset.supplierEstimate || 0),
+            internal_shipping: Number(button.dataset.internalShipping || 0),
+            packet_text: decodeURIComponent(button.dataset.packetText || '')
+          });
+        });
       });
     }
 
