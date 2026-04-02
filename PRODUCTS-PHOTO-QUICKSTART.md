@@ -27,12 +27,20 @@ In Products (`/dashboard/#products`), complete these fields:
 5. Sell price
 6. Internal cost + internal shipping (recommended for margin tracking)
 7. Customer flat shipping
-8. Theme preset
-9. Rustic intro (use Generate Rustic Intro, then edit)
-10. Mockup setting
-11. Factual details
-12. Dimensions
-13. Care instructions
+8. Available sizes
+9. Website tags
+10. Inventory count
+11. Cutter preset
+12. Theme preset
+13. Rustic intro (use Generate Rustic Intro, then edit)
+14. Mockup setting
+15. Factual details
+16. Dimensions
+17. Care instructions
+
+Use the actual supplier print-product page in the Supplier URL field.
+
+If you want to confirm the crop and panel layout before saving, click `Open Source In Cutter`.
 
 Then click Save Product.
 

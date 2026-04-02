@@ -545,6 +545,7 @@
                         <option value="mounted-ensemble-5">Mounted Ensemble of 5</option>
                     </select>
                     <div id="presetMeta" class="preset-meta">Use a preset to match the current mounted print catalog sizes and panel counts.</div>
+                    <div id="productionReference" class="preset-meta" hidden></div>
                 </label>
 
                 <label class="field">
@@ -787,6 +788,7 @@
         const aspectStat = document.getElementById('aspectStat');
         const resolutionStat = document.getElementById('resolutionStat');
         const presetMeta = document.getElementById('presetMeta');
+        const productionReference = document.getElementById('productionReference');
 
         const controls = {
             zoom: document.getElementById('zoom'),
@@ -942,6 +944,39 @@
             setControlValue('edgeStyle', preset.edgeStyle);
             updateOutputs();
             queueRender();
+        }
+
+        function setProductionReference({ supplierUrl = '', productName = '', presetKey = '' } = {}) {
+            if (!productionReference) {
+                return;
+            }
+
+            productionReference.hidden = !supplierUrl && !productName && !presetKey;
+            productionReference.innerHTML = '';
+
+            const summary = [];
+            if (productName) {
+                summary.push(`Product: ${productName}`);
+            }
+
+            if (presetKey && presetCatalog[presetKey]) {
+                summary.push(`Preset: ${presetCatalog[presetKey].label}`);
+            }
+
+            if (summary.length) {
+                const text = document.createElement('div');
+                text.textContent = summary.join(' • ');
+                productionReference.appendChild(text);
+            }
+
+            if (supplierUrl) {
+                const link = document.createElement('a');
+                link.href = supplierUrl;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = 'Open supplier print page';
+                productionReference.appendChild(link);
+            }
         }
 
         function createDownloadName(index, suffix) {
@@ -1326,7 +1361,17 @@
         // Auto-load image from URL parameter if provided (from dashboard upload)
         (() => {
             const params = new URLSearchParams(window.location.search);
+            const preset = params.get('preset');
+            const supplierUrl = params.get('supplierUrl') || '';
+            const productName = params.get('productName') || '';
             const imageUrl = params.get('imageUrl');
+
+            if (preset && presetCatalog[preset]) {
+                applyPreset(preset);
+            }
+
+            setProductionReference({ supplierUrl, productName, presetKey: preset || state.preset });
+
             if (imageUrl) {
                 const image = new Image();
                 image.crossOrigin = 'anonymous';
