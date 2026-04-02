@@ -32,6 +32,23 @@
 
         .section-intro {
             color: #5d4a38;
+            text-align: center;
+        }
+
+        .section h2 {
+            text-align: center;
+            font-size: clamp(2.4rem, 5vw, 3.9rem);
+            border-bottom: 0;
+            margin-bottom: 12px;
+        }
+
+        .drop-cap {
+            font-family: 'Great Vibes', cursive;
+            font-size: 1.55em;
+            line-height: 0.72;
+            vertical-align: -0.18em;
+            display: inline-block;
+            margin-right: 0.02em;
         }
 
         .contact-form {
@@ -46,6 +63,19 @@
             border-radius: 6px;
             padding: 10px;
             font: inherit;
+            background: rgba(255, 250, 245, 0.52);
+            backdrop-filter: blur(2px);
+            transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .contact-form input:focus,
+        .contact-form textarea:focus,
+        .contact-form input:not(:placeholder-shown),
+        .contact-form textarea:not(:placeholder-shown) {
+            background: rgba(255, 250, 245, 0.96);
+            border-color: #b89f85;
+            box-shadow: 0 0 0 3px rgba(184, 159, 133, 0.12);
+            outline: none;
         }
 
         .contact-form textarea {
@@ -66,12 +96,12 @@
 </nav>
 
 <section class="section">
-    <h2>Contact Farmhouse Frames</h2>
+    <h2><span class="drop-cap">C</span>ontact <span class="drop-cap">F</span>armhouse <span class="drop-cap">F</span>rames</h2>
     <p class="section-intro">For custom orders, local pickup questions, or print requests, send a direct message.</p>
 
     <article class="contact-card">
-        <p>Email: <a href="mailto:kristin@farmhouseframes.com">kristin@farmhouseframes.com</a></p>
-        <p>SEO focus: Local Cadiz Photography, Trigg County Scenery, Farmhouse Wall Art.</p>
+        <p>Use the contact form below and we will respond as soon as possible.</p>
+        <p>We welcome all feedback, questions, and reviews from our customers. Your thoughts help us grow and continue creating pieces you love. We look forward to hearing from you. Thank you for supporting Farmhouse Frames.</p>
 
         <form class="contact-form" action="mailto:kristin@farmhouseframes.com" method="post" enctype="text/plain">
             <input type="text" name="name" placeholder="Your name" required>
