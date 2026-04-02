@@ -101,6 +101,43 @@ create table if not exists public.order_requests (
 
 alter table public.order_requests add column if not exists customer_user_id uuid references auth.users(id) on delete set null;
 
+create table if not exists public.customer_profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  first_name text,
+  last_name text,
+  full_name text,
+  date_of_birth date,
+  phone text,
+  address_line_1 text,
+  address_line_2 text,
+  city text,
+  state_region text,
+  postal_code text,
+  country text not null default 'United States',
+  preferred_fulfillment text not null default 'Pickup',
+  saved_notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint customer_profiles_preferred_fulfillment_chk
+    check (preferred_fulfillment in ('Pickup', 'Shipping'))
+);
+
+alter table public.customer_profiles add column if not exists first_name text;
+alter table public.customer_profiles add column if not exists last_name text;
+alter table public.customer_profiles add column if not exists full_name text;
+alter table public.customer_profiles add column if not exists date_of_birth date;
+alter table public.customer_profiles add column if not exists phone text;
+alter table public.customer_profiles add column if not exists address_line_1 text;
+alter table public.customer_profiles add column if not exists address_line_2 text;
+alter table public.customer_profiles add column if not exists city text;
+alter table public.customer_profiles add column if not exists state_region text;
+alter table public.customer_profiles add column if not exists postal_code text;
+alter table public.customer_profiles add column if not exists country text not null default 'United States';
+alter table public.customer_profiles add column if not exists preferred_fulfillment text not null default 'Pickup';
+alter table public.customer_profiles add column if not exists saved_notes text;
+alter table public.customer_profiles add column if not exists created_at timestamptz not null default now();
+alter table public.customer_profiles add column if not exists updated_at timestamptz not null default now();
+
 create table if not exists public.order_request_items (
   id uuid primary key default gen_random_uuid(),
   order_request_id uuid not null references public.order_requests(id) on delete cascade,
@@ -260,6 +297,8 @@ create index if not exists idx_orders_created_at on public.orders(created_at des
 create index if not exists idx_products_created_at on public.products(created_at desc);
 create index if not exists idx_order_requests_created_at on public.order_requests(created_at desc);
 create index if not exists idx_order_requests_customer_user_id on public.order_requests(customer_user_id);
+create index if not exists idx_customer_profiles_full_name on public.customer_profiles(full_name);
+create index if not exists idx_customer_profiles_updated_at on public.customer_profiles(updated_at desc);
 create index if not exists idx_order_request_items_order_id on public.order_request_items(order_request_id);
 create index if not exists idx_supplier_order_packets_order_id on public.supplier_order_packets(order_request_id);
 create index if not exists idx_supplier_order_packets_created_at on public.supplier_order_packets(created_at desc);

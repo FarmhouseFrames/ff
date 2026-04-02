@@ -137,7 +137,7 @@
 
         <script type="module">
             import { publicSupabase } from './js/supabasePublic.js';
-            import { formatMailingAddress, formatProfileName, getSignedInCustomerAccount, hasMailingAddress, profileToUserMetadata } from './js/customerAccount.js';
+            import { formatMailingAddress, formatProfileName, getSignedInCustomerAccount, hasMailingAddress, saveCustomerProfile } from './js/customerAccount.js';
 
             const whoami = document.getElementById('whoami');
             const profileWrap = document.getElementById('profileWrap');
@@ -231,16 +231,16 @@
                         return;
                     }
 
-                    const { data, error } = await publicSupabase.auth.updateUser({
-                        data: profileToUserMetadata(nextProfile)
-                    });
-
-                    if (error) {
-                        document.getElementById('profileStatus').textContent = error.message;
+                    let updatedUser = user;
+                    try {
+                        const result = await saveCustomerProfile(user.id, nextProfile);
+                        updatedUser = result.user || user;
+                    } catch (saveError) {
+                        document.getElementById('profileStatus').textContent = saveError.message;
                         return;
                     }
 
-                    const nextUser = data.user || { ...user, user_metadata: profileToUserMetadata(nextProfile) };
+                    const nextUser = updatedUser;
                     whoami.textContent = `Signed in as ${nextProfile.fullName || nextUser.email} (${nextUser.email})`;
                     renderProfileForm(nextUser, nextProfile, 'Saved. Your account details will now be reused during checkout.');
                 });

@@ -64,6 +64,37 @@ export function hasMailingAddress(profile = {}) {
   return Boolean(normalized.addressLine1 && normalized.city && normalized.stateRegion && normalized.postalCode);
 }
 
+function profileToDbRow(userId, values = {}) {
+  const profile = normalizeCustomerProfile(values);
+  const fullName = readString(profile.fullName || [profile.firstName, profile.lastName].filter(Boolean).join(' '));
+
+  return {
+    user_id: userId,
+    first_name: profile.firstName,
+    last_name: profile.lastName,
+    full_name: fullName,
+    date_of_birth: profile.dateOfBirth || null,
+    phone: profile.phone,
+    address_line_1: profile.addressLine1,
+    address_line_2: profile.addressLine2,
+    city: profile.city,
+    state_region: profile.stateRegion,
+    postal_code: profile.postalCode,
+    country: profile.country || DEFAULT_COUNTRY,
+    preferred_fulfillment: profile.preferredFulfillment || 'Pickup',
+    saved_notes: profile.savedNotes
+  };
+}
+
+function looksLikeMissingTableError(error) {
+  if (!error) {
+    return false;
+  }
+
+  const message = String(error.message || '').toLowerCase();
+  return message.includes('customer_profiles') || message.includes('does not exist') || message.includes('relation');
+}
+
 export async function getSignedInCustomerAccount() {
   const { data, error } = await publicSupabase.auth.getSession();
 
@@ -72,9 +103,75 @@ export async function getSignedInCustomerAccount() {
   }
 
   const user = data.session?.user || null;
+  const metadataProfile = normalizeCustomerProfile(user?.user_metadata || {});
+
+  if (!user) {
+    return {
+      user,
+      profile: metadataProfile
+    };
+  }
+
+  const { data: dbProfile, error: dbError } = await publicSupabase
+    .from('customer_profiles')
+    .select('first_name,last_name,full_name,date_of_birth,phone,address_line_1,address_line_2,city,state_region,postal_code,country,preferred_fulfillment,saved_notes')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (!dbError && dbProfile) {
+    return {
+      user,
+      profile: normalizeCustomerProfile(dbProfile)
+    };
+  }
+
+  if (!dbError && !dbProfile) {
+    const hasMetadataValues = Object.values(metadataProfile).some((value) => readString(value).length > 0);
+
+    if (hasMetadataValues) {
+      try {
+        await publicSupabase
+          .from('customer_profiles')
+          .upsert(profileToDbRow(user.id, metadataProfile), { onConflict: 'user_id' });
+      } catch {
+        // Keep storefront usable even if profile sync fails.
+      }
+    }
+  }
+
+  if (dbError && !looksLikeMissingTableError(dbError)) {
+    throw dbError;
+  }
 
   return {
     user,
-    profile: normalizeCustomerProfile(user?.user_metadata || {})
+    profile: metadataProfile
+  };
+}
+
+export async function saveCustomerProfile(userId, values = {}) {
+  if (!userId) {
+    throw new Error('Cannot save customer profile without a signed-in user.');
+  }
+
+  const dbRow = profileToDbRow(userId, values);
+  const metadata = profileToUserMetadata(values);
+
+  const { error: dbError } = await publicSupabase
+    .from('customer_profiles')
+    .upsert(dbRow, { onConflict: 'user_id' });
+
+  if (dbError && !looksLikeMissingTableError(dbError)) {
+    throw dbError;
+  }
+
+  const { data, error } = await publicSupabase.auth.updateUser({ data: metadata });
+  if (error) {
+    throw error;
+  }
+
+  return {
+    user: data.user,
+    profile: normalizeCustomerProfile(metadata)
   };
 }
