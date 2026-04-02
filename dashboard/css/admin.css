@@ -70,6 +70,10 @@ body{
   padding: 10px 12px;
   border-radius: 12px;
   cursor:pointer;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
 }
 .btn:hover{background: rgba(255,255,255,.06)}
 .btn.primary{background: rgba(119,166,255,.18); border-color: rgba(119,166,255,.45);}
