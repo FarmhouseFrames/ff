@@ -65,3 +65,12 @@ Use the fallback setup docs:
 
 1. Run `/supabase/policies-core.sql` in Supabase SQL Editor.
 2. Configure Storage policies from `/supabase/storage-policies-ui.md`.
+
+## 8) If the splitter works but Uploads or Products do not
+
+This usually means the admin allowlist policy has not been reapplied with the latest `is_admin()` function.
+
+1. Run `/supabase/policies.sql` in Supabase SQL Editor.
+2. If Storage ownership errors block that file, run `/supabase/policies-core.sql` instead.
+3. Sign out and sign back in at `/dashboard/login.html`.
+4. Retry `/dashboard/#products` and `/dashboard/#uploads`.
