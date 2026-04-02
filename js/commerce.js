@@ -103,7 +103,9 @@ export function formatCartSummary(items, config, formValues) {
   const lines = [
     `Customer: ${formValues.name}`,
     `Email: ${formValues.email}`,
+    `Phone: ${formValues.phone || 'Not provided'}`,
     `Fulfillment: ${formValues.fulfillment}`,
+    `Address: ${formValues.address || 'Not provided'}`,
     `Notes: ${formValues.notes || 'None'}`,
     '',
     'Items:',

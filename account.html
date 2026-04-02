@@ -2,196 +2,324 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Account | Farmhouse Frames</title>
-    <link rel="stylesheet" href="css/commerce.css">
-    <style>
-        body {
-            background:
-                linear-gradient(rgba(246, 240, 232, 0.5), rgba(246, 240, 232, 0.5)),
-                url("images/banner-photo.jpg") center center / cover no-repeat fixed;
-        }
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My Account | Farmhouse Frames</title>
+        <link rel="stylesheet" href="css/commerce.css">
+        <style>
+            body {
+                background:
+                    linear-gradient(rgba(246, 240, 232, 0.5), rgba(246, 240, 232, 0.5)),
+                    url("images/banner-photo.jpg") center center / cover no-repeat fixed;
+            }
 
-        .commerce-hero,
-        .checkout-form,
-        .summary-card {
-            background: rgba(255, 250, 245, 0.84);
-            border: 1px solid rgba(204, 183, 158, 0.9);
-            box-shadow: 0 14px 28px rgba(76, 52, 34, 0.12);
-            backdrop-filter: blur(4px);
-        }
+            .commerce-hero,
+            .checkout-form,
+            .summary-card {
+                background: rgba(255, 250, 245, 0.84);
+                border: 1px solid rgba(204, 183, 158, 0.9);
+                box-shadow: 0 14px 28px rgba(76, 52, 34, 0.12);
+                backdrop-filter: blur(4px);
+            }
 
-        .commerce-hero {
-            text-align: center;
-        }
+            .commerce-hero {
+                text-align: center;
+            }
 
-        .checkout-form h2,
-        .summary-card h2 {
-            text-align: center;
-            text-decoration: underline;
-            text-underline-offset: 4px;
-        }
-    </style>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%22 height=%2732%22 rx=%226%22 fill=%22%234d3425%22/%3E%3Ctext x=%2216%22 y=%2223%22 font-family=%22Georgia,serif%22 font-size=%2220%22 fill=%22%23e8d5be%22 text-anchor=%22middle%22%3EF%3C/text%3E%3C/svg%3E">
-</head>
-<body>
-    <nav class="site-nav">
-        <a href="index.html">Home</a>
-        <a href="gallery.html">Gallery</a>
-        <a href="splits.html">Split Canvas</a>
-        <a href="catalog.html">Catalog</a>
-        <a href="contact.html">Contact</a>
-        <a href="pickup.html">Pickup & Shipping</a>
-        <a href="account.html" aria-current="page">Account</a>
-        <a href="certificates.html">Certificates</a>
-    </nav>
+            .checkout-form h2,
+            .summary-card h2 {
+                text-align: center;
+                text-decoration: underline;
+                text-underline-offset: 4px;
+            }
 
-    <div class="commerce-shell">
-        <header class="commerce-topbar">
-            <a href="index.html">Farmhouse Frames</a>
-            <div class="summary-actions">
-                <a class="commerce-button-link" href="products/index.html">Shop products</a>
-                <a class="commerce-button-link" href="checkout.html">Checkout</a>
-                <a id="loginLinkTop" class="commerce-button-link" href="account-login.html?mode=signin">Log in</a>
-                <a id="createLinkTop" class="commerce-button-link" href="account-login.html?mode=signup">Create account</a>
-                <button id="signOutBtn" class="commerce-button" type="button" style="display:none;">Sign out</button>
-            </div>
-        </header>
+            .account-main-column {
+                display: grid;
+                gap: 18px;
+            }
 
-        <section class="commerce-hero">
-            <h1>My Account</h1>
-            <p id="whoami" class="helper-text">Create an account or log in to view your orders from finished Farmhouse Frames products inspired by Cadiz, Trigg County, and Land Between the Lakes.</p>
-        </section>
+            .profile-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 14px;
+            }
 
-        <main class="commerce-layout">
-            <section class="checkout-form">
-                <h2>My Orders</h2>
-                <div id="ordersWrap" class="status-message">
-                    <p class="muted">Sign up for a customer account, or log in to your existing account, to view your order history.</p>
+            .full-span {
+                grid-column: 1 / -1;
+            }
+
+            .account-profile-summary {
+                margin-top: 14px;
+                border-top: 1px solid rgba(204, 183, 158, 0.65);
+                padding-top: 14px;
+            }
+
+            .account-profile-summary p {
+                margin: 0 0 8px;
+            }
+
+            @media (max-width: 820px) {
+                .profile-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+      <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%22 height=%2732%22 rx=%226%22 fill=%22%234d3425%22/%3E%3Ctext x=%2216%22 y=%2223%22 font-family=%22Georgia,serif%22 font-size=%2220%22 fill=%22%23e8d5be%22 text-anchor=%22middle%22%3EF%3C/text%3E%3C/svg%3E">
+    </head>
+    <body>
+        <nav class="site-nav">
+            <a href="index.html">Home</a>
+            <a href="gallery.html">Gallery</a>
+            <a href="splits.html">Split Canvas</a>
+            <a href="catalog.html">Catalog</a>
+            <a href="contact.html">Contact</a>
+            <a href="pickup.html">Pickup & Shipping</a>
+            <a href="account.html" aria-current="page">Account</a>
+            <a href="certificates.html">Certificates</a>
+        </nav>
+
+        <div class="commerce-shell">
+            <header class="commerce-topbar">
+                <a href="index.html">Farmhouse Frames</a>
+                <div class="summary-actions">
+                    <a class="commerce-button-link" href="products/index.html">Shop products</a>
+                    <a class="commerce-button-link" href="checkout.html">Checkout</a>
+                    <a id="loginLinkTop" class="commerce-button-link" href="account-login.html?mode=signin">Log in</a>
+                    <a id="createLinkTop" class="commerce-button-link" href="account-login.html?mode=signup">Create account</a>
+                    <button id="signOutBtn" class="commerce-button" type="button" style="display:none;">Sign out</button>
+                </div>
+            </header>
+
+            <section class="commerce-hero">
+                <h1>My Account</h1>
+                <p id="whoami" class="helper-text">Create an account or log in to save customer details, speed up checkout, and view your finished-product order history.</p>
+            </section>
+
+            <main class="commerce-layout">
+                <div class="account-main-column">
+                    <section class="checkout-form">
+                        <h2>Saved Details</h2>
+                        <div id="profileWrap" class="status-message">
+                            <p class="muted">Create an account to save your full name, date of birth, phone number, mailing address, and checkout preferences.</p>
+                        </div>
+                    </section>
+
+                    <section class="checkout-form">
+                        <h2>My Orders</h2>
+                        <div id="ordersWrap" class="status-message">
+                            <p class="muted">Sign up for a customer account, or log in to your existing account, to view your order history.</p>
+                            <div class="checkout-actions" style="margin-top: 12px;">
+                                <a class="commerce-button-link primary" href="account-login.html?mode=signup">Create customer account</a>
+                                <a class="commerce-button-link" href="account-login.html?mode=signin">Log in to existing account</a>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="summary-card">
+                    <h2>Quick Actions</h2>
+                    <div class="summary-actions">
+                        <a class="commerce-button-link" href="checkout.html">Start checkout</a>
+                        <a class="commerce-button-link" href="cart.html">Open cart</a>
+                        <a class="commerce-button-link" href="account-login.html">Sign in as different user</a>
+                    </div>
+                    <h3 style="margin-top: 18px;">About Farmhouse Frames</h3>
+                    <p class="helper-text">Farmhouse Frames is built around the quiet beauty of Western Kentucky. We turn local scenic photography into finished pieces designed for warm farmhouse spaces and meaningful gifts.</p>
+                    <h3 style="margin-top: 14px;">Why We Love It</h3>
+                    <p class="helper-text">We love preserving everyday moments people often pass by: backroads at sunrise, weathered barns, peaceful waterlines, and seasonal light that feels like home. Every finished product starts with that story.</p>
+                    <p class="helper-text">Your account only shows customer-facing order data and your own saved checkout details.</p>
+                </aside>
+            </main>
+        </div>
+
+        <script type="module">
+            import { publicSupabase } from './js/supabasePublic.js';
+            import { formatMailingAddress, formatProfileName, getSignedInCustomerAccount, hasMailingAddress, profileToUserMetadata } from './js/customerAccount.js';
+
+            const whoami = document.getElementById('whoami');
+            const profileWrap = document.getElementById('profileWrap');
+            const ordersWrap = document.getElementById('ordersWrap');
+            const signOutBtn = document.getElementById('signOutBtn');
+            const loginLinkTop = document.getElementById('loginLinkTop');
+            const createLinkTop = document.getElementById('createLinkTop');
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function renderSignedOutState() {
+                whoami.textContent = 'You are not signed in yet.';
+                profileWrap.innerHTML = `
+                    <p class="muted">Create your customer account to store your full name, date of birth, phone number, mailing address, and checkout preferences.</p>
                     <div class="checkout-actions" style="margin-top: 12px;">
                         <a class="commerce-button-link primary" href="account-login.html?mode=signup">Create customer account</a>
                         <a class="commerce-button-link" href="account-login.html?mode=signin">Log in to existing account</a>
                     </div>
-                </div>
-
-                <div class="info-stack" style="margin-top: 18px;">
-                    <section class="mini-card">
-                        <h3>Guest Checkout Steps</h3>
-                        <ol class="info-list">
-                            <li>Add your favorite finished products to the cart.</li>
-                            <li>Open checkout as a guest and enter your contact details.</li>
-                            <li>Complete payment when prompted and keep your confirmation number.</li>
-                            <li>Farmhouse Frames uses that confirmation to match your payment to your order details.</li>
-                        </ol>
-                    </section>
-
-                    <section class="mini-card">
-                        <h3>Need Help First?</h3>
-                        <p class="helper-text">If you want to ask about sizing, pickup timing, shipping, or a finished product before ordering, use the contact page and include any product details you already know.</p>
-                        <div class="summary-actions">
-                            <a class="commerce-button-link" href="contact.html">Contact Farmhouse Frames</a>
-                            <a class="commerce-button-link" href="pickup.html">Pickup & Shipping</a>
-                        </div>
-                    </section>
-                </div>
-            </section>
-
-            <aside class="summary-card">
-                <h2>Quick Actions</h2>
-                <div class="summary-actions">
-                    <a class="commerce-button-link primary" href="checkout.html">Start checkout as guest</a>
-                    <a class="commerce-button-link" href="cart.html">Open guest cart</a>
-                </div>
-                <p class="helper-text" style="margin-top: 12px;">These links are for customers who do not want to sign in. Their cart and checkout details stay in place until payment is completed and a confirmation number is issued.</p>
-                <h3 style="margin-top: 18px;">About Farmhouse Frames</h3>
-                <p class="helper-text">Farmhouse Frames is built around the quiet beauty of Western Kentucky. We turn local scenic photography into finished pieces designed for warm farmhouse spaces and meaningful gifts.</p>
-                <h3 style="margin-top: 14px;">Why We Love It</h3>
-                <p class="helper-text">We love preserving everyday moments people often pass by: backroads at sunrise, weathered barns, peaceful waterlines, and seasonal light that feels like home. Every finished product starts with that story.</p>
-                <p class="helper-text">Your account only shows customer-facing order data.</p>
-                <div class="page-footer-links">
-                    <a href="legal/privacy.html">Privacy</a>
-                    <a href="legal/terms.html">Terms</a>
-                    <a href="legal/shipping.html">Shipping</a>
-                </div>
-            </aside>
-        </main>
-    </div>
-
-    <script type="module">
-        import { publicSupabase } from './js/supabasePublic.js';
-
-        const whoami = document.getElementById('whoami');
-        const ordersWrap = document.getElementById('ordersWrap');
-        const signOutBtn = document.getElementById('signOutBtn');
-        const loginLinkTop = document.getElementById('loginLinkTop');
-        const createLinkTop = document.getElementById('createLinkTop');
-
-        async function enforceSignedOutStart() {
-            // Always start this page as signed-out by design.
-            await publicSupabase.auth.signOut();
-            return null;
-        }
-
-        function renderOrders(orders) {
-            if (!orders.length) {
-                ordersWrap.innerHTML = '<p class="muted">No account-linked orders yet. Place your next order while signed in.</p>';
-                return;
+                `;
+                ordersWrap.innerHTML = `
+                    <p class="muted">Create your account or log in to keep your orders separated and viewable only by your account.</p>
+                    <div class="checkout-actions" style="margin-top: 12px;">
+                        <a class="commerce-button-link primary" href="account-login.html?mode=signup">Create customer account</a>
+                        <a class="commerce-button-link" href="account-login.html?mode=signin">Log in to existing account</a>
+                    </div>
+                `;
             }
 
-            ordersWrap.innerHTML = `
-                <div style="overflow:auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Fulfillment</th>
-                                <th>Total</th>
-                                <th>Order ID</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${orders.map((order) => `
-                                <tr>
-                                    <td>${new Date(order.created_at).toLocaleString()}</td>
-                                    <td>${order.status || 'new'}</td>
-                                    <td>${order.fulfillment_method || 'Pickup'}</td>
-                                    <td>$${Number(order.total || 0).toFixed(2)}</td>
-                                    <td><code>${order.id}</code></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
+            function renderProfileForm(user, profile, statusMessage = '') {
+                const mailingAddress = formatMailingAddress(profile);
+                profileWrap.innerHTML = `
+                    <form id="profileForm">
+                        <div class="profile-grid">
+                            <label>First name<input id="profileFirstName" type="text" value="${escapeHtml(profile.firstName)}" required></label>
+                            <label>Last name<input id="profileLastName" type="text" value="${escapeHtml(profile.lastName)}" required></label>
+                            <label>Date of birth<input id="profileDateOfBirth" type="date" value="${escapeHtml(profile.dateOfBirth)}" required></label>
+                            <label>Phone number<input id="profilePhone" type="tel" value="${escapeHtml(profile.phone)}" required></label>
+                            <label class="full-span">Email<input id="profileEmail" type="email" value="${escapeHtml(user.email || '')}" readonly></label>
+                            <label class="full-span">Address line 1<input id="profileAddressLine1" type="text" value="${escapeHtml(profile.addressLine1)}" required></label>
+                            <label class="full-span">Address line 2<input id="profileAddressLine2" type="text" value="${escapeHtml(profile.addressLine2)}"></label>
+                            <label>City<input id="profileCity" type="text" value="${escapeHtml(profile.city)}" required></label>
+                            <label>State / Region<input id="profileStateRegion" type="text" value="${escapeHtml(profile.stateRegion)}" required></label>
+                            <label>Postal code<input id="profilePostalCode" type="text" value="${escapeHtml(profile.postalCode)}" required></label>
+                            <label>Country<input id="profileCountry" type="text" value="${escapeHtml(profile.country)}" required></label>
+                            <label>Preferred fulfillment
+                                <select id="profilePreferredFulfillment">
+                                    <option value="Pickup" ${profile.preferredFulfillment === 'Pickup' ? 'selected' : ''}>Pickup</option>
+                                    <option value="Shipping" ${profile.preferredFulfillment === 'Shipping' ? 'selected' : ''}>Shipping</option>
+                                </select>
+                            </label>
+                            <label class="full-span">Saved order notes<textarea id="profileSavedNotes">${escapeHtml(profile.savedNotes)}</textarea></label>
+                        </div>
+                        <div class="checkout-actions" style="margin-top: 14px;">
+                            <button class="commerce-button primary" type="submit">Save account details</button>
+                        </div>
+                        <p id="profileStatus" class="status-message">${escapeHtml(statusMessage)}</p>
+                    </form>
+                    <div class="account-profile-summary">
+                        <p><strong>Saved mailing address:</strong><br>${hasMailingAddress(profile) ? escapeHtml(mailingAddress).replace(/\n/g, '<br>') : 'Add your address above for shipping-ready checkout.'}</p>
+                    </div>
+                `;
 
-        async function loadOrders(user) {
-            const { data, error } = await publicSupabase
-                .from('order_requests')
-                .select('id, created_at, status, fulfillment_method, total')
-                .eq('customer_user_id', user.id)
-                .order('created_at', { ascending: false });
+                document.getElementById('profileForm').addEventListener('submit', async (event) => {
+                    event.preventDefault();
 
-            if (error) {
-                const message = String(error.message || 'Could not load order history.');
-                if (message.toLowerCase().includes('customer_user_id') || message.toLowerCase().includes('does not exist')) {
-                    ordersWrap.innerHTML = '<p class="muted">Account-linked order history is almost ready. Run the latest Supabase SQL migration, then refresh this page.</p>';
+                    const nextProfile = {
+                        firstName: document.getElementById('profileFirstName').value.trim(),
+                        lastName: document.getElementById('profileLastName').value.trim(),
+                        dateOfBirth: document.getElementById('profileDateOfBirth').value,
+                        phone: document.getElementById('profilePhone').value.trim(),
+                        addressLine1: document.getElementById('profileAddressLine1').value.trim(),
+                        addressLine2: document.getElementById('profileAddressLine2').value.trim(),
+                        city: document.getElementById('profileCity').value.trim(),
+                        stateRegion: document.getElementById('profileStateRegion').value.trim(),
+                        postalCode: document.getElementById('profilePostalCode').value.trim(),
+                        country: document.getElementById('profileCountry').value.trim(),
+                        preferredFulfillment: document.getElementById('profilePreferredFulfillment').value,
+                        savedNotes: document.getElementById('profileSavedNotes').value.trim(),
+                        fullName: `${document.getElementById('profileFirstName').value.trim()} ${document.getElementById('profileLastName').value.trim()}`.trim()
+                    };
+
+                    if (!nextProfile.firstName || !nextProfile.lastName || !nextProfile.dateOfBirth || !nextProfile.phone || !nextProfile.addressLine1 || !nextProfile.city || !nextProfile.stateRegion || !nextProfile.postalCode || !nextProfile.country) {
+                        document.getElementById('profileStatus').textContent = 'Complete the required account details before saving.';
+                        return;
+                    }
+
+                    const { data, error } = await publicSupabase.auth.updateUser({
+                        data: profileToUserMetadata(nextProfile)
+                    });
+
+                    if (error) {
+                        document.getElementById('profileStatus').textContent = error.message;
+                        return;
+                    }
+
+                    const nextUser = data.user || { ...user, user_metadata: profileToUserMetadata(nextProfile) };
+                    whoami.textContent = `Signed in as ${nextProfile.fullName || nextUser.email} (${nextUser.email})`;
+                    renderProfileForm(nextUser, nextProfile, 'Saved. Your account details will now be reused during checkout.');
+                });
+            }
+
+            function renderOrders(orders) {
+                if (!orders.length) {
+                    ordersWrap.innerHTML = '<p class="muted">No account-linked orders yet. Place your next order while signed in.</p>';
                     return;
                 }
-                ordersWrap.textContent = message;
-                return;
+
+                ordersWrap.innerHTML = `
+                    <div style="overflow:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Fulfillment</th>
+                                    <th>Total</th>
+                                    <th>Order ID</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${orders.map((order) => `
+                                    <tr>
+                                        <td>${new Date(order.created_at).toLocaleString()}</td>
+                                        <td>${order.status || 'new'}</td>
+                                        <td>${order.fulfillment_method || 'Pickup'}</td>
+                                        <td>$${Number(order.total || 0).toFixed(2)}</td>
+                                        <td><code>${order.id}</code></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
             }
 
-            renderOrders(data || []);
-        }
+            async function loadOrders(user) {
+                const { data, error } = await publicSupabase
+                    .from('order_requests')
+                    .select('id, created_at, status, fulfillment_method, total')
+                    .eq('customer_user_id', user.id)
+                    .order('created_at', { ascending: false });
 
-        signOutBtn.addEventListener('click', async () => {
-            await publicSupabase.auth.signOut();
-            window.location.href = 'account.html';
-        });
+                if (error) {
+                    const message = String(error.message || 'Could not load order history.');
+                    if (message.toLowerCase().includes('customer_user_id') || message.toLowerCase().includes('does not exist')) {
+                        ordersWrap.innerHTML = '<p class="muted">Account-linked order history is almost ready. Run the latest Supabase SQL migration, then refresh this page.</p>';
+                        return;
+                    }
+                    ordersWrap.textContent = message;
+                    return;
+                }
 
-        const user = await enforceSignedOutStart();
+                renderOrders(data || []);
+            }
+
+            signOutBtn.addEventListener('click', async () => {
+                await publicSupabase.auth.signOut();
+                window.location.href = 'account.html';
+            });
+
+            const { user, profile } = await getSignedInCustomerAccount();
+
+            if (!user) {
+                renderSignedOutState();
+            } else {
+                signOutBtn.style.display = 'inline-flex';
+                loginLinkTop.style.display = 'none';
+                createLinkTop.style.display = 'none';
+                whoami.textContent = `Signed in as ${formatProfileName(profile) || user.email} (${user.email})`;
+                renderProfileForm(user, profile);
+                await loadOrders(user);
+            }
+        </script>
+    </body>
+    </html>
         if (!user) {
             whoami.textContent = 'You are not signed in yet.';
             ordersWrap.innerHTML = `

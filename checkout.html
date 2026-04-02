@@ -65,15 +65,11 @@
     <script type="module">
         import { calculateCartTotals, clearCart, formatCartSummary, formatCurrency, loadStoreConfig, readCart } from './js/commerce.js';
         import { publicSupabase } from './js/supabasePublic.js';
+        import { formatMailingAddress, formatProfileName, getSignedInCustomerAccount, hasMailingAddress } from './js/customerAccount.js';
 
         const checkoutRoot = document.getElementById('checkoutRoot');
         const config = await loadStoreConfig();
         const paymentLink = String(config.hostedPaymentUrl || config.hosted_payment_url || '').trim();
-
-        async function getSignedInCustomer() {
-            const { data } = await publicSupabase.auth.getSession();
-            return data.session?.user || null;
-        }
 
         async function createOrderRequestWithFallback(payload) {
             const { data, error } = await publicSupabase
@@ -189,11 +185,15 @@
             }
 
             const totals = calculateCartTotals(items, config.tax);
-            getSignedInCustomer().then((customer) => {
-            checkoutRoot.innerHTML = `
+            getSignedInCustomerAccount().then(({ user: customer, profile }) => {
+                const customerName = formatProfileName(profile);
+                const mailingAddress = formatMailingAddress(profile);
+                const addressReady = hasMailingAddress(profile);
+
+                checkoutRoot.innerHTML = `
                 <section class="checkout-form">
                     <h2>Customer details</h2>
-                    ${customer ? `<p class="helper-text">Signed in as ${customer.email}. This order will appear in your account history after payment is completed and a confirmation number is issued.</p>` : '<p class="helper-text">Guest checkout is available, or <a href="account-login.html">sign in</a> to track orders in your account. Your order details stay together until payment is completed and confirmation is issued.</p>'}
+                    ${customer ? `<p class="helper-text">Signed in as ${customer.email}. This order will appear in your account history and can use your saved account details.</p>` : '<p class="helper-text">Guest checkout is available, or <a href="account-login.html">sign in</a> to track orders in your account.</p>'}
                     <div class="checkout-grid">
                         <label>
                             Full name
@@ -215,6 +215,13 @@
                             <textarea id="orderNotes" placeholder="Pickup timing, shipping preferences, frame notes, or anything else useful."></textarea>
                         </label>
                     </div>
+                    ${customer ? `
+                        <div class="status-message" style="margin-top: 14px;">
+                            <strong>Saved account details</strong><br>
+                            Phone: ${profile.phone || 'Add in your account'}<br>
+                            Address: ${addressReady ? mailingAddress.replace(/\n/g, '<br>') : 'Add your mailing address in your account before using shipping.'}
+                        </div>
+                    ` : ''}
                     <div class="checkout-actions" style="margin-top: 16px;">
                         <button id="sendOrderButton" class="commerce-button primary" type="button">Prepare order email</button>
                         ${paymentLink ? '<button id="payNowButton" class="commerce-button primary" type="button">Pay now securely</button>' : ''}
@@ -257,48 +264,64 @@
                 </aside>
             `;
 
-            const status = document.getElementById('checkoutStatus');
-            if (customer?.email) {
-                const emailInput = document.getElementById('customerEmail');
-                emailInput.value = customer.email;
-            }
-
-            document.getElementById('sendOrderButton').addEventListener('click', async () => {
-                const formValues = {
-                    name: document.getElementById('customerName').value.trim(),
-                    email: document.getElementById('customerEmail').value.trim(),
-                    fulfillment: document.getElementById('fulfillmentMethod').value,
-                    notes: document.getElementById('orderNotes').value.trim()
-                };
-
-                if (!formValues.name || !formValues.email) {
-                    status.textContent = 'Enter your name and email before preparing the order request.';
-                    return;
+                const status = document.getElementById('checkoutStatus');
+                if (customer?.email) {
+                    const emailInput = document.getElementById('customerEmail');
+                    emailInput.value = customer.email;
+                }
+                if (customerName) {
+                    document.getElementById('customerName').value = customerName;
+                }
+                if (profile.preferredFulfillment) {
+                    document.getElementById('fulfillmentMethod').value = profile.preferredFulfillment;
+                }
+                if (profile.savedNotes) {
+                    document.getElementById('orderNotes').value = profile.savedNotes;
                 }
 
-                status.textContent = 'Saving your order request...';
+                document.getElementById('sendOrderButton').addEventListener('click', async () => {
+                    const formValues = {
+                        name: document.getElementById('customerName').value.trim(),
+                        email: document.getElementById('customerEmail').value.trim(),
+                        fulfillment: document.getElementById('fulfillmentMethod').value,
+                        notes: document.getElementById('orderNotes').value.trim(),
+                        phone: profile.phone || '',
+                        address: mailingAddress
+                    };
 
-                try {
-                    const orderRequest = await saveOrderAndItems({
-                        customer,
-                        name: formValues.name,
-                        email: formValues.email,
-                        fulfillment: formValues.fulfillment,
-                        notes: formValues.notes,
-                        totals,
-                        items
-                    });
+                    if (!formValues.name || !formValues.email) {
+                        status.textContent = 'Enter your name and email before preparing the order request.';
+                        return;
+                    }
 
-                    status.textContent = `Order saved (ID: ${orderRequest.id}). Opening your email client...`;
-                } catch (error) {
-                    status.textContent = `Could not save order to dashboard queue. Email fallback still works. (${error.message})`;
-                }
+                    if (formValues.fulfillment === 'Shipping' && customer && !addressReady) {
+                        status.textContent = 'Add your mailing address in My Account before preparing a shipping order.';
+                        return;
+                    }
 
-                const subject = encodeURIComponent(`Farmhouse Frames order request for ${formValues.name}`);
-                const body = formatCartSummary(items, config, formValues);
-                window.location.href = `mailto:${encodeURIComponent(config.businessEmail)}?subject=${subject}&body=${body}`;
-                status.textContent = 'Your email client should open with the prefilled order request. Your order has also been routed to the admin queue when available.';
-            });
+                    status.textContent = 'Saving your order request...';
+
+                    try {
+                        const orderRequest = await saveOrderAndItems({
+                            customer,
+                            name: formValues.name,
+                            email: formValues.email,
+                            fulfillment: formValues.fulfillment,
+                            notes: formValues.notes,
+                            totals,
+                            items
+                        });
+
+                        status.textContent = `Order saved (ID: ${orderRequest.id}). Opening your email client...`;
+                    } catch (error) {
+                        status.textContent = `Could not save order to dashboard queue. Email fallback still works. (${error.message})`;
+                    }
+
+                    const subject = encodeURIComponent(`Farmhouse Frames order request for ${formValues.name}`);
+                    const body = formatCartSummary(items, config, formValues);
+                    window.location.href = `mailto:${encodeURIComponent(config.businessEmail)}?subject=${subject}&body=${body}`;
+                    status.textContent = 'Your email client should open with the prefilled order request. Your order has also been routed to the admin queue when available.';
+                });
 
             if (paymentLink) {
                 document.getElementById('payNowButton')?.addEventListener('click', async () => {
@@ -306,6 +329,11 @@
                     const email = document.getElementById('customerEmail').value.trim();
                     if (!name || !email) {
                         status.textContent = 'Enter name and email before continuing to payment.';
+                        return;
+                    }
+
+                    if (document.getElementById('fulfillmentMethod').value === 'Shipping' && customer && !addressReady) {
+                        status.textContent = 'Add your mailing address in My Account before continuing to payment for shipping.';
                         return;
                     }
 
@@ -333,10 +361,10 @@
                 });
             }
 
-            document.getElementById('clearAfterSendButton').addEventListener('click', () => {
-                clearCart();
-                renderEmptyCheckout();
-            });
+                document.getElementById('clearAfterSendButton').addEventListener('click', () => {
+                    clearCart();
+                    renderEmptyCheckout();
+                });
             });
         }
 
