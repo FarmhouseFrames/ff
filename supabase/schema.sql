@@ -135,10 +135,16 @@ create table if not exists public.sourcing_records (
   catalog_source_file text not null,
   title text,
   category text,
+  supplier_item_type text,
+  supplier_item_label text,
   supplier_url text,
   artwork_url text,
+  mockup_url text,
+  storefront_image_url text,
   layout_name text,
+  workflow_status text not null default 'draft',
   specs text,
+  production_checklist text,
   supplier_description text,
   store_description text,
   base_cost numeric not null default 0,
@@ -154,6 +160,13 @@ create table if not exists public.sourcing_records (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.sourcing_records add column if not exists supplier_item_type text;
+alter table public.sourcing_records add column if not exists supplier_item_label text;
+alter table public.sourcing_records add column if not exists mockup_url text;
+alter table public.sourcing_records add column if not exists storefront_image_url text;
+alter table public.sourcing_records add column if not exists workflow_status text not null default 'draft';
+alter table public.sourcing_records add column if not exists production_checklist text;
 
 create table if not exists public.order_items (
   id uuid primary key default gen_random_uuid(),
