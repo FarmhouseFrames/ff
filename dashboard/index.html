@@ -138,6 +138,10 @@
                 <button class="btn" id="applySourcingToProduct" type="button">Apply sourcing record to form</button>
               </div>
               <label>
+                <span>Approved storefront image URL (optional override)</span>
+                <input id="productApprovedImageUrl" type="url" placeholder="https://...">
+              </label>
+              <label>
                 <span>Product name</span>
                 <input id="productName" type="text" required>
               </label>
@@ -269,12 +273,40 @@
               <div id="sourcingProductSummary" class="message" hidden></div>
 
               <label>
+                <span>Workflow status</span>
+                <select id="sourcingWorkflowStatus">
+                  <option value="draft">Draft</option>
+                  <option value="artwork-ready">Artwork Ready</option>
+                  <option value="mockup-ready">Mockup Ready</option>
+                  <option value="approved-for-storefront">Approved for Storefront</option>
+                  <option value="published">Published</option>
+                  <option value="retired">Retired</option>
+                </select>
+              </label>
+              <label>
+                <span>Supplier item type</span>
+                <input id="sourcingSupplierItemType" type="text" placeholder="Example: Canvas print, mounted print, puzzle">
+              </label>
+              <label>
+                <span>Supplier item label / SKU</span>
+                <input id="sourcingSupplierItemLabel" type="text" placeholder="Example: Walmart 16x20 canvas">
+              </label>
+
+              <label>
                 <span>Supplier / template link</span>
                 <input id="sourcingSupplierUrl" type="url" placeholder="https://...">
               </label>
               <label>
                 <span>Photo upload / artwork link</span>
                 <input id="sourcingArtworkUrl" type="url" placeholder="https://...">
+              </label>
+              <label>
+                <span>Mockup preview URL</span>
+                <input id="sourcingMockupUrl" type="url" placeholder="https://...">
+              </label>
+              <label>
+                <span>Approved storefront image URL</span>
+                <input id="sourcingStorefrontImageUrl" type="url" placeholder="https://...">
               </label>
               <label>
                 <span>Layout name</span>
@@ -317,6 +349,10 @@
               <label>
                 <span>Internal notes</span>
                 <textarea id="sourcingNotes" placeholder="Anything else to remember before creating the sellable product"></textarea>
+              </label>
+              <label>
+                <span>Production checklist</span>
+                <textarea id="sourcingProductionChecklist" placeholder="Example: Confirm artwork crop, export mockup, verify Walmart size, approve storefront image"></textarea>
               </label>
 
               <div class="row">
@@ -454,6 +490,7 @@
     let sourcingCatalog = [];
     let sourcingRecords = {};
     let pendingProductSourcingKey = '';
+    const SOURCING_WORKFLOW_ORDER = ['draft', 'artwork-ready', 'mockup-ready', 'approved-for-storefront', 'published', 'retired'];
     const THEME_PRESETS = {
       'lbl-lake': {
         intro: 'Inspired by [photo], this [product] brings the calm light and open water mood of Land Between the Lakes into your home.',
@@ -623,10 +660,16 @@
         sourceFile: row.catalog_source_file,
         title: row.title,
         category: row.category,
+        workflowStatus: row.workflow_status || 'draft',
+        supplierItemType: row.supplier_item_type || '',
+        supplierItemLabel: row.supplier_item_label || '',
         supplierUrl: row.supplier_url || '',
         artworkUrl: row.artwork_url || '',
+        mockupUrl: row.mockup_url || '',
+        storefrontImageUrl: row.storefront_image_url || '',
         layoutName: row.layout_name || '',
         specs: row.specs || '',
+        productionChecklist: row.production_checklist || '',
         supplierDescription: row.supplier_description || '',
         storeDescription: row.store_description || '',
         baseCost: toFiniteNumber(row.base_cost),
@@ -659,10 +702,16 @@
         sourceFile: product.sourceFile,
         title: product.title,
         category: product.category,
+        workflowStatus: 'draft',
+        supplierItemType: '',
+        supplierItemLabel: '',
         supplierUrl: product.defaultSupplierUrl,
         artworkUrl: '',
+        mockupUrl: '',
+        storefrontImageUrl: '',
         layoutName: product.defaultLayout,
         specs: product.defaultSpecs,
+        productionChecklist: '',
         supplierDescription: '',
         storeDescription: product.description || '',
         baseCost: product.defaultBaseCost,
@@ -747,6 +796,7 @@
             <strong>${escapeHtml(product.title)}</strong>
             <div class="muted small">Product ID: ${escapeHtml(product.id)} | Source: ${escapeHtml(product.sourceFile)}</div>
             <div class="muted small">Category: ${escapeHtml(product.category || '—')} | Public price: ${money(product.price)} | Inventory: ${escapeHtml(product.inventory || '—')}</div>
+            <div class="muted small">Workflow: ${escapeHtml(record?.workflowStatus || 'draft')} | Supplier item: ${escapeHtml(record?.supplierItemLabel || 'Not set')}</div>
             <div class="muted small">Sizes: ${escapeHtml(sizeText)}</div>
           </div>
           <div class="muted small" style="text-align:right;">Last saved: ${escapeHtml(updatedAt)}</div>
@@ -771,6 +821,7 @@
           <div>
             <strong>${escapeHtml(record.title || record.productId)}</strong>
             <div class="muted small">Source product: ${escapeHtml(record.productId || '—')} | File: ${escapeHtml(record.sourceFile || '—')}</div>
+            <div class="muted small">Status: ${escapeHtml(record.workflowStatus || 'draft')} | Supplier item: ${escapeHtml(record.supplierItemLabel || '—')}</div>
             <div class="muted small">Retail before shipping: ${money(record.retailBeforeShipping)} | Retail after shipping: ${money(record.retailAfterShipping)}</div>
           </div>
           <div class="muted small" style="text-align:right;">Updated: ${record.updatedAt ? new Date(record.updatedAt).toLocaleString() : '—'}</div>
@@ -806,10 +857,18 @@
         return;
       }
 
+      const approvalRank = SOURCING_WORKFLOW_ORDER.indexOf(record.workflowStatus || 'draft');
+      const requiredRank = SOURCING_WORKFLOW_ORDER.indexOf('approved-for-storefront');
+      if (approvalRank < requiredRank) {
+        showProductMessage('This sourcing record is not approved for storefront yet. Move it to Approved for Storefront first.', 'error');
+        return;
+      }
+
       $('#productName').value = record.title || '';
       $('#productCategory').value = record.category || '';
       $('#productSupplier').value = inferSupplierName(record.supplierUrl);
       $('#productSupplierUrl').value = record.supplierUrl || '';
+      $('#productApprovedImageUrl').value = record.storefrontImageUrl || record.mockupUrl || '';
       $('#productPrice').value = String(toFiniteNumber(record.retailBeforeShipping));
       $('#productInternalCost').value = String(toFiniteNumber(record.baseCost));
       $('#productInternalShipping').value = String(toFiniteNumber(record.shippingCost) + toFiniteNumber(record.deliveryFee));
@@ -853,7 +912,8 @@
         imageUrl,
         preset,
         supplierUrl: record.supplierUrl || '',
-        productName: record.title || product.title || 'Farmhouse Frames Product'
+        productName: record.title || product.title || 'Farmhouse Frames Product',
+        returnTo: '../dashboard/index.html#sourcing'
       });
     }
 
@@ -901,10 +961,16 @@
 
       if (!product) {
         if (summary) summary.hidden = true;
+        $('#sourcingWorkflowStatus').value = 'draft';
+        $('#sourcingSupplierItemType').value = '';
+        $('#sourcingSupplierItemLabel').value = '';
         $('#sourcingSupplierUrl').value = '';
         $('#sourcingArtworkUrl').value = '';
+        $('#sourcingMockupUrl').value = '';
+        $('#sourcingStorefrontImageUrl').value = '';
         $('#sourcingLayoutName').value = '';
         $('#sourcingSpecs').value = '';
+        $('#sourcingProductionChecklist').value = '';
         $('#sourcingSupplierDescription').value = '';
         $('#sourcingStoreDescription').value = '';
         $('#sourcingBaseCost').value = '';
@@ -918,10 +984,16 @@
 
       const stored = sourcingRecords[product.key] || createDefaultSourcingRecord(product);
 
+        $('#sourcingWorkflowStatus').value = stored.workflowStatus || 'draft';
+        $('#sourcingSupplierItemType').value = stored.supplierItemType || '';
+        $('#sourcingSupplierItemLabel').value = stored.supplierItemLabel || '';
       $('#sourcingSupplierUrl').value = stored.supplierUrl || '';
       $('#sourcingArtworkUrl').value = stored.artworkUrl || '';
+        $('#sourcingMockupUrl').value = stored.mockupUrl || '';
+        $('#sourcingStorefrontImageUrl').value = stored.storefrontImageUrl || '';
       $('#sourcingLayoutName').value = stored.layoutName || '';
       $('#sourcingSpecs').value = stored.specs || '';
+        $('#sourcingProductionChecklist').value = stored.productionChecklist || '';
       $('#sourcingSupplierDescription').value = stored.supplierDescription || '';
       $('#sourcingStoreDescription').value = stored.storeDescription || '';
       $('#sourcingBaseCost').value = stored.baseCost ? String(stored.baseCost) : '';
@@ -941,10 +1013,16 @@
         sourceFile: product.sourceFile,
         title: product.title,
         category: product.category,
+        workflowStatus: $('#sourcingWorkflowStatus').value || 'draft',
+        supplierItemType: $('#sourcingSupplierItemType').value.trim(),
+        supplierItemLabel: $('#sourcingSupplierItemLabel').value.trim(),
         supplierUrl: $('#sourcingSupplierUrl').value.trim(),
         artworkUrl: $('#sourcingArtworkUrl').value.trim(),
+        mockupUrl: $('#sourcingMockupUrl').value.trim(),
+        storefrontImageUrl: $('#sourcingStorefrontImageUrl').value.trim(),
         layoutName: $('#sourcingLayoutName').value.trim(),
         specs: $('#sourcingSpecs').value.trim(),
+        productionChecklist: $('#sourcingProductionChecklist').value.trim(),
         supplierDescription: $('#sourcingSupplierDescription').value.trim(),
         storeDescription: $('#sourcingStoreDescription').value.trim(),
         baseCost: toFiniteNumber($('#sourcingBaseCost').value),
@@ -998,13 +1076,15 @@
               <tr>
                 <td>
                   <strong>${escapeHtml(row.title || row.productId)}</strong><br>
-                  <span class="muted small">${escapeHtml(row.productId || '—')}</span>
+                  <span class="muted small">${escapeHtml(row.productId || '—')}</span><br>
+                  <span class="muted small">${escapeHtml(row.workflowStatus || 'draft')}</span>
                 </td>
                 <td>
                   ${row.supplierUrl ? `<a href="${escapeHtml(row.supplierUrl)}" target="_blank" rel="noopener">Supplier</a><br>` : '<span class="muted small">No supplier link</span><br>'}
-                  ${row.artworkUrl ? `<a href="${escapeHtml(row.artworkUrl)}" target="_blank" rel="noopener">Artwork</a>` : '<span class="muted small">No artwork link</span>'}
+                  ${row.artworkUrl ? `<a href="${escapeHtml(row.artworkUrl)}" target="_blank" rel="noopener">Artwork</a><br>` : '<span class="muted small">No artwork link</span><br>'}
+                  ${row.mockupUrl ? `<a href="${escapeHtml(row.mockupUrl)}" target="_blank" rel="noopener">Mockup</a>` : '<span class="muted small">No mockup</span>'}
                 </td>
-                <td>${escapeHtml(row.layoutName || '—')}</td>
+                <td>${escapeHtml(row.layoutName || '—')}<br><span class="muted small">${escapeHtml(row.supplierItemLabel || row.supplierItemType || '—')}</span></td>
                 <td>${money(row.baseCost)}</td>
                 <td>${money(row.shippingCost)}</td>
                 <td>${money(row.deliveryFee)}</td>
@@ -1107,10 +1187,16 @@
         catalog_source_file: record.sourceFile,
         title: record.title,
         category: record.category,
+        workflow_status: record.workflowStatus,
+        supplier_item_type: record.supplierItemType || null,
+        supplier_item_label: record.supplierItemLabel || null,
         supplier_url: record.supplierUrl || null,
         artwork_url: record.artworkUrl || null,
+        mockup_url: record.mockupUrl || null,
+        storefront_image_url: record.storefrontImageUrl || null,
         layout_name: record.layoutName || null,
         specs: record.specs || null,
+        production_checklist: record.productionChecklist || null,
         supplier_description: record.supplierDescription || null,
         store_description: record.storeDescription || null,
         base_cost: record.baseCost,
@@ -1215,7 +1301,8 @@
         imageUrl: source.file_url,
         preset: $('#productProductionPreset')?.value || 'custom',
         supplierUrl: $('#productSupplierUrl')?.value.trim() || '',
-        productName: $('#productName')?.value.trim() || source.label || 'Farmhouse Frames Product'
+        productName: $('#productName')?.value.trim() || source.label || 'Farmhouse Frames Product',
+        returnTo: '../dashboard/index.html#products'
       });
     }
 
@@ -1252,12 +1339,13 @@
         .filter(Boolean);
     }
 
-    function buildCutterUrl({ imageUrl, preset, supplierUrl, productName }) {
+    function buildCutterUrl({ imageUrl, preset, supplierUrl, productName, returnTo }) {
       const params = new URLSearchParams();
       if (imageUrl) params.set('imageUrl', imageUrl);
       if (preset) params.set('preset', preset);
       if (supplierUrl) params.set('supplierUrl', supplierUrl);
       if (productName) params.set('productName', productName);
+      if (returnTo) params.set('returnTo', returnTo);
       return `../admin-dashboard.html?${params.toString()}`;
     }
 
@@ -1549,7 +1637,7 @@
                 <td>
                   <div style="display:grid; gap:8px; min-width: 150px;">
                     ${product.supplier_url ? `<a href="${escapeHtml(product.supplier_url)}" target="_blank" rel="noopener">Open supplier link</a>` : '<span class="muted">No supplier link</span>'}
-                    ${product.image ? `<a href="${buildCutterUrl({ imageUrl: product.image, preset: product.production_preset || 'custom', supplierUrl: product.supplier_url || '', productName: product.name || 'Farmhouse Frames Product' })}">Open in cutter</a>` : '<span class="muted">No image yet</span>'}
+                    ${product.image ? `<a href="${buildCutterUrl({ imageUrl: product.image, preset: product.production_preset || 'custom', supplierUrl: product.supplier_url || '', productName: product.name || 'Farmhouse Frames Product', returnTo: '../dashboard/index.html#products' })}">Open in cutter</a>` : '<span class="muted">No image yet</span>'}
                   </div>
                 </td>
               </tr>
@@ -1577,9 +1665,10 @@
         }
       }
 
+      const approvedImageUrl = $('#productApprovedImageUrl')?.value.trim() || '';
       const source = getSelectedSourcePhoto();
-      if (!source?.file_url) {
-        showProductMessage('Select an uploaded photo so the product can appear on the storefront and open in the cutter.', 'error');
+      if (!approvedImageUrl && !source?.file_url) {
+        showProductMessage('Select an uploaded photo or provide an approved storefront image URL.', 'error');
         return;
       }
 
@@ -1588,11 +1677,11 @@
         category: $('#productCategory').value.trim() || null,
         supplier_name: $('#productSupplier').value,
         supplier_url: $('#productSupplierUrl').value.trim(),
-        image: source.file_url,
+        image: approvedImageUrl || source?.file_url || '',
         sizes: parseCsvList($('#productSizes').value),
         tags: parseCsvList($('#productTags').value),
         inventory: Number($('#productInventory').value || 0),
-        source_upload_id: source.id,
+        source_upload_id: source?.id || null,
         production_preset: $('#productProductionPreset').value || 'custom',
         price: Number($('#productPrice').value || 0),
         internal_cost: Number($('#productInternalCost').value || 0),

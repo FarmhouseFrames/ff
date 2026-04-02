@@ -463,6 +463,7 @@
                 </div>
                 <div class="actions">
                     <button id="resetAllBtn" class="btn-secondary" type="button">Reset everything</button>
+                    <button id="returnBtn" class="btn-secondary" type="button" hidden>Return to dashboard</button>
                 </div>
                 <div id="statusText" class="status">No image loaded.</div>
             </section>
@@ -782,6 +783,7 @@
         const panelGrid = document.getElementById('panelGrid');
         const imageInput = document.getElementById('imageInput');
         const statusText = document.getElementById('statusText');
+        const returnBtn = document.getElementById('returnBtn');
         const emptyNote = document.getElementById('emptyNote');
         const layoutBadge = document.getElementById('layoutBadge');
         const panelCountStat = document.getElementById('panelCountStat');
@@ -1364,10 +1366,18 @@
             const preset = params.get('preset');
             const supplierUrl = params.get('supplierUrl') || '';
             const productName = params.get('productName') || '';
+            const returnTo = params.get('returnTo') || '';
             const imageUrl = params.get('imageUrl');
 
             if (preset && presetCatalog[preset]) {
                 applyPreset(preset);
+            }
+
+            if (returnTo && returnBtn) {
+                returnBtn.hidden = false;
+                returnBtn.addEventListener('click', () => {
+                    window.location.href = returnTo;
+                });
             }
 
             setProductionReference({ supplierUrl, productName, presetKey: preset || state.preset });
