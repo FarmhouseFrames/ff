@@ -5,6 +5,7 @@ This repository contains the Farmhouse Frames storefront, product data, and admi
 Primary project documentation:
 
 - [PROJECT-DEFINITION.md](/workspaces/ff/PROJECT-DEFINITION.md)
+- [PRODUCTS-PHOTO-QUICKSTART.md](/workspaces/ff/PRODUCTS-PHOTO-QUICKSTART.md)
 
 Current implementation highlights:
 
