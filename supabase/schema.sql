@@ -114,7 +114,7 @@ create table if not exists public.order_request_items (
 
 create table if not exists public.supplier_order_packets (
   id uuid primary key default gen_random_uuid(),
-  order_request_id uuid not null references public.order_requests(id) on delete cascade,
+  order_request_id uuid references public.order_requests(id) on delete cascade,
   supplier_name text not null,
   supplier_url text,
   packet_text text not null,
@@ -127,6 +127,8 @@ create table if not exists public.supplier_order_packets (
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+alter table public.supplier_order_packets alter column order_request_id drop not null;
 
 create table if not exists public.sourcing_records (
   id uuid primary key default gen_random_uuid(),

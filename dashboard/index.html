@@ -361,6 +361,7 @@
                 <button class="btn" id="openUploadsFromSourcing" type="button">Open uploads</button>
                 <button class="btn" id="openSourcingInCutter" type="button">Open artwork in cutter</button>
                 <button class="btn" id="sendSourcingToProducts" type="button">Send to products form</button>
+                <button class="btn" id="createSourcingPacketBtn" type="button">Create supplier packet</button>
               </div>
             </form>
             <div id="sourcingMessage" class="message" hidden></div>
@@ -491,6 +492,7 @@
     let sourcingRecords = {};
     let pendingProductSourcingKey = '';
     const SOURCING_WORKFLOW_ORDER = ['draft', 'artwork-ready', 'mockup-ready', 'approved-for-storefront', 'published', 'retired'];
+    const PRIVATE_SUPPLIER_HOSTS = ['walmart.com', 'amazon.com', 'canvaschamp.com'];
     const THEME_PRESETS = {
       'lbl-lake': {
         intro: 'Inspired by [photo], this [product] brings the calm light and open water mood of Land Between the Lakes into your home.',
@@ -581,6 +583,50 @@
       if (host.includes('amazon')) return 'Amazon';
       if (host.includes('canvaschamp')) return 'CanvasChamp';
       return 'Other';
+    }
+
+    function textContainsPrivateSupplierHost(value) {
+      const text = String(value || '').toLowerCase();
+      if (!text) return false;
+      return PRIVATE_SUPPLIER_HOSTS.some((host) => text.includes(host));
+    }
+
+    function urlPointsToPrivateSupplier(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return false;
+      try {
+        const host = new URL(raw).hostname.toLowerCase();
+        return PRIVATE_SUPPLIER_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`));
+      } catch {
+        return textContainsPrivateSupplierHost(raw);
+      }
+    }
+
+    function validateStorefrontPrivacy(payload, selectedSourcingRecord = null) {
+      const publicFields = [
+        payload.name,
+        payload.category,
+        payload.description,
+        ...(Array.isArray(payload.tags) ? payload.tags : [])
+      ];
+
+      if (publicFields.some((entry) => textContainsPrivateSupplierHost(entry))) {
+        return 'Privacy guard: remove supplier domains from customer-facing fields before saving.';
+      }
+
+      if (urlPointsToPrivateSupplier(payload.image)) {
+        return 'Privacy guard: approved storefront image URL cannot point to a supplier domain.';
+      }
+
+      if (selectedSourcingRecord?.supplierUrl) {
+        const supplierUrl = String(selectedSourcingRecord.supplierUrl).trim().toLowerCase();
+        const description = String(payload.description || '').toLowerCase();
+        if (supplierUrl && description.includes(supplierUrl)) {
+          return 'Privacy guard: storefront description cannot include the supplier URL.';
+        }
+      }
+
+      return '';
     }
 
     function normalizeCatalogEntry(entry, sourceFile) {
@@ -940,6 +986,72 @@
       applySourcingRecordToProductForm();
     }
 
+    function buildSourcingPacketText(record, product) {
+      const shippingTotal = toFiniteNumber(record.shippingCost) + toFiniteNumber(record.deliveryFee);
+      return [
+        `SOURCE: Sourcing Workspace`,
+        `Catalog Product: ${record.title || product.title || record.productId || 'Unknown'}`,
+        `Catalog Product ID: ${record.productId || product.id || 'Unknown'}`,
+        `Catalog Key: ${record.productKey || product.key || 'Unknown'}`,
+        `Workflow Status: ${record.workflowStatus || 'draft'}`,
+        `Supplier: ${inferSupplierName(record.supplierUrl)}`,
+        `Supplier Link: ${record.supplierUrl || 'Missing supplier link'}`,
+        `Supplier Item: ${record.supplierItemLabel || record.supplierItemType || 'Not set'}`,
+        `Artwork URL: ${record.artworkUrl || 'Not set'}`,
+        `Mockup URL: ${record.mockupUrl || 'Not set'}`,
+        `Approved Storefront Image: ${record.storefrontImageUrl || 'Not set'}`,
+        `Layout: ${record.layoutName || 'Not set'}`,
+        record.specs ? `Specs: ${record.specs}` : null,
+        record.productionChecklist ? `Production Checklist: ${record.productionChecklist}` : null,
+        record.supplierDescription ? `Supplier Notes: ${record.supplierDescription}` : null,
+        record.notes ? `Internal Notes: ${record.notes}` : null,
+        '',
+        `Cost Basis (Base + Ship + Delivery): ${money(toFiniteNumber(record.baseCost) + shippingTotal)}`,
+        `Shipping + Delivery: ${money(shippingTotal)}`,
+        `Retail Before Shipping: ${money(record.retailBeforeShipping)}`,
+        `Retail After Shipping: ${money(record.retailAfterShipping)}`,
+        `Target Profit: ${money(record.profitAmount)} (${Number(record.profitPercent || 0).toFixed(1)}%)`
+      ].filter(Boolean).join('\n');
+    }
+
+    async function createSourcingSupplierPacket() {
+      const product = getSelectedSourcingProduct();
+      if (!product) {
+        showSourcingMessage('Choose a sourcing product first.', 'error');
+        return;
+      }
+
+      const record = sourcingRecords[product.key];
+      if (!record) {
+        showSourcingMessage('Save this sourcing record first.', 'error');
+        return;
+      }
+
+      if (!record.supplierUrl) {
+        showSourcingMessage('Add a supplier link before creating a supplier packet.', 'error');
+        return;
+      }
+
+      const packetText = buildSourcingPacketText(record, product);
+      const shippingTotal = toFiniteNumber(record.shippingCost) + toFiniteNumber(record.deliveryFee);
+
+      await saveSupplierOrderPacket({
+        order_request_id: null,
+        supplier_name: inferSupplierName(record.supplierUrl),
+        supplier_url: record.supplierUrl,
+        customer_total: toFiniteNumber(record.retailAfterShipping),
+        customer_shipping: shippingTotal,
+        supplier_estimate: toFiniteNumber(record.baseCost) + shippingTotal,
+        internal_shipping: shippingTotal,
+        packet_text: packetText,
+        notes: `source:sourcing:${record.productKey}`,
+        source_key: record.productKey
+      });
+
+      showSourcingMessage('Supplier packet created from sourcing record and saved to supplier order history.', 'ok');
+      navigateToRoute('orders');
+    }
+
     async function hydrateProductSourcingOptions() {
       try {
         await loadSourcingCatalog();
@@ -1097,6 +1209,7 @@
                     <button class="btn" type="button" data-load-sourcing="${escapeHtml(row.productKey)}">Load</button>
                     <button class="btn" type="button" data-open-sourcing-cutter="${escapeHtml(row.productKey)}">Open in cutter</button>
                     <button class="btn" type="button" data-send-sourcing-products="${escapeHtml(row.productKey)}">Send to products</button>
+                    <button class="btn" type="button" data-create-sourcing-packet="${escapeHtml(row.productKey)}">Create supplier packet</button>
                   </div>
                 </td>
               </tr>
@@ -1131,6 +1244,16 @@
           select.value = button.dataset.sendSourcingProducts || '';
           populateSourcingForm(getSelectedSourcingProduct());
           await sendCurrentSourcingToProducts();
+        });
+      });
+
+      wrap.querySelectorAll('button[data-create-sourcing-packet]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const select = $('#sourcingProductSelect');
+          if (!select) return;
+          select.value = button.dataset.createSourcingPacket || '';
+          populateSourcingForm(getSelectedSourcingProduct());
+          await createSourcingSupplierPacket();
         });
       });
     }
@@ -1697,6 +1820,13 @@
         active: true
       };
 
+      const selectedSourcingRecord = getSelectedProductSourcingRecord();
+      const privacyError = validateStorefrontPrivacy(payload, selectedSourcingRecord);
+      if (privacyError) {
+        showProductMessage(privacyError, 'error');
+        return;
+      }
+
       if (!payload.name || !payload.supplier_url || payload.price < 0) {
         showProductMessage('Enter a product name, supplier link, and valid price.', 'error');
         return;
@@ -1741,7 +1871,7 @@
       const { error } = await supabase
         .from('supplier_order_packets')
         .insert({
-          order_request_id: record.order_request_id,
+          order_request_id: record.order_request_id || null,
           supplier_name: record.supplier_name,
           supplier_url: record.supplier_url || null,
           packet_text: record.packet_text,
@@ -1750,6 +1880,7 @@
           supplier_estimate: Number(record.supplier_estimate || 0),
           internal_shipping: Number(record.internal_shipping || 0),
           status: 'prepared',
+          notes: record.notes || null,
           created_by: user?.id || null
         });
 
@@ -1759,9 +1890,10 @@
       }
 
       showMessage(`Supplier PO saved for ${record.supplier_name}.`, 'ok');
-      await logActivity('supplier_packet_saved', 'supplier_order_packets', record.order_request_id, {
+      await logActivity('supplier_packet_saved', 'supplier_order_packets', record.order_request_id || record.source_key || record.supplier_name, {
         supplier_name: record.supplier_name,
-        supplier_estimate: record.supplier_estimate
+        supplier_estimate: record.supplier_estimate,
+        source: record.order_request_id ? 'order-request' : 'sourcing-workspace'
       });
       await loadSupplierOrderHistory();
     }
@@ -1809,7 +1941,7 @@
                   ${escapeHtml(row.supplier_name || '—')}<br>
                   ${row.supplier_url ? `<a href="${escapeHtml(row.supplier_url)}" target="_blank" rel="noopener">Open Link</a>` : '<span class="muted">No link</span>'}
                 </td>
-                <td><code>${escapeHtml(row.order_request_id)}</code></td>
+                <td>${row.order_request_id ? `<code>${escapeHtml(row.order_request_id)}</code>` : `<span class="muted">${escapeHtml(String(row.notes || 'Sourcing packet').replace('source:sourcing:', 'Sourcing: '))}</span>`}</td>
                 <td>${money(row.customer_total)}</td>
                 <td>${money(row.customer_shipping)}</td>
                 <td>${money(row.supplier_estimate)}</td>
@@ -2374,6 +2506,7 @@
     $('#openUploadsFromSourcing')?.addEventListener('click', () => navigateToRoute('uploads'));
     $('#openSourcingInCutter')?.addEventListener('click', openCurrentSourcingInCutter);
     $('#sendSourcingToProducts')?.addEventListener('click', sendCurrentSourcingToProducts);
+    $('#createSourcingPacketBtn')?.addEventListener('click', createSourcingSupplierPacket);
     $('#refreshClientsBtn')?.addEventListener('click', loadClientsPage);
     $('#refreshLogsBtn')?.addEventListener('click', loadActivityLogs);
     $('#productSourcePhoto')?.addEventListener('change', updateSourcePhotoPreview);
