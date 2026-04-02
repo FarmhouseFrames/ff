@@ -113,3 +113,47 @@ Run this after each major admin/storefront update:
    - `order_request_items`
 4. Verify supplier packet save creates rows in:
    - `supplier_order_packets`
+
+## 9) Storage policy setup (Dashboard UI)
+
+If SQL Editor shows `must be owner of table objects`, run:
+
+1. `supabase/policies-core.sql` in SQL Editor
+2. Configure Storage rules in Supabase Dashboard UI
+
+For bucket `photo-uploads`, create these policies under Storage -> Policies:
+
+1. Policy name: `Admin upload photo-uploads`
+   - Allowed operation: `INSERT`
+   - Target roles: `authenticated`
+   - `WITH CHECK` expression:
+
+```sql
+bucket_id = 'photo-uploads' and public.is_admin()
+```
+
+2. Policy name: `Admin update photo-uploads`
+   - Allowed operation: `UPDATE`
+   - Target roles: `authenticated`
+   - `USING` expression:
+
+```sql
+bucket_id = 'photo-uploads' and public.is_admin()
+```
+
+   - `WITH CHECK` expression:
+
+```sql
+bucket_id = 'photo-uploads' and public.is_admin()
+```
+
+3. Policy name: `Admin delete photo-uploads`
+   - Allowed operation: `DELETE`
+   - Target roles: `authenticated`
+   - `USING` expression:
+
+```sql
+bucket_id = 'photo-uploads' and public.is_admin()
+```
+
+If you use additional admin buckets (for example `uploads`, `order-files`, `case-files`), duplicate the same policies and change `bucket_id` accordingly.
