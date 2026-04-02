@@ -13,7 +13,9 @@
             <div class="summary-actions">
                 <a class="commerce-button-link" href="products/index.html">Shop products</a>
                 <a class="commerce-button-link" href="checkout.html">Checkout</a>
-                <button id="signOutBtn" class="commerce-button" type="button">Sign out</button>
+                <a id="loginLinkTop" class="commerce-button-link" href="account-login.html?mode=signin">Log in</a>
+                <a id="createLinkTop" class="commerce-button-link" href="account-login.html?mode=signup">Create account</a>
+                <button id="signOutBtn" class="commerce-button" type="button" style="display:none;">Sign out</button>
             </div>
         </header>
 
@@ -45,6 +47,9 @@
 
         const whoami = document.getElementById('whoami');
         const ordersWrap = document.getElementById('ordersWrap');
+        const signOutBtn = document.getElementById('signOutBtn');
+        const loginLinkTop = document.getElementById('loginLinkTop');
+        const createLinkTop = document.getElementById('createLinkTop');
 
         async function requireSession() {
             const { data, error } = await publicSupabase.auth.getSession();
@@ -53,7 +58,6 @@
             }
 
             if (!data.session?.user) {
-                window.location.href = 'account-login.html';
                 return null;
             }
 
@@ -114,13 +118,28 @@
             renderOrders(data || []);
         }
 
-        document.getElementById('signOutBtn').addEventListener('click', async () => {
+        signOutBtn.addEventListener('click', async () => {
             await publicSupabase.auth.signOut();
-            window.location.href = 'account-login.html';
+            window.location.href = 'account.html';
         });
 
         const user = await requireSession();
+        if (!user) {
+            whoami.textContent = 'You are not signed in yet.';
+            ordersWrap.innerHTML = `
+                <p class="muted">Create your account or log in to keep your orders separated and viewable only by your account.</p>
+                <div class="checkout-actions" style="margin-top: 12px;">
+                    <a class="commerce-button-link primary" href="account-login.html?mode=signup">Create customer account</a>
+                    <a class="commerce-button-link" href="account-login.html?mode=signin">Log in to existing account</a>
+                </div>
+            `;
+            return;
+        }
+
         if (user) {
+            signOutBtn.style.display = 'inline-flex';
+            loginLinkTop.style.display = 'none';
+            createLinkTop.style.display = 'none';
             whoami.textContent = `Signed in as ${user.email}`;
             await loadOrders(user);
         }

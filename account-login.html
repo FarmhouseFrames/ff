@@ -23,7 +23,7 @@
 
         <main class="commerce-layout">
             <section class="checkout-form">
-                <h2>Sign in</h2>
+                <h2 id="authTitle">Sign in</h2>
                 <div class="checkout-grid">
                     <label>Email<input id="email" type="email" autocomplete="email" required></label>
                     <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
@@ -52,6 +52,23 @@
         import { publicSupabase } from './js/supabasePublic.js';
 
         const status = document.getElementById('authStatus');
+        const authTitle = document.getElementById('authTitle');
+        const signInBtn = document.getElementById('signInBtn');
+        const signUpBtn = document.getElementById('signUpBtn');
+
+        function setModeFromUrl() {
+            const mode = new URLSearchParams(window.location.search).get('mode');
+            if (mode === 'signup') {
+                authTitle.textContent = 'Create customer account';
+                signUpBtn.classList.add('primary');
+                signInBtn.classList.remove('primary');
+                setStatus('Create your account to retain and view only your own order history.');
+            } else {
+                authTitle.textContent = 'Sign in';
+                signInBtn.classList.add('primary');
+                signUpBtn.classList.remove('primary');
+            }
+        }
 
         function getFormValues() {
             return {
@@ -71,7 +88,7 @@
             }
         }
 
-        document.getElementById('signInBtn').addEventListener('click', async () => {
+        signInBtn.addEventListener('click', async () => {
             const { email, password } = getFormValues();
             if (!email || !password) {
                 setStatus('Enter email and password.');
@@ -87,7 +104,7 @@
             window.location.href = 'account.html';
         });
 
-        document.getElementById('signUpBtn').addEventListener('click', async () => {
+        signUpBtn.addEventListener('click', async () => {
             const { email, password } = getFormValues();
             if (!email || !password) {
                 setStatus('Enter email and password to create an account.');
@@ -122,6 +139,7 @@
             setStatus('Password reset email sent.');
         });
 
+        setModeFromUrl();
         ensureRedirectForSession();
     </script>
 </body>
