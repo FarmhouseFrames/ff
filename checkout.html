@@ -38,6 +38,69 @@
             return data.session?.user || null;
         }
 
+        async function createOrderRequestWithFallback(payload) {
+            const { data, error } = await publicSupabase
+                .from('order_requests')
+                .insert(payload)
+                .select()
+                .single();
+
+            if (!error) {
+                return { data, error: null };
+            }
+
+            // Backward compatibility: if migration adding customer_user_id is not applied yet,
+            // retry without that column so checkout still works.
+            if (error.message && error.message.toLowerCase().includes('customer_user_id')) {
+                const fallbackPayload = { ...payload };
+                delete fallbackPayload.customer_user_id;
+                return publicSupabase
+                    .from('order_requests')
+                    .insert(fallbackPayload)
+                    .select()
+                    .single();
+            }
+
+            return { data: null, error };
+        }
+
+        async function saveOrderAndItems({ customer, name, email, fulfillment, notes, totals, items }) {
+            const { data: orderRequest, error: orderError } = await createOrderRequestWithFallback({
+                customer_user_id: customer?.id || null,
+                customer_name: name,
+                customer_email: email,
+                fulfillment_method: fulfillment,
+                notes: notes || null,
+                subtotal: totals.subtotal,
+                tax: totals.tax,
+                total: totals.total,
+                status: 'new'
+            });
+
+            if (orderError) {
+                throw orderError;
+            }
+
+            const lineItems = items.map((item) => ({
+                order_request_id: orderRequest.id,
+                product_id: item.productId || null,
+                title: item.title,
+                size: item.size || null,
+                quantity: item.quantity,
+                unit_price: item.price
+            }));
+
+            const { error: itemError } = await publicSupabase
+                .from('order_request_items')
+                .insert(lineItems);
+
+            if (itemError) {
+                throw itemError;
+            }
+
+            return orderRequest;
+        }
+
         function buildHostedPaymentUrl(baseUrl, customerEmail, orderId) {
             if (!baseUrl) {
                 return '';
@@ -124,6 +187,11 @@
             `;
 
             const status = document.getElementById('checkoutStatus');
+            if (customer?.email) {
+                const emailInput = document.getElementById('customerEmail');
+                emailInput.value = customer.email;
+            }
+
             document.getElementById('sendOrderButton').addEventListener('click', async () => {
                 const formValues = {
                     name: document.getElementById('customerName').value.trim(),
@@ -140,42 +208,15 @@
                 status.textContent = 'Saving your order request...';
 
                 try {
-                    const { data: orderRequest, error: orderError } = await publicSupabase
-                        .from('order_requests')
-                        .insert({
-                            customer_user_id: customer?.id || null,
-                            customer_name: formValues.name,
-                            customer_email: formValues.email,
-                            fulfillment_method: formValues.fulfillment,
-                            notes: formValues.notes || null,
-                            subtotal: totals.subtotal,
-                            tax: totals.tax,
-                            total: totals.total,
-                            status: 'new'
-                        })
-                        .select()
-                        .single();
-
-                    if (orderError) {
-                        throw orderError;
-                    }
-
-                    const lineItems = items.map((item) => ({
-                        order_request_id: orderRequest.id,
-                        product_id: item.productId || null,
-                        title: item.title,
-                        size: item.size || null,
-                        quantity: item.quantity,
-                        unit_price: item.price
-                    }));
-
-                    const { error: itemError } = await publicSupabase
-                        .from('order_request_items')
-                        .insert(lineItems);
-
-                    if (itemError) {
-                        throw itemError;
-                    }
+                    const orderRequest = await saveOrderAndItems({
+                        customer,
+                        name: formValues.name,
+                        email: formValues.email,
+                        fulfillment: formValues.fulfillment,
+                        notes: formValues.notes,
+                        totals,
+                        items
+                    });
 
                     status.textContent = `Order saved (ID: ${orderRequest.id}). Opening your email client...`;
                 } catch (error) {
@@ -201,43 +242,16 @@
                     let orderId = '';
 
                     try {
-                        const { data: orderRequest, error: orderError } = await publicSupabase
-                            .from('order_requests')
-                            .insert({
-                                customer_user_id: customer?.id || null,
-                                customer_name: name,
-                                customer_email: email,
-                                fulfillment_method: document.getElementById('fulfillmentMethod').value,
-                                notes: document.getElementById('orderNotes').value.trim() || null,
-                                subtotal: totals.subtotal,
-                                tax: totals.tax,
-                                total: totals.total,
-                                status: 'new'
-                            })
-                            .select()
-                            .single();
-
-                        if (orderError) {
-                            throw orderError;
-                        }
-
+                        const orderRequest = await saveOrderAndItems({
+                            customer,
+                            name,
+                            email,
+                            fulfillment: document.getElementById('fulfillmentMethod').value,
+                            notes: document.getElementById('orderNotes').value.trim(),
+                            totals,
+                            items
+                        });
                         orderId = orderRequest.id;
-                        const lineItems = items.map((item) => ({
-                            order_request_id: orderRequest.id,
-                            product_id: item.productId || null,
-                            title: item.title,
-                            size: item.size || null,
-                            quantity: item.quantity,
-                            unit_price: item.price
-                        }));
-
-                        const { error: itemError } = await publicSupabase
-                            .from('order_request_items')
-                            .insert(lineItems);
-
-                        if (itemError) {
-                            throw itemError;
-                        }
                     } catch (error) {
                         status.textContent = `Could not save order before payment: ${error.message}`;
                         return;
