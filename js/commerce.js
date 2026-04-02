@@ -1,3 +1,5 @@
+import { publicSupabase } from './supabasePublic.js';
+
 function formatCurrency(value, currency = 'USD') {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -14,6 +16,25 @@ async function fetchJson(url) {
 }
 
 export async function loadStoreConfig() {
+  try {
+    const { data, error } = await publicSupabase
+      .from('store_settings')
+      .select('business_email, tax_rate, currency, hosted_payment_url')
+      .eq('id', 'storefront')
+      .maybeSingle();
+
+    if (!error && data) {
+      return {
+        businessEmail: data.business_email || 'kristin@farmhouseframes.com',
+        tax: Number(data.tax_rate ?? 0),
+        currency: data.currency || 'USD',
+        hostedPaymentUrl: data.hosted_payment_url || ''
+      };
+    }
+  } catch {
+    // Fall back to static JSON config if Supabase read is unavailable.
+  }
+
   return fetchJson('./data/config.json');
 }
 

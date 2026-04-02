@@ -22,6 +22,8 @@ alter table public.orders enable row level security;
 alter table public.order_requests enable row level security;
 alter table public.order_request_items enable row level security;
 alter table public.supplier_order_packets enable row level security;
+alter table public.store_settings enable row level security;
+alter table public.activity_logs enable row level security;
 alter table public.order_items enable row level security;
 alter table public.hours_log enable row level security;
 alter table public.mileage_log enable row level security;
@@ -50,7 +52,7 @@ declare
 begin
   foreach t in array array[
     'products','product_photos','categories','cases','uploads',
-    'clients','orders','order_requests','order_request_items','supplier_order_packets','order_items',
+    'clients','orders','order_requests','order_request_items','supplier_order_packets','store_settings','activity_logs','order_items',
     'hours_log','mileage_log','expenses','payments',
     'case_files','case_templates','evidence_index'
   ]
@@ -73,7 +75,27 @@ to anon, authenticated
 with check (
   char_length(trim(customer_name)) > 0
   and position('@' in customer_email) > 1
+  and (customer_user_id is null or customer_user_id = auth.uid())
   and total >= 0
+);
+
+drop policy if exists "Customers can read own order requests" on public.order_requests;
+create policy "Customers can read own order requests"
+on public.order_requests for select
+to authenticated
+using (customer_user_id = auth.uid());
+
+drop policy if exists "Customers can read own order request items" on public.order_request_items;
+create policy "Customers can read own order request items"
+on public.order_request_items for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.order_requests r
+    where r.id = order_request_id
+      and r.customer_user_id = auth.uid()
+  )
 );
 
 drop policy if exists "Public can create order request items" on public.order_request_items;
@@ -85,6 +107,12 @@ with check (
   and unit_price >= 0
   and char_length(trim(title)) > 0
 );
+
+drop policy if exists "Public can read storefront settings" on public.store_settings;
+create policy "Public can read storefront settings"
+on public.store_settings for select
+to anon, authenticated
+using (id = 'storefront');
 
 -- Storage (run after creating buckets)
 create or replace function public.is_admin_bucket(bucket text)

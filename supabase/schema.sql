@@ -87,6 +87,7 @@ create table if not exists public.orders (
 
 create table if not exists public.order_requests (
   id uuid primary key default gen_random_uuid(),
+  customer_user_id uuid references auth.users(id) on delete set null,
   customer_name text not null,
   customer_email text not null,
   fulfillment_method text not null default 'Pickup',
@@ -97,6 +98,8 @@ create table if not exists public.order_requests (
   total numeric not null default 0,
   created_at timestamptz not null default now()
 );
+
+alter table public.order_requests add column if not exists customer_user_id uuid references auth.users(id) on delete set null;
 
 create table if not exists public.order_request_items (
   id uuid primary key default gen_random_uuid(),
@@ -190,13 +193,39 @@ create table if not exists public.evidence_index (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.store_settings (
+  id text primary key,
+  business_email text,
+  tax_rate numeric not null default 0,
+  currency text not null default 'USD',
+  hosted_payment_url text,
+  updated_by uuid references auth.users(id) on delete set null,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.activity_logs (
+  id uuid primary key default gen_random_uuid(),
+  actor_user_id uuid references auth.users(id) on delete set null,
+  action text not null,
+  entity text,
+  entity_id text,
+  details jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists idx_uploads_created_at on public.uploads(created_at desc);
 create index if not exists idx_orders_created_at on public.orders(created_at desc);
 create index if not exists idx_products_created_at on public.products(created_at desc);
 create index if not exists idx_order_requests_created_at on public.order_requests(created_at desc);
+create index if not exists idx_order_requests_customer_user_id on public.order_requests(customer_user_id);
 create index if not exists idx_order_request_items_order_id on public.order_request_items(order_request_id);
 create index if not exists idx_supplier_order_packets_order_id on public.supplier_order_packets(order_request_id);
 create index if not exists idx_supplier_order_packets_created_at on public.supplier_order_packets(created_at desc);
+create index if not exists idx_activity_logs_created_at on public.activity_logs(created_at desc);
+
+insert into public.store_settings (id, business_email, tax_rate, currency)
+values ('storefront', 'kristin@farmhouseframes.com', 0.06, 'USD')
+on conflict (id) do nothing;
 
 insert into storage.buckets (id, name, public)
 values ('photo-uploads', 'photo-uploads', true)

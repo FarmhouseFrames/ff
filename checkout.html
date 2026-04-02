@@ -13,6 +13,7 @@
             <div class="summary-actions">
                 <a class="commerce-button-link" href="cart.html">Back to cart</a>
                 <a class="commerce-button-link" href="products/index.html">Browse products</a>
+                <a class="commerce-button-link" href="account-login.html">Account</a>
             </div>
         </header>
 
@@ -30,6 +31,31 @@
 
         const checkoutRoot = document.getElementById('checkoutRoot');
         const config = await loadStoreConfig();
+        const paymentLink = String(config.hostedPaymentUrl || config.hosted_payment_url || '').trim();
+
+        async function getSignedInCustomer() {
+            const { data } = await publicSupabase.auth.getSession();
+            return data.session?.user || null;
+        }
+
+        function buildHostedPaymentUrl(baseUrl, customerEmail, orderId) {
+            if (!baseUrl) {
+                return '';
+            }
+
+            try {
+                const url = new URL(baseUrl);
+                if (customerEmail) {
+                    url.searchParams.set('prefilled_email', customerEmail);
+                }
+                if (orderId) {
+                    url.searchParams.set('client_reference_id', orderId);
+                }
+                return url.toString();
+            } catch {
+                return baseUrl;
+            }
+        }
 
         function renderEmptyCheckout() {
             checkoutRoot.innerHTML = `
@@ -49,9 +75,11 @@
             }
 
             const totals = calculateCartTotals(items, config.tax);
+            getSignedInCustomer().then((customer) => {
             checkoutRoot.innerHTML = `
                 <section class="checkout-form">
                     <h2>Customer details</h2>
+                    ${customer ? `<p class="helper-text">Signed in as ${customer.email}. This order will appear in your account history.</p>` : '<p class="helper-text">Guest checkout is available, or <a href="account-login.html">sign in</a> to track orders in your account.</p>'}
                     <div class="checkout-grid">
                         <label>
                             Full name
@@ -75,9 +103,10 @@
                     </div>
                     <div class="checkout-actions" style="margin-top: 16px;">
                         <button id="sendOrderButton" class="commerce-button primary" type="button">Prepare order email</button>
+                        ${paymentLink ? '<button id="payNowButton" class="commerce-button primary" type="button">Pay now securely</button>' : ''}
                         <button id="clearAfterSendButton" class="commerce-button" type="button">Clear cart</button>
                     </div>
-                    <p id="checkoutStatus" class="status-message">Payment processing is not live here yet, so this checkout prepares a structured order request email.</p>
+                    <p id="checkoutStatus" class="status-message">${paymentLink ? 'Payment link is enabled. You can save your order and continue to secure checkout.' : 'Payment link is not configured yet, so this checkout prepares a structured order request email.'}</p>
                 </section>
 
                 <aside class="summary-card">
@@ -114,6 +143,7 @@
                     const { data: orderRequest, error: orderError } = await publicSupabase
                         .from('order_requests')
                         .insert({
+                            customer_user_id: customer?.id || null,
                             customer_name: formValues.name,
                             customer_email: formValues.email,
                             fulfillment_method: formValues.fulfillment,
@@ -158,9 +188,70 @@
                 status.textContent = 'Your email client should open with the prefilled order request. Your order has also been routed to the admin queue when available.';
             });
 
+            if (paymentLink) {
+                document.getElementById('payNowButton')?.addEventListener('click', async () => {
+                    const name = document.getElementById('customerName').value.trim();
+                    const email = document.getElementById('customerEmail').value.trim();
+                    if (!name || !email) {
+                        status.textContent = 'Enter name and email before continuing to payment.';
+                        return;
+                    }
+
+                    status.textContent = 'Saving order before payment...';
+                    let orderId = '';
+
+                    try {
+                        const { data: orderRequest, error: orderError } = await publicSupabase
+                            .from('order_requests')
+                            .insert({
+                                customer_user_id: customer?.id || null,
+                                customer_name: name,
+                                customer_email: email,
+                                fulfillment_method: document.getElementById('fulfillmentMethod').value,
+                                notes: document.getElementById('orderNotes').value.trim() || null,
+                                subtotal: totals.subtotal,
+                                tax: totals.tax,
+                                total: totals.total,
+                                status: 'new'
+                            })
+                            .select()
+                            .single();
+
+                        if (orderError) {
+                            throw orderError;
+                        }
+
+                        orderId = orderRequest.id;
+                        const lineItems = items.map((item) => ({
+                            order_request_id: orderRequest.id,
+                            product_id: item.productId || null,
+                            title: item.title,
+                            size: item.size || null,
+                            quantity: item.quantity,
+                            unit_price: item.price
+                        }));
+
+                        const { error: itemError } = await publicSupabase
+                            .from('order_request_items')
+                            .insert(lineItems);
+
+                        if (itemError) {
+                            throw itemError;
+                        }
+                    } catch (error) {
+                        status.textContent = `Could not save order before payment: ${error.message}`;
+                        return;
+                    }
+
+                    const hostedUrl = buildHostedPaymentUrl(paymentLink, email, orderId);
+                    window.location.href = hostedUrl;
+                });
+            }
+
             document.getElementById('clearAfterSendButton').addEventListener('click', () => {
                 clearCart();
                 renderEmptyCheckout();
+            });
             });
         }
 
