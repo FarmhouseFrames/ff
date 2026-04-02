@@ -17,6 +17,7 @@
       <nav class="nav">
         <a href="#dashboard" data-route="dashboard" class="active">Dashboard</a>
         <a href="#products" data-route="products">Products</a>
+        <a href="#sourcing" data-route="sourcing">Sourcing</a>
         <a href="#uploads" data-route="uploads">Uploads</a>
         <a href="../admin/splitter-tool.html">Studio Cutter</a>
         <a href="../admin/manual-entry.html">Manual Entry</a>
@@ -69,6 +70,7 @@
             <div class="row">
               <button class="btn primary" id="seedDemoBtn">Seed demo data</button>
               <button class="btn" id="refreshBtn">Refresh metrics</button>
+              <button class="btn" id="openSourcingBtn">Open sourcing workspace</button>
               <a class="btn quick-link" href="../admin/splitter-tool.html">Open studio cutter</a>
               <a class="btn quick-link" href="../admin/manual-entry.html">Open manual entry</a>
             </div>
@@ -125,6 +127,16 @@
 
           <div class="card">
             <form id="productForm" class="form">
+              <label>
+                <span>Prefill from sourcing record</span>
+                <select id="productSourcingRecord">
+                  <option value="">No sourcing record selected</option>
+                </select>
+              </label>
+              <div id="productSourcingSummary" class="message" hidden></div>
+              <div class="row">
+                <button class="btn" id="applySourcingToProduct" type="button">Apply sourcing record to form</button>
+              </div>
               <label>
                 <span>Product name</span>
                 <input id="productName" type="text" required>
@@ -239,6 +251,90 @@
           </div>
         </div>
 
+        <div id="page-sourcing" style="display: none;">
+          <div class="card">
+            <h2>Private Sourcing Workspace</h2>
+            <p class="muted">Store internal supplier links, upload targets, layouts, specs, descriptions, and pricing math here. This workspace stays admin-only, does not publish supplier details to the storefront, and saves to Supabase for your admin account.</p>
+          </div>
+
+          <div class="card">
+            <form id="sourcingForm" class="form">
+              <label>
+                <span>Existing product</span>
+                <select id="sourcingProductSelect" required>
+                  <option value="">Loading catalog…</option>
+                </select>
+              </label>
+
+              <div id="sourcingProductSummary" class="message" hidden></div>
+
+              <label>
+                <span>Supplier / template link</span>
+                <input id="sourcingSupplierUrl" type="url" placeholder="https://...">
+              </label>
+              <label>
+                <span>Photo upload / artwork link</span>
+                <input id="sourcingArtworkUrl" type="url" placeholder="https://...">
+              </label>
+              <label>
+                <span>Layout name</span>
+                <input id="sourcingLayoutName" type="text" placeholder="Example: 3-panel vertical split">
+              </label>
+              <label>
+                <span>Layout + production specs</span>
+                <textarea id="sourcingSpecs" placeholder="Sizes, materials, trim, bleed, piece count, production notes"></textarea>
+              </label>
+              <label>
+                <span>Supplier description</span>
+                <textarea id="sourcingSupplierDescription" placeholder="Internal vendor wording or product notes"></textarea>
+              </label>
+              <label>
+                <span>Storefront description draft</span>
+                <textarea id="sourcingStoreDescription" placeholder="Customer-facing details you may want to publish later"></textarea>
+              </label>
+
+              <div class="grid sourcing-math-grid">
+                <label>
+                  <span>Base cost (USD)</span>
+                  <input id="sourcingBaseCost" type="number" min="0" step="0.01" placeholder="0.00">
+                </label>
+                <label>
+                  <span>Shipping cost (USD)</span>
+                  <input id="sourcingShippingCost" type="number" min="0" step="0.01" placeholder="0.00">
+                </label>
+                <label>
+                  <span>Delivery fee (USD)</span>
+                  <input id="sourcingDeliveryFee" type="number" min="0" step="0.01" placeholder="0.00">
+                </label>
+                <label>
+                  <span>Desired profit (USD)</span>
+                  <input id="sourcingProfitAmount" type="number" min="0" step="0.01" placeholder="0.00">
+                </label>
+              </div>
+
+              <div id="sourcingPriceSummary" class="grid sourcing-math-grid"></div>
+
+              <label>
+                <span>Internal notes</span>
+                <textarea id="sourcingNotes" placeholder="Anything else to remember before creating the sellable product"></textarea>
+              </label>
+
+              <div class="row">
+                <button class="btn primary" type="submit">Save sourcing record</button>
+                <button class="btn" id="resetSourcingBtn" type="button">Reset form</button>
+              </div>
+            </form>
+            <div id="sourcingMessage" class="message" hidden></div>
+          </div>
+
+          <div class="card">
+            <div class="row">
+              <button id="refreshSourcingBtn" class="btn" type="button">Reload sourcing records</button>
+            </div>
+            <div id="sourcingTableWrap" class="muted">Loading sourcing records…</div>
+          </div>
+        </div>
+
         <div id="page-orders" style="display: none;">
           <div class="card">
             <h2>Customer Orders To Fulfill</h2>
@@ -348,9 +444,12 @@
     const msg = $('#message');
     const uploadMsg = $('#uploadMessage');
     const productMsg = $('#productMessage');
+    const sourcingMsg = $('#sourcingMessage');
     const settingsMsg = $('#settingsMessage');
     const uploadedPhotoById = new Map();
     let currentAdminUserId = null;
+    let sourcingCatalog = [];
+    let sourcingRecords = {};
     const THEME_PRESETS = {
       'lbl-lake': {
         intro: 'Inspired by [photo], this [product] brings the calm light and open water mood of Land Between the Lakes into your home.',
@@ -420,6 +519,560 @@
       if (dimensions) parts.push(`[DIMENSIONS] ${dimensions}`);
       if (care) parts.push(`[CARE] ${care}`);
       return parts.join('\n');
+    }
+
+    function toFiniteNumber(value) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function showSourcingMessage(text, kind = 'ok') {
+      if (!sourcingMsg) return;
+      sourcingMsg.hidden = false;
+      sourcingMsg.className = `message ${kind}`;
+      sourcingMsg.textContent = text;
+    }
+
+    function inferSupplierName(url) {
+      const host = String(url || '').toLowerCase();
+      if (!host) return 'Other';
+      if (host.includes('walmart')) return 'Walmart';
+      if (host.includes('amazon')) return 'Amazon';
+      if (host.includes('canvaschamp')) return 'CanvasChamp';
+      return 'Other';
+    }
+
+    function normalizeCatalogEntry(entry, sourceFile) {
+      if (!entry) return null;
+
+      const rawId = entry.id ?? entry.name ?? `item-${Math.random().toString(36).slice(2, 8)}`;
+      const id = String(rawId);
+      const title = entry.title || entry.name || `Product ${id}`;
+      const baseCost = toFiniteNumber(entry.internal_cost ?? entry.walmartCost ?? 0);
+      const price = toFiniteNumber(entry.price ?? entry.sellingPrice ?? 0);
+      const material = entry.material ? `Material: ${entry.material}` : '';
+      const dimensions = entry.dimensions ? `Dimensions: ${entry.dimensions}` : '';
+      const pieces = entry.pieces ? `Pieces: ${entry.pieces}` : '';
+
+      return {
+        key: `${sourceFile}:${id}`,
+        id,
+        sourceFile,
+        title,
+        category: entry.category || '',
+        price,
+        currency: entry.currency || 'USD',
+        description: entry.description || '',
+        image: entry.image || '',
+        sizes: Array.isArray(entry.sizes) ? entry.sizes : [],
+        tags: Array.isArray(entry.tags) ? entry.tags : [],
+        inventory: entry.inventory ?? '',
+        defaultSupplierUrl: entry.supplier_url || entry.walmartLink || '',
+        defaultLayout: entry.layout || '',
+        defaultBaseCost: baseCost,
+        defaultRetailPrice: price,
+        defaultSpecs: [dimensions, material, pieces].filter(Boolean).join(' | ')
+      };
+    }
+
+    async function fetchCatalogFile(path) {
+      try {
+        const response = await fetch(path, { cache: 'no-store' });
+        if (!response.ok) return [];
+        const payload = await response.json();
+        if (Array.isArray(payload)) return payload;
+        return payload ? [payload] : [];
+      } catch {
+        return [];
+      }
+    }
+
+    async function loadSourcingCatalog() {
+      const [legacyCatalog, publicCatalog] = await Promise.all([
+        fetchCatalogFile('../data/products.json'),
+        fetchCatalogFile('../products/products.json')
+      ]);
+
+      sourcingCatalog = [
+        ...legacyCatalog.map((entry) => normalizeCatalogEntry(entry, 'data/products.json')),
+        ...publicCatalog.map((entry) => normalizeCatalogEntry(entry, 'products/products.json'))
+      ].filter(Boolean).sort((a, b) => a.title.localeCompare(b.title));
+    }
+
+    async function loadSourcingRecordsFromDb() {
+      const { data, error } = await supabase
+        .from('sourcing_records')
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        const message = String(error.message || 'Could not load sourcing records.');
+        if (message.toLowerCase().includes('does not exist')) {
+          throw new Error('Sourcing records table is not migrated yet. Apply the latest Supabase SQL and refresh the dashboard.');
+        }
+        throw error;
+      }
+
+      sourcingRecords = Object.fromEntries((data || []).map((row) => [row.catalog_product_key, {
+        productKey: row.catalog_product_key,
+        productId: row.catalog_product_id,
+        sourceFile: row.catalog_source_file,
+        title: row.title,
+        category: row.category,
+        supplierUrl: row.supplier_url || '',
+        artworkUrl: row.artwork_url || '',
+        layoutName: row.layout_name || '',
+        specs: row.specs || '',
+        supplierDescription: row.supplier_description || '',
+        storeDescription: row.store_description || '',
+        baseCost: toFiniteNumber(row.base_cost),
+        shippingCost: toFiniteNumber(row.shipping_cost),
+        deliveryFee: toFiniteNumber(row.delivery_fee),
+        profitAmount: toFiniteNumber(row.profit_amount),
+        retailBeforeShipping: toFiniteNumber(row.retail_before_shipping),
+        retailAfterShipping: toFiniteNumber(row.retail_after_shipping),
+        profitPercent: toFiniteNumber(row.profit_percent),
+        notes: row.notes || '',
+        updatedAt: row.updated_at || row.created_at || null
+      }]));
+    }
+
+    function getSelectedSourcingProduct() {
+      const selectedKey = $('#sourcingProductSelect')?.value;
+      return sourcingCatalog.find((item) => item.key === selectedKey) || null;
+    }
+
+    function getSelectedProductSourcingRecord() {
+      const selectedKey = $('#productSourcingRecord')?.value;
+      return selectedKey ? sourcingRecords[selectedKey] || null : null;
+    }
+
+    function createDefaultSourcingRecord(product) {
+      const startingProfit = Math.max(product.defaultRetailPrice - product.defaultBaseCost, 0);
+      return {
+        productKey: product.key,
+        productId: product.id,
+        sourceFile: product.sourceFile,
+        title: product.title,
+        category: product.category,
+        supplierUrl: product.defaultSupplierUrl,
+        artworkUrl: '',
+        layoutName: product.defaultLayout,
+        specs: product.defaultSpecs,
+        supplierDescription: '',
+        storeDescription: product.description || '',
+        baseCost: product.defaultBaseCost,
+        shippingCost: 0,
+        deliveryFee: 0,
+        profitAmount: startingProfit,
+        retailBeforeShipping: product.defaultBaseCost + startingProfit,
+        retailAfterShipping: product.defaultBaseCost + startingProfit,
+        profitPercent: product.defaultBaseCost > 0 ? (startingProfit / product.defaultBaseCost) * 100 : 0,
+        notes: '',
+        updatedAt: null
+      };
+    }
+
+    function calculateSourcingPrices(values) {
+      const baseCost = toFiniteNumber(values.baseCost);
+      const shippingCost = toFiniteNumber(values.shippingCost);
+      const deliveryFee = toFiniteNumber(values.deliveryFee);
+      const profitAmount = toFiniteNumber(values.profitAmount);
+      const totalCost = baseCost + shippingCost + deliveryFee;
+      const retailBeforeShipping = baseCost + profitAmount;
+      const retailAfterShipping = totalCost + profitAmount;
+      const profitPercent = totalCost > 0 ? (profitAmount / totalCost) * 100 : 0;
+
+      return {
+        totalCost,
+        retailBeforeShipping,
+        retailAfterShipping,
+        profitPercent
+      };
+    }
+
+    function renderSourcingPriceSummary() {
+      const wrap = $('#sourcingPriceSummary');
+      if (!wrap) return;
+
+      const values = {
+        baseCost: $('#sourcingBaseCost')?.value,
+        shippingCost: $('#sourcingShippingCost')?.value,
+        deliveryFee: $('#sourcingDeliveryFee')?.value,
+        profitAmount: $('#sourcingProfitAmount')?.value
+      };
+      const pricing = calculateSourcingPrices(values);
+
+      wrap.innerHTML = `
+        <div class="summary-stat">
+          <span class="muted small">Cost basis</span>
+          <strong>${money(pricing.totalCost)}</strong>
+        </div>
+        <div class="summary-stat">
+          <span class="muted small">Retail before shipping/delivery</span>
+          <strong>${money(pricing.retailBeforeShipping)}</strong>
+        </div>
+        <div class="summary-stat">
+          <span class="muted small">Retail after shipping/delivery</span>
+          <strong>${money(pricing.retailAfterShipping)}</strong>
+        </div>
+        <div class="summary-stat">
+          <span class="muted small">Profit percent on total cost</span>
+          <strong>${pricing.profitPercent.toFixed(1)}%</strong>
+        </div>
+      `;
+    }
+
+    function renderSourcingProductSummary(product, record) {
+      const summary = $('#sourcingProductSummary');
+      if (!summary) return;
+
+      if (!product) {
+        summary.hidden = true;
+        summary.innerHTML = '';
+        return;
+      }
+
+      const sizeText = product.sizes.length ? product.sizes.join(', ') : '—';
+      const updatedAt = record?.updatedAt ? new Date(record.updatedAt).toLocaleString() : 'Not saved yet';
+      summary.hidden = false;
+      summary.className = 'message';
+      summary.innerHTML = `
+        <div class="row" style="justify-content:space-between; align-items:flex-start; gap:16px;">
+          <div>
+            <strong>${escapeHtml(product.title)}</strong>
+            <div class="muted small">Product ID: ${escapeHtml(product.id)} | Source: ${escapeHtml(product.sourceFile)}</div>
+            <div class="muted small">Category: ${escapeHtml(product.category || '—')} | Public price: ${money(product.price)} | Inventory: ${escapeHtml(product.inventory || '—')}</div>
+            <div class="muted small">Sizes: ${escapeHtml(sizeText)}</div>
+          </div>
+          <div class="muted small" style="text-align:right;">Last saved: ${escapeHtml(updatedAt)}</div>
+        </div>
+      `;
+    }
+
+    function renderProductSourcingSummary(record) {
+      const summary = $('#productSourcingSummary');
+      if (!summary) return;
+
+      if (!record) {
+        summary.hidden = true;
+        summary.innerHTML = '';
+        return;
+      }
+
+      summary.hidden = false;
+      summary.className = 'message';
+      summary.innerHTML = `
+        <div class="row" style="justify-content:space-between; align-items:flex-start; gap:16px;">
+          <div>
+            <strong>${escapeHtml(record.title || record.productId)}</strong>
+            <div class="muted small">Source product: ${escapeHtml(record.productId || '—')} | File: ${escapeHtml(record.sourceFile || '—')}</div>
+            <div class="muted small">Retail before shipping: ${money(record.retailBeforeShipping)} | Retail after shipping: ${money(record.retailAfterShipping)}</div>
+          </div>
+          <div class="muted small" style="text-align:right;">Updated: ${record.updatedAt ? new Date(record.updatedAt).toLocaleString() : '—'}</div>
+        </div>
+      `;
+    }
+
+    function loadProductSourcingOptions() {
+      const select = $('#productSourcingRecord');
+      if (!select) return;
+
+      const currentValue = select.value;
+      const rows = Object.values(sourcingRecords)
+        .sort((a, b) => String(a.title || '').localeCompare(String(b.title || '')));
+
+      select.innerHTML = `<option value="">No sourcing record selected</option>${rows.map((row) => (
+        `<option value="${escapeHtml(row.productKey)}">${escapeHtml(row.title || row.productId)} (${escapeHtml(row.productId || '—')})</option>`
+      )).join('')}`;
+
+      if (currentValue && sourcingRecords[currentValue]) {
+        select.value = currentValue;
+      }
+
+      renderProductSourcingSummary(getSelectedProductSourcingRecord());
+    }
+
+    function applySourcingRecordToProductForm() {
+      const record = getSelectedProductSourcingRecord();
+      if (!record) {
+        showProductMessage('Choose a sourcing record first.', 'error');
+        return;
+      }
+
+      $('#productName').value = record.title || '';
+      $('#productCategory').value = record.category || '';
+      $('#productSupplier').value = inferSupplierName(record.supplierUrl);
+      $('#productSupplierUrl').value = record.supplierUrl || '';
+      $('#productPrice').value = String(toFiniteNumber(record.retailBeforeShipping));
+      $('#productInternalCost').value = String(toFiniteNumber(record.baseCost));
+      $('#productInternalShipping').value = String(toFiniteNumber(record.shippingCost) + toFiniteNumber(record.deliveryFee));
+      $('#productCustomerShipping').value = String(toFiniteNumber(record.shippingCost) + toFiniteNumber(record.deliveryFee));
+
+      const catalogProduct = sourcingCatalog.find((item) => item.key === record.productKey);
+      if (catalogProduct) {
+        $('#productSizes').value = catalogProduct.sizes.join(', ');
+        $('#productTags').value = catalogProduct.tags.join(', ');
+        if (catalogProduct.inventory !== '') {
+          $('#productInventory').value = String(catalogProduct.inventory);
+        }
+      }
+
+      const factualParts = [record.storeDescription, record.supplierDescription, record.specs ? `Specs: ${record.specs}` : '']
+        .filter(Boolean)
+        .join('\n\n');
+      if (factualParts) {
+        $('#productDescription').value = factualParts;
+      }
+
+      showProductMessage('Sourcing record applied to product form. Review and save when ready.', 'ok');
+    }
+
+    async function hydrateProductSourcingOptions() {
+      try {
+        await loadSourcingCatalog();
+        await loadSourcingRecordsFromDb();
+        loadProductSourcingOptions();
+      } catch (error) {
+        const select = $('#productSourcingRecord');
+        if (select) {
+          select.innerHTML = '<option value="">Sourcing records unavailable</option>';
+        }
+        renderProductSourcingSummary(null);
+        showProductMessage(error?.message || 'Could not load sourcing records for the product form.', 'error');
+      }
+    }
+
+    function populateSourcingForm(product) {
+      const summary = $('#sourcingProductSummary');
+      if (sourcingMsg) sourcingMsg.hidden = true;
+
+      if (!product) {
+        if (summary) summary.hidden = true;
+        $('#sourcingSupplierUrl').value = '';
+        $('#sourcingArtworkUrl').value = '';
+        $('#sourcingLayoutName').value = '';
+        $('#sourcingSpecs').value = '';
+        $('#sourcingSupplierDescription').value = '';
+        $('#sourcingStoreDescription').value = '';
+        $('#sourcingBaseCost').value = '';
+        $('#sourcingShippingCost').value = '';
+        $('#sourcingDeliveryFee').value = '';
+        $('#sourcingProfitAmount').value = '';
+        $('#sourcingNotes').value = '';
+        renderSourcingPriceSummary();
+        return;
+      }
+
+      const stored = sourcingRecords[product.key] || createDefaultSourcingRecord(product);
+
+      $('#sourcingSupplierUrl').value = stored.supplierUrl || '';
+      $('#sourcingArtworkUrl').value = stored.artworkUrl || '';
+      $('#sourcingLayoutName').value = stored.layoutName || '';
+      $('#sourcingSpecs').value = stored.specs || '';
+      $('#sourcingSupplierDescription').value = stored.supplierDescription || '';
+      $('#sourcingStoreDescription').value = stored.storeDescription || '';
+      $('#sourcingBaseCost').value = stored.baseCost ? String(stored.baseCost) : '';
+      $('#sourcingShippingCost').value = stored.shippingCost ? String(stored.shippingCost) : '';
+      $('#sourcingDeliveryFee').value = stored.deliveryFee ? String(stored.deliveryFee) : '';
+      $('#sourcingProfitAmount').value = stored.profitAmount ? String(stored.profitAmount) : '';
+      $('#sourcingNotes').value = stored.notes || '';
+
+      renderSourcingProductSummary(product, stored);
+      renderSourcingPriceSummary();
+    }
+
+    function collectSourcingFormValues(product) {
+      const values = {
+        productKey: product.key,
+        productId: product.id,
+        sourceFile: product.sourceFile,
+        title: product.title,
+        category: product.category,
+        supplierUrl: $('#sourcingSupplierUrl').value.trim(),
+        artworkUrl: $('#sourcingArtworkUrl').value.trim(),
+        layoutName: $('#sourcingLayoutName').value.trim(),
+        specs: $('#sourcingSpecs').value.trim(),
+        supplierDescription: $('#sourcingSupplierDescription').value.trim(),
+        storeDescription: $('#sourcingStoreDescription').value.trim(),
+        baseCost: toFiniteNumber($('#sourcingBaseCost').value),
+        shippingCost: toFiniteNumber($('#sourcingShippingCost').value),
+        deliveryFee: toFiniteNumber($('#sourcingDeliveryFee').value),
+        profitAmount: toFiniteNumber($('#sourcingProfitAmount').value),
+        notes: $('#sourcingNotes').value.trim(),
+        updatedAt: new Date().toISOString()
+      };
+
+      const pricing = calculateSourcingPrices(values);
+      return {
+        ...values,
+        retailBeforeShipping: pricing.retailBeforeShipping,
+        retailAfterShipping: pricing.retailAfterShipping,
+        profitPercent: pricing.profitPercent
+      };
+    }
+
+    function renderSourcingTable() {
+      const wrap = $('#sourcingTableWrap');
+      if (!wrap) return;
+
+      const rows = Object.values(sourcingRecords)
+        .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+
+      if (!rows.length) {
+        wrap.innerHTML = '<p class="muted">No sourcing records saved yet. Pick a product above to start storing private links and pricing notes.</p>';
+        return;
+      }
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Links</th>
+              <th>Layout</th>
+              <th>Base</th>
+              <th>Ship</th>
+              <th>Delivery</th>
+              <th>Profit</th>
+              <th>Retail Before</th>
+              <th>Retail After</th>
+              <th>Updated</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((row) => `
+              <tr>
+                <td>
+                  <strong>${escapeHtml(row.title || row.productId)}</strong><br>
+                  <span class="muted small">${escapeHtml(row.productId || '—')}</span>
+                </td>
+                <td>
+                  ${row.supplierUrl ? `<a href="${escapeHtml(row.supplierUrl)}" target="_blank" rel="noopener">Supplier</a><br>` : '<span class="muted small">No supplier link</span><br>'}
+                  ${row.artworkUrl ? `<a href="${escapeHtml(row.artworkUrl)}" target="_blank" rel="noopener">Artwork</a>` : '<span class="muted small">No artwork link</span>'}
+                </td>
+                <td>${escapeHtml(row.layoutName || '—')}</td>
+                <td>${money(row.baseCost)}</td>
+                <td>${money(row.shippingCost)}</td>
+                <td>${money(row.deliveryFee)}</td>
+                <td>${money(row.profitAmount)}<br><span class="muted small">${Number(row.profitPercent || 0).toFixed(1)}%</span></td>
+                <td>${money(row.retailBeforeShipping)}</td>
+                <td>${money(row.retailAfterShipping)}</td>
+                <td>${row.updatedAt ? new Date(row.updatedAt).toLocaleString() : '—'}</td>
+                <td><button class="btn" type="button" data-load-sourcing="${escapeHtml(row.productKey)}">Load</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+
+      wrap.querySelectorAll('button[data-load-sourcing]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const select = $('#sourcingProductSelect');
+          if (!select) return;
+          select.value = button.dataset.loadSourcing || '';
+          populateSourcingForm(getSelectedSourcingProduct());
+        });
+      });
+    }
+
+    async function loadSourcingPage() {
+      const select = $('#sourcingProductSelect');
+      const wrap = $('#sourcingTableWrap');
+      if (!select || !wrap) return;
+
+      if (sourcingMsg) sourcingMsg.hidden = true;
+      wrap.textContent = 'Loading sourcing records…';
+
+      try {
+        await loadSourcingCatalog();
+        await loadSourcingRecordsFromDb();
+      } catch (error) {
+        wrap.innerHTML = `<div class="message error">${escapeHtml(error?.message || 'Could not load sourcing records.')}</div>`;
+        showSourcingMessage(error?.message || 'Could not load sourcing records.', 'error');
+        return;
+      }
+
+      const currentValue = select.value;
+      const options = sourcingCatalog.map((product) => (
+        `<option value="${escapeHtml(product.key)}">${escapeHtml(product.title)} (${escapeHtml(product.id)})</option>`
+      )).join('');
+
+      select.innerHTML = `<option value="">Select a product</option>${options}`;
+      if (currentValue && sourcingCatalog.some((item) => item.key === currentValue)) {
+        select.value = currentValue;
+      }
+
+      const selected = getSelectedSourcingProduct() || sourcingCatalog[0] || null;
+      if (selected && !select.value) {
+        select.value = selected.key;
+      }
+
+      populateSourcingForm(getSelectedSourcingProduct());
+      renderSourcingTable();
+      loadProductSourcingOptions();
+    }
+
+    async function saveSourcingRecord(event) {
+      event.preventDefault();
+      const product = getSelectedSourcingProduct();
+      if (!product) {
+        showSourcingMessage('Choose a product before saving a sourcing record.', 'error');
+        return;
+      }
+
+      const record = collectSourcingFormValues(product);
+      const payload = {
+        catalog_product_key: record.productKey,
+        catalog_product_id: record.productId,
+        catalog_source_file: record.sourceFile,
+        title: record.title,
+        category: record.category,
+        supplier_url: record.supplierUrl || null,
+        artwork_url: record.artworkUrl || null,
+        layout_name: record.layoutName || null,
+        specs: record.specs || null,
+        supplier_description: record.supplierDescription || null,
+        store_description: record.storeDescription || null,
+        base_cost: record.baseCost,
+        shipping_cost: record.shippingCost,
+        delivery_fee: record.deliveryFee,
+        profit_amount: record.profitAmount,
+        retail_before_shipping: record.retailBeforeShipping,
+        retail_after_shipping: record.retailAfterShipping,
+        profit_percent: record.profitPercent,
+        notes: record.notes || null,
+        updated_by: currentAdminUserId,
+        updated_at: record.updatedAt,
+        created_by: currentAdminUserId
+      };
+
+      const { error } = await supabase
+        .from('sourcing_records')
+        .upsert(payload, { onConflict: 'catalog_product_key' });
+
+      if (error) {
+        showSourcingMessage(error.message, 'error');
+        return;
+      }
+
+      sourcingRecords[product.key] = record;
+      renderSourcingProductSummary(product, record);
+      renderSourcingPriceSummary();
+      renderSourcingTable();
+      loadProductSourcingOptions();
+      showSourcingMessage('Private sourcing record saved to Supabase.', 'ok');
+      await logActivity('sourcing_saved', 'sourcing_workspace', product.id, {
+        product_key: product.key,
+        has_supplier_url: Boolean(record.supplierUrl),
+        has_artwork_url: Boolean(record.artworkUrl),
+        retail_after_shipping: record.retailAfterShipping
+      });
+    }
+
+    function resetSourcingForm() {
+      populateSourcingForm(getSelectedSourcingProduct());
     }
 
     async function loadProductSourcePhotos() {
@@ -551,7 +1204,7 @@
         page.style.display = 'none';
       });
 
-      const validRoutes = ['dashboard', 'products', 'uploads', 'orders', 'clients', 'logs', 'settings'];
+      const validRoutes = ['dashboard', 'products', 'sourcing', 'uploads', 'orders', 'clients', 'logs', 'settings'];
       if (validRoutes.includes(route)) {
         const page = $(`#page-${route}`);
         if (page) {
@@ -559,6 +1212,10 @@
           if (route === 'products') {
             loadProductSourcePhotos();
             loadProductsPage();
+            hydrateProductSourcingOptions();
+          }
+          if (route === 'sourcing') {
+            loadSourcingPage();
           }
           if (route === 'orders') {
             loadOrderRequests();
@@ -586,6 +1243,7 @@
       const map = {
         dashboard: 'Dashboard',
         products: 'Products',
+        sourcing: 'Sourcing',
         uploads: 'Uploads',
         orders: 'Orders',
         clients: 'Clients',
@@ -1541,11 +2199,21 @@
 
     $('#uploadForm').addEventListener('submit', handleFileUpload);
     $('#productForm')?.addEventListener('submit', createProduct);
+    $('#sourcingForm')?.addEventListener('submit', saveSourcingRecord);
     $('#settingsForm')?.addEventListener('submit', saveStoreSettings);
     $('#reloadSettingsBtn')?.addEventListener('click', loadStoreSettings);
+    $('#refreshSourcingBtn')?.addEventListener('click', loadSourcingPage);
+    $('#resetSourcingBtn')?.addEventListener('click', resetSourcingForm);
     $('#refreshClientsBtn')?.addEventListener('click', loadClientsPage);
     $('#refreshLogsBtn')?.addEventListener('click', loadActivityLogs);
     $('#productSourcePhoto')?.addEventListener('change', updateSourcePhotoPreview);
+    $('#productSourcingRecord')?.addEventListener('change', () => renderProductSourcingSummary(getSelectedProductSourcingRecord()));
+    $('#sourcingProductSelect')?.addEventListener('change', () => populateSourcingForm(getSelectedSourcingProduct()));
+    ['#sourcingBaseCost', '#sourcingShippingCost', '#sourcingDeliveryFee', '#sourcingProfitAmount'].forEach((selector) => {
+      $(selector)?.addEventListener('input', renderSourcingPriceSummary);
+    });
+    $('#applySourcingToProduct')?.addEventListener('click', applySourcingRecordToProductForm);
+    $('#openSourcingBtn')?.addEventListener('click', () => navigateToRoute('sourcing'));
     $('#openSourceInCutter')?.addEventListener('click', openSelectedSourceInCutter);
     $('#generateRusticCopy')?.addEventListener('click', () => {
       const generated = generateRusticIntroCopy();
