@@ -26,7 +26,7 @@
         .contact-card {
             border: 1px solid #d8cfc4;
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.72);
             padding: 20px;
         }
 
@@ -103,6 +103,110 @@
             min-height: 120px;
             resize: vertical;
         }
+
+        .faq-section {
+            margin-top: 24px;
+            border: 1px solid rgba(204, 183, 158, 0.9);
+            border-radius: 14px;
+            background: rgba(255, 250, 245, 0.72);
+            padding: 16px;
+        }
+
+        .faq-title {
+            margin: 0 0 8px;
+            color: #5d4a38;
+            text-align: center;
+            font-size: 1.35rem;
+        }
+
+        .faq-search-wrap {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #d4c7b8;
+            border-radius: 999px;
+            background: rgba(255, 250, 245, 0.88);
+            padding: 8px 12px;
+        }
+
+        .faq-search-icon {
+            width: 18px;
+            height: 18px;
+            color: #8b6f52;
+            flex: 0 0 auto;
+        }
+
+        .faq-search {
+            border: 0;
+            background: transparent;
+            color: #5f4d3b;
+            font: inherit;
+            width: 100%;
+        }
+
+        .faq-search:focus {
+            outline: none;
+        }
+
+        .faq-results {
+            margin-top: 12px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .faq-item {
+            border: 1px solid #dfd0bf;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.84);
+            overflow: clip;
+        }
+
+        .faq-item summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 10px 12px;
+            color: #5d4a38;
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .faq-item summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .faq-item summary::after {
+            content: '+';
+            color: #8b6f52;
+            font-size: 1.2rem;
+            line-height: 1;
+            transition: transform 0.2s ease;
+        }
+
+        .faq-item[open] summary::after {
+            content: '-';
+        }
+
+        .faq-item p {
+            margin: 0;
+            padding: 0 12px 12px;
+            color: #6a5846;
+        }
+
+        .faq-empty {
+            margin: 4px 0 0;
+            color: #6a5846;
+            text-align: center;
+            display: none;
+        }
+
+        .faq-empty.active {
+            display: block;
+        }
     </style>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%22 height=%2732%22 rx=%226%22 fill=%22%234d3425%22/%3E%3Ctext x=%2216%22 y=%2223%22 font-family=%22Georgia,serif%22 font-size=%2220%22 fill=%22%23e8d5be%22 text-anchor=%22middle%22%3EF%3C/text%3E%3C/svg%3E">
 </head>
@@ -120,7 +224,6 @@
 
 <section class="section">
     <h2><span class="drop-cap">C</span>ontact</h2>
-    <p class="section-intro">For custom orders, local pickup questions, or print requests, send a direct message.</p>
 
     <article class="contact-card">
         <p>We welcome all feedback, questions, and reviews from our customers. Your thoughts help us grow and continue creating pieces you love. We look forward to hearing from you. Thank you for supporting Farmhouse Frames.</p>
@@ -188,6 +291,47 @@
             <textarea name="message" placeholder="How can we help?" required></textarea>
             <button type="submit" class="banner-btn">Send Inquiry</button>
         </form>
+
+        <section class="faq-section" aria-labelledby="faqHeading">
+            <h3 class="faq-title" id="faqHeading">Frequently Asked Questions</h3>
+            <div class="faq-search-wrap">
+                <svg class="faq-search-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                    <path d="M20 20l-4.2-4.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                </svg>
+                <input
+                    id="faqSearch"
+                    class="faq-search"
+                    type="search"
+                    placeholder="Search common questions"
+                    aria-label="Search frequently asked questions"
+                >
+            </div>
+
+            <div class="faq-results" id="faqResults">
+                <details class="faq-item" data-faq="How long does shipping take? Shipping usually takes 5 to 10 business days after your order is placed.">
+                    <summary>How long does shipping take?</summary>
+                    <p>Shipping usually takes 5 to 10 business days after your order is placed.</p>
+                </details>
+
+                <details class="faq-item" data-faq="Do you offer local pickup? Yes. Local pickup is available in Kentucky and we will coordinate a time with you.">
+                    <summary>Do you offer local pickup?</summary>
+                    <p>Yes. Local pickup is available in Kentucky and we will coordinate a time with you.</p>
+                </details>
+
+                <details class="faq-item" data-faq="Can I request a custom photo print? Yes, custom print requests are welcome. Share your details through this form and we will follow up.">
+                    <summary>Can I request a custom photo print?</summary>
+                    <p>Yes, custom print requests are welcome. Share your details through this form and we will follow up.</p>
+                </details>
+
+                <details class="faq-item" data-faq="How do I request a refund or report an issue? Choose the reason in the contact form and complete the follow-up fields so we can help quickly.">
+                    <summary>How do I request a refund or report an issue?</summary>
+                    <p>Choose the reason in the contact form and complete the follow-up fields so we can help quickly.</p>
+                </details>
+            </div>
+
+            <p class="faq-empty" id="faqEmpty">No matching answer found yet. Send your question through the form and we will help.</p>
+        </section>
     </article>
 </section>
 
@@ -212,6 +356,32 @@
 
     reasonSelect.addEventListener('change', updateFollowUpFields);
     updateFollowUpFields();
+
+    const faqSearch = document.getElementById('faqSearch');
+    const faqItems = document.querySelectorAll('.faq-item');
+    const faqEmpty = document.getElementById('faqEmpty');
+
+    function filterFaqItems() {
+        const query = faqSearch.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        faqItems.forEach((item) => {
+            const searchableText = item.dataset.faq.toLowerCase();
+            const isVisible = searchableText.includes(query);
+            item.hidden = !isVisible;
+            if (!isVisible) {
+                item.open = false;
+            }
+            if (isVisible) {
+                visibleCount += 1;
+            }
+        });
+
+        faqEmpty.classList.toggle('active', visibleCount === 0);
+    }
+
+    faqSearch.addEventListener('input', filterFaqItems);
+    filterFaqItems();
 </script>
 
 <footer>© 2026 Farmhouse Frames</footer>
