@@ -15,24 +15,33 @@
         }
 
         .logistics-hero {
-            border: 1px solid #dbcfc1;
+            width: fit-content;
+            max-width: 100%;
+            margin: 0 auto;
+            border: 1px solid #d7cab9;
             border-radius: 16px;
-            background: linear-gradient(145deg, #fffaf5 0%, #f2e5d8 52%, #fdf8f3 100%);
+            background: #f8efe6;
             padding: 26px;
-            box-shadow: 0 12px 24px rgba(90, 60, 38, 0.08);
+            text-align: center;
         }
 
-        .logistics-hero h1 {
-            margin: 0 0 8px;
+        .logistics-hero .hero-signature {
+            margin: 0 0 10px;
             color: #5e452b;
-            font-size: clamp(2rem, 4.2vw, 3.1rem);
-            font-family: 'Cormorant Garamond', serif;
+            font-size: calc(clamp(2rem, 4.2vw, 3.1rem) + 3pt);
+            font-family: 'Great Vibes', cursive;
+            font-weight: 400;
+            line-height: 1.05;
         }
 
         .logistics-hero p {
             margin: 0;
             color: #6f5b45;
             line-height: 1.6;
+        }
+
+        .logistics-hero p + p {
+            margin-top: 4px;
         }
 
         .logistics-grid {
@@ -90,6 +99,26 @@
             line-height: 1.6;
         }
 
+        .post-delivery-box {
+            margin-top: 14px;
+            width: fit-content;
+            max-width: 100%;
+            border: 2px solid #4c3322;
+            border-radius: 12px;
+            background: rgba(248, 239, 230, 0.62);
+            padding: 14px 16px;
+        }
+
+        .post-delivery-box p {
+            margin: 0;
+            color: #5a4633;
+            line-height: 1.6;
+        }
+
+        .post-delivery-box p + p {
+            margin-top: 8px;
+        }
+
         .logistics-actions {
             margin-top: 18px;
             display: flex;
@@ -115,8 +144,8 @@
     </style>
 </head>
 <body>
-<header>Farmhouse Frames</header>
 <nav>
+    <a href="index.html">Home</a>
     <a href="gallery.html">Gallery</a>
     <a href="splits.html">Split Canvas</a>
     <a href="catalog.html">Catalog</a>
@@ -128,45 +157,49 @@
 
 <main class="logistics-shell">
     <section class="logistics-hero">
-        <h1>Pickup & Shipping</h1>
-        <p>Every Farmhouse Frames piece is prepared with care and quality checks before delivery. Below is exactly how local pickup and shipping work, so you know what to expect from order to arrival.</p>
+        <h1 class="hero-signature">Picture Perfect</h1>
+        <p>Every Farmhouse Frames piece is prepared with care and subject to rigorous quality checks before delivery.</p>
+        <p>We treat your chosen images with the same respect as a gallery installation,</p>
+        <p>ensuring that whether your photo is destined for a canvas,</p>
+        <p>a custom clock, or a family puzzle, it meets our professional standards.</p>
     </section>
 
     <section class="logistics-grid">
         <article class="logistics-card">
-            <h2>Local Pickup (Cadiz Area)</h2>
+            <h2>Our Boutique Quality Standard</h2>
             <ul>
-                <li>Pickup is available for customers in Cadiz and nearby Trigg County areas.</li>
-                <li>After your order is ready, we contact you directly by email to schedule a pickup window.</li>
-                <li>Bring your order confirmation email at pickup so we can verify and release quickly.</li>
-                <li>Pickup point details are shared privately in your ready-for-pickup message.</li>
+                <li><strong>Color Accuracy:</strong> We verify that the print colors on your canvas or decor item perfectly match the original photography.</li>
+                <li><strong>Material Integrity:</strong> We check that puzzles are crisply cut, clocks are perfectly timed, and canvases are stretched tight without warping.</li>
+                <li><strong>Detail Check:</strong> Every item is inspected for clarity and sharpness to ensure your image looks stunning at any scale.</li>
             </ul>
         </article>
 
         <article class="logistics-card">
-            <h2>Shipping Options</h2>
+            <h2>Local Pickup</h2>
             <ul>
-                <li>Shipping is available for domestic U.S. orders.</li>
-                <li>Rates are calculated using your selected product type and order size.</li>
-                <li>Tracking details are provided after carrier label creation.</li>
-                <li>Large split-canvas sets may ship in multiple boxes for safer transit.</li>
+                <li><strong>Ready Notification:</strong> You will receive a personal alert the moment your custom items have passed their final quality check.</li>
+                <li><strong>Flexible Windows:</strong> We offer convenient times for you to stop by and collect your orders.</li>
+                <li><strong>Hand-Off:</strong> We provide a final look at the piece with you upon pickup to ensure you are thrilled with the result.</li>
             </ul>
         </article>
 
         <article class="logistics-card">
-            <h2>Typical Turnaround</h2>
+            <h2>Shipping & Handling</h2>
             <ul>
-                <li>Production prep: usually 2-5 business days depending on product type.</li>
-                <li>Local pickup notice: sent as soon as quality check is complete.</li>
-                <li>Shipped orders: typically 3-7 business days in transit after dispatch.</li>
-                <li>Seasonal demand can add extra processing time; we’ll keep you updated.</li>
+                <li><strong>Secure Packaging:</strong> From reinforced corners for canvases to padded boxes for clocks, we ensure everything is immobilized for a safe journey.</li>
+                <li><strong>Real-Time Updates:</strong> You will receive a tracking number as soon as your order is dispatched, allowing you to follow your art from our studio to your door.</li>
             </ul>
         </article>
     </section>
 
     <section class="logistics-band">
-        <h2>Packaging & Care</h2>
-        <p>Prints and canvases are packed to protect corners, surfaces, and framing edges. If anything arrives damaged in transit, contact us right away so we can review photos and make it right quickly.</p>
+        <h2>After Delivery or Shipping</h2>
+        <p>Your experience continues even after your items arrive.</p>
+        <div class="post-delivery-box">
+            <p><strong>Initial Inspection:</strong> We recommend unboxing your decor immediately to ensure everything arrived in pristine condition.</p>
+            <p><strong>Care Instructions:</strong> We provide specific tips on how to clean and maintain your canvases or functional decor to ensure they last for generations.</p>
+            <p><strong>Customer Support:</strong> If you have any questions about hanging your wall art or assembling your puzzles, we are just a message away.</p>
+        </div>
     </section>
 
     <section class="logistics-actions">
