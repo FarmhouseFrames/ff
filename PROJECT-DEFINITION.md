@@ -109,9 +109,9 @@ The admin area is private and should use Supabase for authentication and protect
 
 **Private authenticated admin dashboard:**
 - [dashboard/login.html](/workspaces/ff/dashboard/login.html): admin login UI.
-- [dashboard/index.html](/workspaces/ff/dashboard/index.html): authenticated admin command center with tabbed interface:
+- [dashboard/index.html](/workspaces/ff/dashboard/index.html): authenticated admin command center with hash-route interface:
   - **Dashboard:** metrics (products, orders, uploads).
-  - **Uploads:** photo asset manager with bulk upload and cutter preview.
+  - **Uploads (`#uploads`):** upload one image, write upload metadata, then redirect into studio cutter with `imageUrl`.
   - **Products:** product creation, pricing, inventory, supplier mapping, and cutter integration.
   - **Orders:** customer order requests, fulfillment status, and supplier packet generation.
   - **Clients:** customer CRM (structure ready, UI pending).
@@ -125,6 +125,13 @@ The admin area is private and should use Supabase for authentication and protect
 - [admin/manual-entry.html](/workspaces/ff/admin/manual-entry.html): Kristin-only manual order entry for photo-to-frame alignment verification.
 - [admin/splitter-tool.html](/workspaces/ff/admin/splitter-tool.html): splitter preview tool (redirects to admin-dashboard.html).
 - [admin-dashboard.html](/workspaces/ff/admin-dashboard.html): studio cutter and image preparation tool for visualizing photo crops across Trio, Quintet, and Ensemble layouts.
+
+**Upload-to-editor bridge (implemented):**
+- Upload starts in [dashboard/index.html](/workspaces/ff/dashboard/index.html) at `#uploads`.
+- File is stored in Supabase Storage bucket `photo-uploads`.
+- Upload row is saved in `public.uploads` with `uploaded_by`.
+- App redirects to [admin-dashboard.html](/workspaces/ff/admin-dashboard.html) using `?imageUrl=...`.
+- Studio cutter auto-loads `imageUrl` if present.
 
 ### Legacy admin files
 

@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=../dashboard/index.html">
     <title>Admin Dashboard | Farmhouse Frames</title>
+    <script>
+      const target = `../dashboard/index.html${window.location.hash || ''}`;
+      window.location.replace(target);
+    </script>
 </head>
 <body>
     <p>Redirecting to <a href="../dashboard/index.html">Admin Dashboard</a>.</p>
