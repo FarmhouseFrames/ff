@@ -58,6 +58,7 @@
         }
 
         .contact-form input,
+        .contact-form select,
         .contact-form textarea {
             border: 1px solid #d4c7b8;
             border-radius: 6px;
@@ -69,6 +70,7 @@
         }
 
         .contact-form input:focus,
+        .contact-form select:focus,
         .contact-form textarea:focus,
         .contact-form input:not(:placeholder-shown),
         .contact-form textarea:not(:placeholder-shown) {
@@ -76,6 +78,25 @@
             border-color: #b89f85;
             box-shadow: 0 0 0 3px rgba(184, 159, 133, 0.12);
             outline: none;
+        }
+
+        .contact-form label {
+            color: #5f4d3b;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .follow-up-block {
+            display: none;
+            border: 1px solid #dccfbf;
+            border-radius: 10px;
+            background: rgba(255, 250, 245, 0.75);
+            padding: 12px;
+            gap: 10px;
+        }
+
+        .follow-up-block.active {
+            display: grid;
         }
 
         .contact-form textarea {
@@ -107,11 +128,90 @@
         <form class="contact-form" action="mailto:kristin@farmhouseframes.com" method="post" enctype="text/plain">
             <input type="text" name="name" placeholder="Your name" required>
             <input type="email" name="email" placeholder="Your email" required>
+            <label for="contactReason">Reason for Contact</label>
+            <select id="contactReason" name="reason" required>
+                <option value="">Select a reason</option>
+                <option value="review">Review Product or Process</option>
+                <option value="refund">Refund Request</option>
+                <option value="missing">Missing Item/Items</option>
+                <option value="wrong-product">Wrong Product</option>
+                <option value="product-issue">Product Issue</option>
+                <option value="other">Other</option>
+            </select>
+
+            <div class="follow-up-block" data-reason="review">
+                <label for="reviewTopic">Review Focus</label>
+                <select id="reviewTopic" name="review_focus" data-required="true" disabled>
+                    <option value="">Choose one</option>
+                    <option value="product">Product Review</option>
+                    <option value="process">Order Process Review</option>
+                    <option value="both">Both</option>
+                </select>
+                <label for="reviewOrder">Order Number (if applicable)</label>
+                <input id="reviewOrder" type="text" name="review_order_number" placeholder="Order number" disabled>
+            </div>
+
+            <div class="follow-up-block" data-reason="refund">
+                <label for="refundOrder">Order Number</label>
+                <input id="refundOrder" type="text" name="refund_order_number" placeholder="Order number" data-required="true" disabled>
+                <label for="refundReason">Reason for Refund</label>
+                <textarea id="refundReason" name="refund_reason" placeholder="Please share why you are requesting a refund" data-required="true" disabled></textarea>
+            </div>
+
+            <div class="follow-up-block" data-reason="missing">
+                <label for="missingOrder">Order Number</label>
+                <input id="missingOrder" type="text" name="missing_order_number" placeholder="Order number" data-required="true" disabled>
+                <label for="missingItems">Missing Item/Items</label>
+                <textarea id="missingItems" name="missing_items" placeholder="List the missing item or items" data-required="true" disabled></textarea>
+            </div>
+
+            <div class="follow-up-block" data-reason="wrong-product">
+                <label for="wrongOrder">Order Number</label>
+                <input id="wrongOrder" type="text" name="wrong_product_order_number" placeholder="Order number" data-required="true" disabled>
+                <label for="wrongDetails">What was expected vs. received?</label>
+                <textarea id="wrongDetails" name="wrong_product_details" placeholder="Describe what you expected and what arrived" data-required="true" disabled></textarea>
+            </div>
+
+            <div class="follow-up-block" data-reason="product-issue">
+                <label for="issueOrder">Order Number</label>
+                <input id="issueOrder" type="text" name="issue_order_number" placeholder="Order number" data-required="true" disabled>
+                <label for="issueDetails">Product Issue Details</label>
+                <textarea id="issueDetails" name="product_issue_details" placeholder="Describe the issue you noticed" data-required="true" disabled></textarea>
+            </div>
+
+            <div class="follow-up-block" data-reason="other">
+                <label for="otherSubject">Subject</label>
+                <input id="otherSubject" type="text" name="other_subject" placeholder="Subject" data-required="true" disabled>
+            </div>
+
             <textarea name="message" placeholder="How can we help?" required></textarea>
             <button type="submit" class="banner-btn">Send Inquiry</button>
         </form>
     </article>
 </section>
+
+<script>
+    const reasonSelect = document.getElementById('contactReason');
+    const followUpBlocks = document.querySelectorAll('.follow-up-block');
+
+    function updateFollowUpFields() {
+        const selectedReason = reasonSelect.value;
+
+        followUpBlocks.forEach((block) => {
+            const isActive = block.dataset.reason === selectedReason;
+            block.classList.toggle('active', isActive);
+
+            const fields = block.querySelectorAll('input, select, textarea');
+            fields.forEach((field) => {
+                field.disabled = !isActive;
+                field.required = isActive && field.dataset.required === 'true';
+            });
+        });
+    }
+
+    reasonSelect.addEventListener('change', updateFollowUpFields);
+    updateFollowUpFields();
+</script>
 
 <footer>© 2026 Farmhouse Frames</footer>
 </body>
