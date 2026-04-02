@@ -112,7 +112,8 @@ body {
 .cart-list,
 .summary-card,
 .checkout-form,
-.empty-card {
+.empty-card,
+.mini-card {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -200,6 +201,35 @@ body {
   display: grid;
   gap: 10px;
   margin: 16px 0;
+}
+
+.info-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.mini-card h3 {
+  margin: 0 0 10px;
+}
+
+.info-list {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.page-footer-links {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.page-footer-links a {
+  color: var(--accent-deep);
 }
 
 .summary-line {

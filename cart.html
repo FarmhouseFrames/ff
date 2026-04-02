@@ -5,9 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cart | Farmhouse Frames</title>
     <link rel="stylesheet" href="css/commerce.css">
+    <style>
+        body {
+            background:
+                linear-gradient(rgba(246, 240, 232, 0.5), rgba(246, 240, 232, 0.5)),
+                url("images/banner-photo.jpg") center center / cover no-repeat fixed;
+        }
+
+        .commerce-hero,
+        .cart-list,
+        .summary-card,
+        .empty-card,
+        .mini-card {
+            background: rgba(255, 250, 245, 0.84);
+            border: 1px solid rgba(204, 183, 158, 0.9);
+            box-shadow: 0 14px 28px rgba(76, 52, 34, 0.12);
+            backdrop-filter: blur(4px);
+        }
+
+        .commerce-hero {
+            text-align: center;
+        }
+    </style>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%22 height=%2732%22 rx=%226%22 fill=%22%234d3425%22/%3E%3Ctext x=%2216%22 y=%2223%22 font-family=%22Georgia,serif%22 font-size=%2220%22 fill=%22%23e8d5be%22 text-anchor=%22middle%22%3EF%3C/text%3E%3C/svg%3E">
 </head>
 <body>
+    <nav class="site-nav">
+        <a href="index.html">Home</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="splits.html">Split Canvas</a>
+        <a href="catalog.html">Catalog</a>
+        <a href="contact.html">Contact</a>
+        <a href="pickup.html">Pickup & Shipping</a>
+        <a href="account.html">Account</a>
+        <a href="certificates.html">Certificates</a>
+    </nav>
+
     <div class="commerce-shell">
         <header class="commerce-topbar">
             <a href="index.html">Farmhouse Frames</a>
@@ -20,7 +53,7 @@
 
         <section class="commerce-hero">
             <h1>Your Cart</h1>
-            <p>Review quantities, remove items, and continue to checkout when the order looks right.</p>
+            <p>Review your selections, adjust quantities, and continue to guest checkout when everything looks right. Your cart stays in place until payment is completed and a confirmation number is issued.</p>
         </section>
 
         <main id="cartRoot" class="commerce-layout"></main>
@@ -41,8 +74,27 @@
                     <section class="empty-card">
                         <h2>Your cart is empty</h2>
                         <p>Add a product from the catalog to start building your order.</p>
-                        <p><a class="commerce-button-link primary" href="products/index.html">Browse products</a></p>
+                        <p class="helper-text">Guest carts stay saved in this browser until payment is completed and a confirmation number is issued.</p>
+                        <div class="summary-actions">
+                            <a class="commerce-button-link primary" href="products/index.html">Browse products</a>
+                            <a class="commerce-button-link" href="catalog.html">View catalog</a>
+                        </div>
                     </section>
+
+                    <aside class="summary-card">
+                        <h2>How Guest Checkout Works</h2>
+                        <ol class="info-list">
+                            <li>Add finished products to your cart.</li>
+                            <li>Move to checkout and enter your contact details.</li>
+                            <li>Complete payment when prompted.</li>
+                            <li>Keep your confirmation number for your records.</li>
+                        </ol>
+                        <div class="page-footer-links">
+                            <a href="legal/privacy.html">Privacy</a>
+                            <a href="legal/terms.html">Terms</a>
+                            <a href="legal/shipping.html">Shipping</a>
+                        </div>
+                    </aside>
                 `;
                 return;
             }
@@ -79,7 +131,23 @@
                         <a class="commerce-button-link primary" href="checkout.html">Checkout</a>
                         <button id="clearCartButton" class="commerce-button" type="button">Clear cart</button>
                     </div>
+                    <p class="helper-text">Guest checkout is available. Your cart details stay in place until payment is completed and a confirmation number is provided.</p>
                     <p class="helper-text">Tax is estimated from the current store configuration.</p>
+                    <div class="page-footer-links">
+                        <a href="pickup.html">Pickup & Shipping</a>
+                        <a href="legal/privacy.html">Privacy</a>
+                        <a href="legal/terms.html">Terms</a>
+                    </div>
+                </aside>
+
+                <aside class="summary-card">
+                    <h2>Before You Checkout</h2>
+                    <ol class="info-list">
+                        <li>Review quantity and item details carefully.</li>
+                        <li>Use guest checkout if you do not want to create an account.</li>
+                        <li>Your order details stay together until payment is completed and confirmation is issued.</li>
+                        <li>Keep your payment confirmation number once it appears.</li>
+                    </ol>
                 </aside>
             `;
 

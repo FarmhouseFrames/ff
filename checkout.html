@@ -5,9 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout | Farmhouse Frames</title>
     <link rel="stylesheet" href="css/commerce.css">
+    <style>
+        body {
+            background:
+                linear-gradient(rgba(246, 240, 232, 0.5), rgba(246, 240, 232, 0.5)),
+                url("images/banner-photo.jpg") center center / cover no-repeat fixed;
+        }
+
+        .commerce-hero,
+        .summary-card,
+        .checkout-form,
+        .empty-card,
+        .mini-card {
+            background: rgba(255, 250, 245, 0.84);
+            border: 1px solid rgba(204, 183, 158, 0.9);
+            box-shadow: 0 14px 28px rgba(76, 52, 34, 0.12);
+            backdrop-filter: blur(4px);
+        }
+
+        .commerce-hero,
+        .checkout-form h2,
+        .summary-card h2,
+        .mini-card h3 {
+            text-align: center;
+        }
+    </style>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%22 height=%2732%22 rx=%226%22 fill=%22%234d3425%22/%3E%3Ctext x=%2216%22 y=%2223%22 font-family=%22Georgia,serif%22 font-size=%2220%22 fill=%22%23e8d5be%22 text-anchor=%22middle%22%3EF%3C/text%3E%3C/svg%3E">
 </head>
 <body>
+    <nav class="site-nav">
+        <a href="index.html">Home</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="splits.html">Split Canvas</a>
+        <a href="catalog.html">Catalog</a>
+        <a href="contact.html">Contact</a>
+        <a href="pickup.html">Pickup & Shipping</a>
+        <a href="account.html">Account</a>
+        <a href="certificates.html">Certificates</a>
+    </nav>
+
     <div class="commerce-shell">
         <header class="commerce-topbar">
             <a href="index.html">Farmhouse Frames</a>
@@ -20,7 +56,7 @@
 
         <section class="commerce-hero">
             <h1>Checkout</h1>
-            <p>This checkout flow is static-hosting safe. It prepares a full order request from the shared cart and sends it to the store email.</p>
+            <p>This guest checkout flow keeps your order details together until payment is completed and a confirmation number is issued. It also routes the order into the Farmhouse Frames admin queue when available.</p>
         </section>
 
         <main id="checkoutRoot" class="commerce-layout"></main>
@@ -126,8 +162,22 @@
                 <section class="empty-card">
                     <h2>Your cart is empty</h2>
                     <p>Add products before going to checkout.</p>
-                    <p><a class="commerce-button-link primary" href="products/index.html">Browse products</a></p>
+                    <p class="helper-text">Guest checkout becomes available as soon as products are added to your cart.</p>
+                    <div class="summary-actions">
+                        <a class="commerce-button-link primary" href="products/index.html">Browse products</a>
+                        <a class="commerce-button-link" href="cart.html">Open cart</a>
+                    </div>
                 </section>
+
+                <aside class="summary-card">
+                    <h2>Guest Checkout</h2>
+                    <ol class="info-list">
+                        <li>Choose finished products from the storefront.</li>
+                        <li>Enter your details here without creating an account.</li>
+                        <li>Complete payment and keep your confirmation number.</li>
+                        <li>Farmhouse Frames uses that information to finalize your order.</li>
+                    </ol>
+                </aside>
             `;
         }
 
@@ -143,7 +193,7 @@
             checkoutRoot.innerHTML = `
                 <section class="checkout-form">
                     <h2>Customer details</h2>
-                    ${customer ? `<p class="helper-text">Signed in as ${customer.email}. This order will appear in your account history.</p>` : '<p class="helper-text">Guest checkout is available, or <a href="account-login.html">sign in</a> to track orders in your account.</p>'}
+                    ${customer ? `<p class="helper-text">Signed in as ${customer.email}. This order will appear in your account history after payment is completed and a confirmation number is issued.</p>` : '<p class="helper-text">Guest checkout is available, or <a href="account-login.html">sign in</a> to track orders in your account. Your order details stay together until payment is completed and confirmation is issued.</p>'}
                     <div class="checkout-grid">
                         <label>
                             Full name
@@ -170,7 +220,7 @@
                         ${paymentLink ? '<button id="payNowButton" class="commerce-button primary" type="button">Pay now securely</button>' : ''}
                         <button id="clearAfterSendButton" class="commerce-button" type="button">Clear cart</button>
                     </div>
-                    <p id="checkoutStatus" class="status-message">${paymentLink ? 'Payment link is enabled. You can save your order and continue to secure checkout.' : 'Payment link is not configured yet, so this checkout prepares a structured order request email.'}</p>
+                    <p id="checkoutStatus" class="status-message">${paymentLink ? 'Payment link is enabled. You can save your order details here and continue to secure checkout until payment is completed and confirmation is issued.' : 'Payment link is not configured yet, so this checkout prepares a structured order request email while keeping your order details together.'}</p>
                 </section>
 
                 <aside class="summary-card">
@@ -184,6 +234,26 @@
                         <div class="summary-line total"><span>Total</span><span>${formatCurrency(totals.total, config.currency)}</span></div>
                     </div>
                     <p class="helper-text">Store contact: ${config.businessEmail}</p>
+                    <p class="helper-text">Guest orders remain tied to the details entered here until payment is completed and a confirmation number is created.</p>
+                    <div class="page-footer-links">
+                        <a href="pickup.html">Pickup & Shipping</a>
+                        <a href="legal/privacy.html">Privacy</a>
+                        <a href="legal/terms.html">Terms</a>
+                    </div>
+                </aside>
+
+                <aside class="summary-card">
+                    <h2>What Happens Next</h2>
+                    <ol class="info-list">
+                        <li>Your order details are saved into the Farmhouse Frames admin queue when available.</li>
+                        <li>You continue to payment or prepare the structured order email fallback.</li>
+                        <li>After payment, keep your confirmation number for pickup or shipping updates.</li>
+                        <li>If you need help, contact Farmhouse Frames before leaving this page.</li>
+                    </ol>
+                    <div class="summary-actions">
+                        <a class="commerce-button-link" href="contact.html">Contact Farmhouse Frames</a>
+                        <a class="commerce-button-link" href="pickup.html">Pickup & Shipping</a>
+                    </div>
                 </aside>
             `;
 
