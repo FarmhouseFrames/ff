@@ -8,6 +8,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/site.css">
     <style>
+        header {
+            font-family: 'Great Vibes', cursive;
+            font-size: clamp(2.5rem, 5vw, 4.2rem);
+            letter-spacing: 0.02em;
+            line-height: 1;
+        }
+
+        header::first-letter {
+            font-size: 1.65em;
+            line-height: 0.75;
+            vertical-align: -0.22em;
+            margin-right: 0.02em;
+            display: inline-block;
+        }
+
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
