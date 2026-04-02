@@ -36,6 +36,8 @@ The storefront is designed to stay simple, fast, static-first, and GitHub Pages 
 - [pickup.html](/workspaces/ff/pickup.html): pickup and shipping details.
 - [cart.html](/workspaces/ff/cart.html): cart flow.
 - [checkout.html](/workspaces/ff/checkout.html): checkout flow.
+- [account-login.html](/workspaces/ff/account-login.html): customer sign-in/sign-up/reset page.
+- [account.html](/workspaces/ff/account.html): customer account and order history page.
 - [products/index.html](/workspaces/ff/products/index.html): product listing entry point (query-parameter driven).
 - [products/product.html](/workspaces/ff/products/product.html): product detail page (query-parameter driven).
 - [COLLECTIONS](/workspaces/ff/COLLECTIONS): themed collection pages (legacy, data-sourced from products.json).
@@ -114,9 +116,9 @@ The admin area is private and should use Supabase for authentication and protect
   - **Uploads (`#uploads`):** upload one image, write upload metadata, then redirect into studio cutter with `imageUrl`.
   - **Products:** product creation, pricing, inventory, supplier mapping, and cutter integration.
   - **Orders:** customer order requests, fulfillment status, and supplier packet generation.
-  - **Clients:** customer CRM (structure ready, UI pending).
-  - **Logs:** activity logging (structure ready, UI pending).
-  - **Settings:** business configuration (structure ready, UI pending).
+  - **Clients:** customer directory and order summary rollups.
+  - **Logs:** activity log viewer for admin operations.
+  - **Settings:** storefront email/tax/currency/hosted-payment configuration.
 - [dashboard/js/auth.js](/workspaces/ff/dashboard/js/auth.js): sign-in, sign-out, current user lookup, and allowlist enforcement.
 - [dashboard/js/supabaseClient.js](/workspaces/ff/dashboard/js/supabaseClient.js): Supabase client bootstrap.
 - [dashboard/css/admin.css](/workspaces/ff/dashboard/css/admin.css): admin styling.

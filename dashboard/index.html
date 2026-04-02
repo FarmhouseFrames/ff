@@ -261,6 +261,67 @@
           </div>
         </div>
 
+        <div id="page-clients" style="display: none;">
+          <div class="card">
+            <h2>Customer Directory</h2>
+            <p class="muted">Customer records from manual entries plus checkout order requests.</p>
+          </div>
+
+          <div class="card">
+            <div class="row">
+              <button id="refreshClientsBtn" class="btn">Refresh clients</button>
+            </div>
+            <div id="clientsTableWrap" class="muted">Loading clients...</div>
+          </div>
+        </div>
+
+        <div id="page-logs" style="display: none;">
+          <div class="card">
+            <h2>Activity Logs</h2>
+            <p class="muted">Operational timeline of admin actions and system events.</p>
+          </div>
+
+          <div class="card">
+            <div class="row">
+              <button id="refreshLogsBtn" class="btn">Refresh logs</button>
+            </div>
+            <div id="logsTableWrap" class="muted">Loading activity logs...</div>
+          </div>
+        </div>
+
+        <div id="page-settings" style="display: none;">
+          <div class="card">
+            <h2>Storefront Settings</h2>
+            <p class="muted">Configure checkout email destination, tax rate, currency, and hosted payment link.</p>
+          </div>
+
+          <div class="card">
+            <form id="settingsForm" class="form">
+              <label>
+                <span>Business Email</span>
+                <input id="settingBusinessEmail" type="email" required>
+              </label>
+              <label>
+                <span>Tax Rate (decimal)</span>
+                <input id="settingTaxRate" type="number" step="0.001" min="0" required>
+              </label>
+              <label>
+                <span>Currency</span>
+                <input id="settingCurrency" type="text" maxlength="3" required>
+              </label>
+              <label>
+                <span>Hosted Payment URL</span>
+                <input id="settingHostedPaymentUrl" type="url" placeholder="https://...">
+              </label>
+              <div class="row">
+                <button class="btn primary" type="submit">Save settings</button>
+                <button class="btn" id="reloadSettingsBtn" type="button">Reload</button>
+              </div>
+            </form>
+            <div id="settingsMessage" class="message" hidden></div>
+          </div>
+        </div>
+
         <div id="page-other" style="display: none;">
           <div class="card">
             <h2>Coming Soon</h2>
@@ -287,7 +348,9 @@
     const msg = $('#message');
     const uploadMsg = $('#uploadMessage');
     const productMsg = $('#productMessage');
+    const settingsMsg = $('#settingsMessage');
     const uploadedPhotoById = new Map();
+    let currentAdminUserId = null;
     const THEME_PRESETS = {
       'lbl-lake': {
         intro: 'Inspired by [photo], this [product] brings the calm light and open water mood of Land Between the Lakes into your home.',
@@ -444,6 +507,13 @@
       productMsg.textContent = text;
     }
 
+    function showSettingsMessage(text, kind = 'ok') {
+      if (!settingsMsg) return;
+      settingsMsg.hidden = false;
+      settingsMsg.className = `message ${kind}`;
+      settingsMsg.textContent = text;
+    }
+
     function parseCsvList(value) {
       return String(value || '')
         .split(',')
@@ -493,6 +563,15 @@
           if (route === 'orders') {
             loadOrderRequests();
             loadSupplierOrderHistory();
+          }
+          if (route === 'clients') {
+            loadClientsPage();
+          }
+          if (route === 'logs') {
+            loadActivityLogs();
+          }
+          if (route === 'settings') {
+            loadStoreSettings();
           }
         } else {
           document.getElementById('page-other').style.display = 'block';
@@ -667,6 +746,10 @@
 
         showUploadMessage(`✓ Uploaded "${file.name}" successfully!`, 'ok');
         setStatus('Opening editor…', 'neutral');
+        await logActivity('upload_created', 'uploads', record?.id || null, {
+          file_name: file.name,
+          category: category || null
+        });
 
         // Redirect to editor with image URL as parameter
         setTimeout(() => {
@@ -801,6 +884,11 @@
       }
 
       showProductMessage('Product saved. It can now be sold from your storefront.', 'ok');
+      await logActivity('product_created', 'products', payload.name, {
+        category: payload.category,
+        price: payload.price,
+        source_upload_id: payload.source_upload_id
+      });
       $('#productForm').reset();
       updateSourcePhotoPreview();
       await loadProductsPage();
@@ -820,6 +908,7 @@
 
       await loadOrderRequests();
       await refreshMetrics();
+      await logActivity('order_status_updated', 'order_requests', orderId, { status });
     }
 
     async function saveSupplierOrderPacket(record) {
@@ -845,6 +934,10 @@
       }
 
       showMessage(`Supplier PO saved for ${record.supplier_name}.`, 'ok');
+      await logActivity('supplier_packet_saved', 'supplier_order_packets', record.order_request_id, {
+        supplier_name: record.supplier_name,
+        supplier_estimate: record.supplier_estimate
+      });
       await loadSupplierOrderHistory();
     }
 
@@ -1178,9 +1271,223 @@
       });
     }
 
+    async function logActivity(action, entity, entityId = null, details = {}) {
+      try {
+        await supabase
+          .from('activity_logs')
+          .insert({
+            actor_user_id: currentAdminUserId,
+            action,
+            entity,
+            entity_id: entityId,
+            details
+          });
+      } catch {
+        // Logging should never block primary workflows.
+      }
+    }
+
+    async function loadClientsPage() {
+      const wrap = $('#clientsTableWrap');
+      if (!wrap) return;
+      wrap.textContent = 'Loading clients...';
+
+      const [{ data: clients, error: clientsError }, { data: orders, error: ordersError }] = await Promise.all([
+        supabase.from('clients').select('id, name, email, phone, created_at').order('created_at', { ascending: false }).limit(200),
+        supabase.from('order_requests').select('customer_name, customer_email, total, created_at').order('created_at', { ascending: false }).limit(500)
+      ]);
+
+      if (clientsError || ordersError) {
+        wrap.innerHTML = `<div class="message error">${(clientsError || ordersError)?.message || 'Could not load clients.'}</div>`;
+        return;
+      }
+
+      const byEmail = new Map();
+
+      (clients || []).forEach((client) => {
+        const key = normalizeKey(client.email || `${client.id}@internal`);
+        byEmail.set(key, {
+          name: client.name || 'Unnamed',
+          email: client.email || '—',
+          phone: client.phone || '—',
+          totalOrders: 0,
+          totalSpent: 0,
+          lastOrderAt: null
+        });
+      });
+
+      (orders || []).forEach((order) => {
+        const key = normalizeKey(order.customer_email || '');
+        if (!key) return;
+        const existing = byEmail.get(key) || {
+          name: order.customer_name || 'Unknown',
+          email: order.customer_email || '—',
+          phone: '—',
+          totalOrders: 0,
+          totalSpent: 0,
+          lastOrderAt: null
+        };
+        existing.totalOrders += 1;
+        existing.totalSpent += Number(order.total || 0);
+        const orderTime = new Date(order.created_at).getTime();
+        const lastTime = existing.lastOrderAt ? new Date(existing.lastOrderAt).getTime() : 0;
+        if (orderTime > lastTime) {
+          existing.lastOrderAt = order.created_at;
+        }
+        byEmail.set(key, existing);
+      });
+
+      const rows = Array.from(byEmail.values())
+        .sort((a, b) => (new Date(b.lastOrderAt || 0)).getTime() - (new Date(a.lastOrderAt || 0)).getTime());
+
+      if (!rows.length) {
+        wrap.innerHTML = '<p class="muted">No customer records yet.</p>';
+        return;
+      }
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Orders</th>
+              <th>Total Spent</th>
+              <th>Last Order</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((row) => `
+              <tr>
+                <td>${escapeHtml(row.name)}</td>
+                <td>${row.email !== '—' ? `<a href="mailto:${escapeHtml(row.email)}">${escapeHtml(row.email)}</a>` : '—'}</td>
+                <td>${escapeHtml(row.phone)}</td>
+                <td>${row.totalOrders}</td>
+                <td>${money(row.totalSpent)}</td>
+                <td>${row.lastOrderAt ? new Date(row.lastOrderAt).toLocaleString() : '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadActivityLogs() {
+      const wrap = $('#logsTableWrap');
+      if (!wrap) return;
+      wrap.textContent = 'Loading activity logs...';
+
+      const { data, error } = await supabase
+        .from('activity_logs')
+        .select('id, action, entity, entity_id, details, created_at')
+        .order('created_at', { ascending: false })
+        .limit(150);
+
+      if (error) {
+        wrap.innerHTML = `<div class="message error">${error.message}</div>`;
+        return;
+      }
+
+      if (!data || !data.length) {
+        wrap.innerHTML = '<p class="muted">No activity logs yet.</p>';
+        return;
+      }
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Action</th>
+              <th>Entity</th>
+              <th>Entity ID</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map((row) => `
+              <tr>
+                <td>${new Date(row.created_at).toLocaleString()}</td>
+                <td>${escapeHtml(row.action)}</td>
+                <td>${escapeHtml(row.entity || '—')}</td>
+                <td><code>${escapeHtml(row.entity_id || '—')}</code></td>
+                <td><code>${escapeHtml(JSON.stringify(row.details || {}))}</code></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadStoreSettings() {
+      if (settingsMsg) settingsMsg.hidden = true;
+
+      const { data, error } = await supabase
+        .from('store_settings')
+        .select('*')
+        .eq('id', 'storefront')
+        .maybeSingle();
+
+      if (error) {
+        showSettingsMessage(error.message, 'error');
+        return;
+      }
+
+      const settings = data || {
+        business_email: 'kristin@farmhouseframes.com',
+        tax_rate: 0.06,
+        currency: 'USD',
+        hosted_payment_url: ''
+      };
+
+      $('#settingBusinessEmail').value = settings.business_email || '';
+      $('#settingTaxRate').value = String(Number(settings.tax_rate ?? 0));
+      $('#settingCurrency').value = String(settings.currency || 'USD').toUpperCase();
+      $('#settingHostedPaymentUrl').value = settings.hosted_payment_url || '';
+    }
+
+    async function saveStoreSettings(event) {
+      event.preventDefault();
+      if (settingsMsg) settingsMsg.hidden = true;
+
+      const payload = {
+        id: 'storefront',
+        business_email: $('#settingBusinessEmail').value.trim(),
+        tax_rate: Number($('#settingTaxRate').value || 0),
+        currency: $('#settingCurrency').value.trim().toUpperCase(),
+        hosted_payment_url: $('#settingHostedPaymentUrl').value.trim() || null,
+        updated_by: currentAdminUserId,
+        updated_at: new Date().toISOString()
+      };
+
+      if (!payload.business_email || payload.tax_rate < 0 || !payload.currency) {
+        showSettingsMessage('Enter a valid business email, tax rate, and currency.', 'error');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('store_settings')
+        .upsert(payload, { onConflict: 'id' });
+
+      if (error) {
+        showSettingsMessage(error.message, 'error');
+        return;
+      }
+
+      showSettingsMessage('Settings saved.', 'ok');
+      await logActivity('settings_saved', 'store_settings', 'storefront', {
+        business_email: payload.business_email,
+        tax_rate: payload.tax_rate,
+        currency: payload.currency,
+        hosted_payment_url_configured: Boolean(payload.hosted_payment_url)
+      });
+    }
+
     await requireAdminSession();
 
     const user = await getCurrentUser();
+    currentAdminUserId = user?.id || null;
     $('#whoami').textContent = user?.email ? `Signed in as ${user.email}` : 'Signed in';
 
     setTitleFromHash();
@@ -1219,6 +1526,10 @@
 
     $('#uploadForm').addEventListener('submit', handleFileUpload);
     $('#productForm')?.addEventListener('submit', createProduct);
+    $('#settingsForm')?.addEventListener('submit', saveStoreSettings);
+    $('#reloadSettingsBtn')?.addEventListener('click', loadStoreSettings);
+    $('#refreshClientsBtn')?.addEventListener('click', loadClientsPage);
+    $('#refreshLogsBtn')?.addEventListener('click', loadActivityLogs);
     $('#productSourcePhoto')?.addEventListener('change', updateSourcePhotoPreview);
     $('#openSourceInCutter')?.addEventListener('click', openSelectedSourceInCutter);
     $('#generateRusticCopy')?.addEventListener('click', () => {

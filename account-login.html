@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Login | Farmhouse Frames</title>
+    <link rel="stylesheet" href="css/commerce.css">
+</head>
+<body>
+    <div class="commerce-shell">
+        <header class="commerce-topbar">
+            <a href="index.html">Farmhouse Frames</a>
+            <div class="summary-actions">
+                <a class="commerce-button-link" href="products/index.html">Shop products</a>
+                <a class="commerce-button-link" href="account.html">My account</a>
+            </div>
+        </header>
+
+        <section class="commerce-hero">
+            <h1>Customer Account</h1>
+            <p>Sign in to view your saved orders and speed up checkout.</p>
+        </section>
+
+        <main class="commerce-layout">
+            <section class="checkout-form">
+                <h2>Sign in</h2>
+                <div class="checkout-grid">
+                    <label>Email<input id="email" type="email" autocomplete="email" required></label>
+                    <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+                </div>
+                <div class="checkout-actions" style="margin-top: 14px;">
+                    <button id="signInBtn" class="commerce-button primary" type="button">Sign in</button>
+                    <button id="signUpBtn" class="commerce-button" type="button">Create account</button>
+                    <button id="resetBtn" class="commerce-button" type="button">Reset password</button>
+                </div>
+                <p id="authStatus" class="status-message"></p>
+            </section>
+
+            <aside class="summary-card">
+                <h2>Why use an account?</h2>
+                <div class="summary-list">
+                    <div class="summary-line"><span>Order history</span><span>Included</span></div>
+                    <div class="summary-line"><span>Faster checkout</span><span>Included</span></div>
+                    <div class="summary-line"><span>Guest checkout</span><span>Still available</span></div>
+                </div>
+                <p class="helper-text">Supplier and print-company details remain private and admin-only.</p>
+            </aside>
+        </main>
+    </div>
+
+    <script type="module">
+        import { publicSupabase } from './js/supabasePublic.js';
+
+        const status = document.getElementById('authStatus');
+
+        function getFormValues() {
+            return {
+                email: document.getElementById('email').value.trim(),
+                password: document.getElementById('password').value
+            };
+        }
+
+        function setStatus(message) {
+            status.textContent = message;
+        }
+
+        async function ensureRedirectForSession() {
+            const { data } = await publicSupabase.auth.getSession();
+            if (data.session?.user) {
+                window.location.href = 'account.html';
+            }
+        }
+
+        document.getElementById('signInBtn').addEventListener('click', async () => {
+            const { email, password } = getFormValues();
+            if (!email || !password) {
+                setStatus('Enter email and password.');
+                return;
+            }
+
+            const { error } = await publicSupabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                setStatus(error.message);
+                return;
+            }
+
+            window.location.href = 'account.html';
+        });
+
+        document.getElementById('signUpBtn').addEventListener('click', async () => {
+            const { email, password } = getFormValues();
+            if (!email || !password) {
+                setStatus('Enter email and password to create an account.');
+                return;
+            }
+
+            const { error } = await publicSupabase.auth.signUp({ email, password });
+            if (error) {
+                setStatus(error.message);
+                return;
+            }
+
+            setStatus('Account created. Check your email if confirmation is required, then sign in.');
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', async () => {
+            const email = document.getElementById('email').value.trim();
+            if (!email) {
+                setStatus('Enter your email to reset password.');
+                return;
+            }
+
+            const { error } = await publicSupabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/account-login.html`
+            });
+
+            if (error) {
+                setStatus(error.message);
+                return;
+            }
+
+            setStatus('Password reset email sent.');
+        });
+
+        ensureRedirectForSession();
+    </script>
+</body>
+</html>

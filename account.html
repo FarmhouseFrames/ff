@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account | Farmhouse Frames</title>
+    <link rel="stylesheet" href="css/commerce.css">
+</head>
+<body>
+    <div class="commerce-shell">
+        <header class="commerce-topbar">
+            <a href="index.html">Farmhouse Frames</a>
+            <div class="summary-actions">
+                <a class="commerce-button-link" href="products/index.html">Shop products</a>
+                <a class="commerce-button-link" href="checkout.html">Checkout</a>
+                <button id="signOutBtn" class="commerce-button" type="button">Sign out</button>
+            </div>
+        </header>
+
+        <section class="commerce-hero">
+            <h1>My Account</h1>
+            <p id="whoami" class="helper-text">Loading account...</p>
+        </section>
+
+        <main class="commerce-layout">
+            <section class="checkout-form">
+                <h2>My Orders</h2>
+                <div id="ordersWrap" class="status-message">Loading your order history...</div>
+            </section>
+
+            <aside class="summary-card">
+                <h2>Quick Actions</h2>
+                <div class="summary-actions">
+                    <a class="commerce-button-link" href="checkout.html">Start checkout</a>
+                    <a class="commerce-button-link" href="cart.html">Open cart</a>
+                    <a class="commerce-button-link" href="account-login.html">Sign in as different user</a>
+                </div>
+                <p class="helper-text">Your account only shows customer-facing order data.</p>
+            </aside>
+        </main>
+    </div>
+
+    <script type="module">
+        import { publicSupabase } from './js/supabasePublic.js';
+
+        const whoami = document.getElementById('whoami');
+        const ordersWrap = document.getElementById('ordersWrap');
+
+        async function requireSession() {
+            const { data, error } = await publicSupabase.auth.getSession();
+            if (error) {
+                throw error;
+            }
+
+            if (!data.session?.user) {
+                window.location.href = 'account-login.html';
+                return null;
+            }
+
+            return data.session.user;
+        }
+
+        function renderOrders(orders) {
+            if (!orders.length) {
+                ordersWrap.innerHTML = '<p class="muted">No account-linked orders yet. Place your next order while signed in.</p>';
+                return;
+            }
+
+            ordersWrap.innerHTML = `
+                <div style="overflow:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Fulfillment</th>
+                                <th>Total</th>
+                                <th>Order ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${orders.map((order) => `
+                                <tr>
+                                    <td>${new Date(order.created_at).toLocaleString()}</td>
+                                    <td>${order.status || 'new'}</td>
+                                    <td>${order.fulfillment_method || 'Pickup'}</td>
+                                    <td>$${Number(order.total || 0).toFixed(2)}</td>
+                                    <td><code>${order.id}</code></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        async function loadOrders(user) {
+            const { data, error } = await publicSupabase
+                .from('order_requests')
+                .select('id, created_at, status, fulfillment_method, total')
+                .eq('customer_user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                ordersWrap.textContent = error.message;
+                return;
+            }
+
+            renderOrders(data || []);
+        }
+
+        document.getElementById('signOutBtn').addEventListener('click', async () => {
+            await publicSupabase.auth.signOut();
+            window.location.href = 'account-login.html';
+        });
+
+        const user = await requireSession();
+        if (user) {
+            whoami.textContent = `Signed in as ${user.email}`;
+            await loadOrders(user);
+        }
+    </script>
+</body>
+</html>

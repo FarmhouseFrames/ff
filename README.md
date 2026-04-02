@@ -11,6 +11,7 @@ Current implementation highlights:
 
 - Public storefront pages live at the repository root, with product-category pages under [products](/workspaces/ff/products).
 - The authenticated admin lives under [dashboard](/workspaces/ff/dashboard), including the Uploads route for image ingestion.
+- Customer account pages are available at [account-login.html](/workspaces/ff/account-login.html) and [account.html](/workspaces/ff/account.html).
 - Legacy admin upload flow still exists in [dashboard.html](/workspaces/ff/dashboard.html) and [app.js](/workspaces/ff/app.js).
 - Product and business data currently live in [data](/workspaces/ff/data) and [products/products.json](/workspaces/ff/products/products.json).
 
@@ -32,6 +33,7 @@ Required Supabase objects:
 
 - Storage bucket: `photo-uploads` (public)
 - RLS policy allowlist includes bucket: `photo-uploads`
+- Tables: `order_requests` with `customer_user_id`, `store_settings`, and `activity_logs`
 
 ## Automatic SQL Apply Setup
 
