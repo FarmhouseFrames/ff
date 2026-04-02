@@ -1,1 +1,90 @@
-[{"id": 1, "name": "Mounted Set of 3", "description": "3-piece mounted photo set (3×8\"×20\" vertical panels)", "walmartCost": 31.96, "sellingPrice": 63.92, "walmartLink": "https://www.walmart.com/ip/Mounted-Set-of-3", "dimensions": "3×(8\"×20\")", "pieces": 3, "material": "Fujifilm photo paper on 1\" mounting board", "layout": "vertical-split", "category": "mounted-prints"}, {"id": 2, "name": "Mounted Trilogy", "description": "Classic 3-piece gallery wall (1×11\"×14\" + 2×8\"×10\")", "walmartCost": 38.00, "sellingPrice": 76.00, "walmartLink": "https://www.walmart.com/ip/Mounted-Trilogy/2806251901", "dimensions": "1×11\"×14\", 2×8\"×10\", "pieces": 3, "material": "Fujifilm photo paper on 1\" mounting board", "layout": "asymmetric-3", "category": "mounted-prints"}, {"id": 3, "name": "Mounted Landscape Set", "description": "5-piece mixed gallery set", "walmartCost": 62.88, "sellingPrice": 125.76, "walmartLink": "https://www.walmart.com/ip/Mounted-Landscape-Set-Gallery-Wall/5063980574", "dimensions": "1×8\"×20\", 2×8\"×10\", 2×8\"×8\", "pieces": 5, "material": "Fujifilm photo paper on 1\" mounting board", "layout": "mixed-landscape", "category": "mounted-prints"}, {"id": 4, "name": "Mounted Ensemble of 5", "description": "Premium 5-piece gallery wall", "walmartCost": 86.88, "sellingPrice": 173.76, "walmartLink": "https://www.walmart.com/ip/Mounted-Ensemble-of-5-Gallery-Wall/5066099383", "dimensions": "1×8\"×20\", 2×11\"×14\", 2×8\"×10\", "pieces": 5, "material": "Fujifilm photo paper on 1\" mounting board", "layout": "premium-gallery", "category": "mounted-prints"}, {"id": 5, "name": "Child's Photo Puzzle 16×20 (56-piece)", "description": "Fun 56-piece jigsaw puzzle", "walmartCost": 32.96, "sellingPrice": 65.92, "walmartLink": "https://photos3.walmart.com/category/1271-puzzles", "dimensions": "16\"×20\"", "pieces": 56, "material": "Fujicolor Crystal Archive paper", "layout": "puzzle", "category": "puzzles"}, {"id": 6, "name": "Premium Photo Puzzle 8×10 (110-piece)", "description": "110-piece premium quality photo puzzle", "walmartCost": 16.97, "sellingPrice": 33.94, "walmartLink": "https://photos3.walmart.com/category/1271-puzzles", "dimensions": "8\"×10\"", "pieces": 110, "material": "Premium photo paper", "layout": "puzzle", "category": "puzzles"}, {"id": 7, "name": "Premium Photo Puzzle 11×14 (252-piece)", "description": "Challenge-level 252-piece photo puzzle", "walmartCost": 14.96, "sellingPrice": 29.92, "walmartLink": "https://photos3.walmart.com/category/1271-puzzles", "dimensions": "11\"×14\"", "pieces": 252, "material": "Premium photo paper", "layout": "puzzle", "category": "puzzles"}, {"id": 8, "name": "Wood Box Wall Art 6×8", "description": "Rustic 6×8 wood box shadow frame", "walmartCost": 42.95, "sellingPrice": 85.90, "walmartLink": "https://photos3.walmart.com/category/2277-woodbox-wall-art", "dimensions": "6\"×8\" (1.64\" deep)", "pieces": 1, "material": "Solid wood, acrylic front, acid-free backing", "layout": "wood-box", "category": "wall-art"}]
+[
+	{
+		"id": 1,
+		"name": "Mounted Set of 3",
+		"description": "3-piece mounted photo set (3x8\"x20\" vertical panels)",
+		"sellingPrice": 63.92,
+		"dimensions": "3x(8\"x20\")",
+		"pieces": 3,
+		"material": "Fujifilm photo paper on 1\" mounting board",
+		"layout": "vertical-split",
+		"category": "mounted-prints"
+	},
+	{
+		"id": 2,
+		"name": "Mounted Trilogy",
+		"description": "Classic 3-piece gallery wall (1x11\"x14\" + 2x8\"x10\")",
+		"sellingPrice": 76,
+		"dimensions": "1x11\"x14\", 2x8\"x10\"",
+		"pieces": 3,
+		"material": "Fujifilm photo paper on 1\" mounting board",
+		"layout": "asymmetric-3",
+		"category": "mounted-prints"
+	},
+	{
+		"id": 3,
+		"name": "Mounted Landscape Set",
+		"description": "5-piece mixed gallery set",
+		"sellingPrice": 125.76,
+		"dimensions": "1x8\"x20\", 2x8\"x10\", 2x8\"x8\"",
+		"pieces": 5,
+		"material": "Fujifilm photo paper on 1\" mounting board",
+		"layout": "mixed-landscape",
+		"category": "mounted-prints"
+	},
+	{
+		"id": 4,
+		"name": "Mounted Ensemble of 5",
+		"description": "Premium 5-piece gallery wall",
+		"sellingPrice": 173.76,
+		"dimensions": "1x8\"x20\", 2x11\"x14\", 2x8\"x10\"",
+		"pieces": 5,
+		"material": "Fujifilm photo paper on 1\" mounting board",
+		"layout": "premium-gallery",
+		"category": "mounted-prints"
+	},
+	{
+		"id": 5,
+		"name": "Child's Photo Puzzle 16x20 (56-piece)",
+		"description": "Fun 56-piece jigsaw puzzle",
+		"sellingPrice": 65.92,
+		"dimensions": "16\"x20\"",
+		"pieces": 56,
+		"material": "Fujicolor Crystal Archive paper",
+		"layout": "puzzle",
+		"category": "puzzles"
+	},
+	{
+		"id": 6,
+		"name": "Premium Photo Puzzle 8x10 (110-piece)",
+		"description": "110-piece premium quality photo puzzle",
+		"sellingPrice": 33.94,
+		"dimensions": "8\"x10\"",
+		"pieces": 110,
+		"material": "Premium photo paper",
+		"layout": "puzzle",
+		"category": "puzzles"
+	},
+	{
+		"id": 7,
+		"name": "Premium Photo Puzzle 11x14 (252-piece)",
+		"description": "Challenge-level 252-piece photo puzzle",
+		"sellingPrice": 29.92,
+		"dimensions": "11\"x14\"",
+		"pieces": 252,
+		"material": "Premium photo paper",
+		"layout": "puzzle",
+		"category": "puzzles"
+	},
+	{
+		"id": 8,
+		"name": "Wood Box Wall Art 6x8",
+		"description": "Rustic 6x8 wood box shadow frame",
+		"sellingPrice": 85.9,
+		"dimensions": "6\"x8\" (1.64\" deep)",
+		"pieces": 1,
+		"material": "Solid wood, acrylic front, acid-free backing",
+		"layout": "wood-box",
+		"category": "wall-art"
+	}
+]
