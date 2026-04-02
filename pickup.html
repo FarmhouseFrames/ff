@@ -15,24 +15,33 @@
         }
 
         .logistics-hero {
-            border: 1px solid #dbcfc1;
+            width: fit-content;
+            max-width: 100%;
+            margin: 0 auto;
+            border: 1px solid #d7cab9;
             border-radius: 16px;
-            background: linear-gradient(145deg, #fffaf5 0%, #f2e5d8 52%, #fdf8f3 100%);
+            background: #f8efe6;
             padding: 26px;
-            box-shadow: 0 12px 24px rgba(90, 60, 38, 0.08);
+            text-align: center;
         }
 
-        .logistics-hero h1 {
-            margin: 0 0 8px;
+        .logistics-hero .hero-signature {
+            margin: 0 0 10px;
             color: #5e452b;
-            font-size: clamp(2rem, 4.2vw, 3.1rem);
-            font-family: 'Cormorant Garamond', serif;
+            font-size: calc(clamp(2rem, 4.2vw, 3.1rem) + 3pt);
+            font-family: 'Great Vibes', cursive;
+            font-weight: 400;
+            line-height: 1.05;
         }
 
         .logistics-hero p {
             margin: 0;
             color: #6f5b45;
             line-height: 1.6;
+        }
+
+        .logistics-hero p + p {
+            margin-top: 4px;
         }
 
         .logistics-grid {
@@ -148,9 +157,11 @@
 
 <main class="logistics-shell">
     <section class="logistics-hero">
-        <h1>From Capture to Keepsake</h1>
-        <p>Every Farmhouse Frames piece is prepared with care and subject to rigorous quality checks before delivery. We treat your chosen images with the same respect as a gallery installation, ensuring that whether your photo is destined for a canvas, a custom clock, or a family puzzle, it meets our professional standards.</p>
-        <p>Below is exactly how local pickup and shipping work, so you know what to expect from the moment you place your order to its final arrival.</p>
+        <h1 class="hero-signature">Picture Perfect</h1>
+        <p>Every Farmhouse Frames piece is prepared with care and subject to rigorous quality checks before delivery.</p>
+        <p>We treat your chosen images with the same respect as a gallery installation,</p>
+        <p>ensuring that whether your photo is destined for a canvas,</p>
+        <p>a custom clock, or a family puzzle, it meets our professional standards.</p>
     </section>
 
     <section class="logistics-grid">
