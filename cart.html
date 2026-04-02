@@ -3,28 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopping Cart</title>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        .cart { margin: 20px; }
-        .cart-item { display: flex; justify-content: space-between; margin: 10px 0; }
-        .cart-total { margin-top: 20px; font-weight: bold; }
-    </style>
+    <title>Cart | Farmhouse Frames</title>
+    <link rel="stylesheet" href="css/commerce.css">
 </head>
 <body>
-    <div class="cart">
-        <h2>Your Shopping Cart</h2>
-        <div class="cart-item">
-            <span>Item Name</span>
-            <span>$0.00</span>
-        </div>
-        <div class="cart-item">
-            <span>Item Name</span>
-            <span>$0.00</span>
-        </div>
-        <div class="cart-total">
-            Total: $0.00
-        </div>
+    <div class="commerce-shell">
+        <header class="commerce-topbar">
+            <a href="index.html">Farmhouse Frames</a>
+            <div class="summary-actions">
+                <a class="commerce-button-link" href="products/index.html">Continue shopping</a>
+                <a class="commerce-button-link primary" href="checkout.html">Go to checkout</a>
+            </div>
+        </header>
+
+        <section class="commerce-hero">
+            <h1>Your Cart</h1>
+            <p>Review quantities, remove items, and continue to checkout when the order looks right.</p>
+        </section>
+
+        <main id="cartRoot" class="commerce-layout"></main>
     </div>
+
+    <script type="module">
+        import { calculateCartTotals, clearCart, formatCurrency, loadStoreConfig, readCart, removeCartItem, saveCart } from './js/commerce.js';
+
+        const cartRoot = document.getElementById('cartRoot');
+        const config = await loadStoreConfig();
+
+        function renderCart() {
+            const items = readCart();
+            const totals = calculateCartTotals(items, config.tax);
+
+            if (!items.length) {
+                cartRoot.innerHTML = `
+                    <section class="empty-card">
+                        <h2>Your cart is empty</h2>
+                        <p>Add a product from the catalog to start building your order.</p>
+                        <p><a class="commerce-button-link primary" href="products/index.html">Browse products</a></p>
+                    </section>
+                `;
+                return;
+            }
+
+            cartRoot.innerHTML = `
+                <section class="cart-list">
+                    <h2>${totals.itemCount} item${totals.itemCount === 1 ? '' : 's'} in cart</h2>
+                    <div class="cart-items">
+                        ${items.map((item, index) => `
+                            <article class="cart-item" data-index="${index}">
+                                <img src="${item.image || ''}" alt="${item.title}">
+                                <div>
+                                    <h3>${item.title}</h3>
+                                    <div class="cart-meta">${item.size ? `Size: ${item.size}` : 'Made to order'}</div>
+                                    <div class="cart-meta">${formatCurrency(item.price, config.currency)} each</div>
+                                </div>
+                                <div class="cart-controls">
+                                    <input type="number" min="1" value="${item.quantity}" aria-label="Quantity for ${item.title}">
+                                    <button class="commerce-button" type="button" data-remove="${index}">Remove</button>
+                                </div>
+                            </article>
+                        `).join('')}
+                    </div>
+                </section>
+
+                <aside class="summary-card">
+                    <h2>Summary</h2>
+                    <div class="summary-list">
+                        <div class="summary-line"><span>Subtotal</span><span>${formatCurrency(totals.subtotal, config.currency)}</span></div>
+                        <div class="summary-line"><span>Estimated tax</span><span>${formatCurrency(totals.tax, config.currency)}</span></div>
+                        <div class="summary-line total"><span>Total</span><span>${formatCurrency(totals.total, config.currency)}</span></div>
+                    </div>
+                    <div class="summary-actions">
+                        <a class="commerce-button-link primary" href="checkout.html">Checkout</a>
+                        <button id="clearCartButton" class="commerce-button" type="button">Clear cart</button>
+                    </div>
+                    <p class="helper-text">Tax is estimated from the current store configuration.</p>
+                </aside>
+            `;
+
+            cartRoot.querySelectorAll('.cart-item input[type="number"]').forEach((input, index) => {
+                input.addEventListener('input', (event) => {
+                    const nextValue = Math.max(1, Number(event.target.value || 1));
+                    const nextCart = readCart();
+                    nextCart[index].quantity = nextValue;
+                    saveCart(nextCart);
+                    renderCart();
+                });
+            });
+
+            cartRoot.querySelectorAll('[data-remove]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    removeCartItem(Number(button.dataset.remove));
+                    renderCart();
+                });
+            });
+
+            document.getElementById('clearCartButton').addEventListener('click', () => {
+                clearCart();
+                renderCart();
+            });
+        }
+
+        renderCart();
+    </script>
 </body>
 </html>

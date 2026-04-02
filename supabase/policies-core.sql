@@ -77,34 +77,3 @@ with check (
   and unit_price >= 0
   and char_length(trim(title)) > 0
 );
-
--- Storage (run after creating buckets)
-create or replace function public.is_admin_bucket(bucket text)
-returns boolean
-language sql
-stable
-as $$
-  select bucket = any(array['product-images','uploads','photo-uploads','order-files','case-files']);
-$$;
-
-do $$
-begin
-  begin
-    alter table storage.objects enable row level security;
-    drop policy if exists "Admin can manage objects in admin buckets" on storage.objects;
-    create policy "Admin can manage objects in admin buckets"
-    on storage.objects for all
-    to authenticated
-    using (
-      public.is_admin()
-      and public.is_admin_bucket(bucket_id)
-    )
-    with check (
-      public.is_admin()
-      and public.is_admin_bucket(bucket_id)
-    );
-  exception
-    when insufficient_privilege then
-      raise notice 'Skipping storage.objects policy setup (insufficient privilege). Configure Storage policies in Supabase Dashboard if needed.';
-  end;
-end $$;

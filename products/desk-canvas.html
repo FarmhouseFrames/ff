@@ -1,1 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Desk Canvases | Farmhouse Frames</title>
+	<link rel="stylesheet" href="./styles.css">
+</head>
+<body data-category="desk-canvases">
+	<div class="page-shell">
+		<header class="topbar">
+			<a class="brand-link" href="../index.html">Farmhouse Frames</a>
+			<nav class="nav-links">
+				<a href="./index.html">All Products</a>
+				<a href="../cart.html">Cart</a>
+				<a href="../pickup.html">Pickup</a>
+			</nav>
+		</header>
+
+		<section class="hero">
+			<div class="eyebrow">Category</div>
+			<h1>Desk Canvases</h1>
+			<p>Compact canvas products for desks, shelves, and small-format display areas.</p>
+		</section>
+
+		<main id="productsRoot" class="products-grid"></main>
+	</div>
+
+	<script type="module">
+		import { loadProducts, matchesCategory, renderProductCard } from './products.js';
+
+		const productsRoot = document.getElementById('productsRoot');
+
+		try {
+			const products = await loadProducts();
+			const filtered = products.filter((product) => matchesCategory(product, 'desk-canvases'));
+			productsRoot.innerHTML = filtered.length
+				? filtered.map(renderProductCard).join('')
+				: `<section class="card empty-state"><h3>No desk canvases yet</h3><p>Add desk canvas products to the shared catalog to populate this page.</p></section>`;
+		} catch (error) {
+			productsRoot.innerHTML = `<section class="card empty-state"><h3>Catalog unavailable</h3><p>${error.message}</p></section>`;
+		}
+	</script>
+</body>
+</html>
 

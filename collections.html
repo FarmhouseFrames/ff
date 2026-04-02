@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop by Product Type - Farmhouse Frames</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<header>
+    Farmhouse Frames
+</header>
+
+<nav>
+    <a href="index.html">Home</a>
+    <a href="products/index.html">Products</a>
+    <a href="pickup.html">Pickup & Shipping</a>
+    <a href="certificates.html">Certificates</a>
+</nav>
+
+<section class="section">
+    <h1>Shop by Product Type</h1>
+    <p class="section-intro">
+        Choose a product type first. You will only see photos and products available for that product type.
+    </p>
+
+    <div class="collections-showcase">
+        <article class="collection-card">
+            <div class="collection-body">
+                <h2>Canvas Prints</h2>
+                <p>Single panel canvas products featuring local Farmhouse Frames photography.</p>
+                <div class="collection-footer">
+                    <a href="products/index.html?category=canvas" class="collection-link">Browse Canvas →</a>
+                </div>
+            </div>
+        </article>
+
+        <article class="collection-card">
+            <div class="collection-body">
+                <h2>Split Canvas</h2>
+                <p>Diptych, triptych, and multi-panel layouts designed for statement walls.</p>
+                <div class="collection-footer">
+                    <a href="products/index.html?category=split-canvas" class="collection-link">Browse Split Canvas →</a>
+                </div>
+            </div>
+        </article>
+
+        <article class="collection-card">
+            <div class="collection-body">
+                <h2>Mounted Prints</h2>
+                <p>Ready to hang mounted sets and curated grouped wall configurations.</p>
+                <div class="collection-footer">
+                    <a href="products/index.html?category=mounted-prints" class="collection-link">Browse Mounted Prints →</a>
+                </div>
+            </div>
+        </article>
+
+        <article class="collection-card">
+            <div class="collection-body">
+                <h2>Puzzles</h2>
+                <p>Photo puzzles in multiple formats and piece counts.</p>
+                <div class="collection-footer">
+                    <a href="products/index.html?category=puzzles" class="collection-link">Browse Puzzles →</a>
+                </div>
+            </div>
+        </article>
+
+        <article class="collection-card">
+            <div class="collection-body">
+                <h2>Cards</h2>
+                <p>Custom card products ready for seasonal and year-round gifting.</p>
+                <div class="collection-footer">
+                    <a href="products/index.html?category=cards" class="collection-link">Browse Cards →</a>
+                </div>
+            </div>
+        </article>
+
+        <article class="collection-card">
+            <div class="collection-body">
+                <h2>Wall Art</h2>
+                <p>Specialty decor styles including framed and dimensional art pieces.</p>
+                <div class="collection-footer">
+                    <a href="products/index.html?category=wall-art" class="collection-link">Browse Wall Art →</a>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <div class="section-actions">
+        <a href="products/index.html?category=all" class="banner-btn">Browse All Products</a>
+    </div>
+
+</section>
+
+<footer>
+    © 2026 Farmhouse Frames — Fine Art Photography in Kentucky
+</footer>
+
+<style>
+/* Collections Showcase Grid */
+.collections-showcase {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 28px;
+    margin: 40px 0;
+}
+
+.collection-card {
+    background: var(--card-bg, #fff);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.collection-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.collection-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: 220px;
+}
+
+.collection-body h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--text-dark, #1a1a1a);
+    font-family: Georgia, serif;
+    line-height: 1.3;
+}
+
+.collection-body p {
+    font-size: 0.95rem;
+    color: var(--text-muted, #666);
+    margin: 0 0 20px 0;
+    line-height: 1.5;
+    flex-grow: 1;
+}
+
+.collection-footer {
+    margin-top: auto;
+}
+
+.collection-link {
+    display: inline-block;
+    color: var(--accent-brown, #8b5a2b);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: color 0.2s ease;
+}
+
+.collection-link:hover {
+    color: var(--accent-brown-dark, #5c3d1b);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 820px) {
+    .collections-showcase {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .section-intro {
+        font-size: 1rem;
+    }
+}
+</style>
+
+</body>
+
+</html>

@@ -9,11 +9,22 @@ create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   price numeric not null default 0,
+  internal_cost numeric not null default 0,
+  internal_shipping numeric not null default 0,
+  customer_shipping numeric not null default 0,
   category text,
+  supplier_name text,
+  supplier_url text,
   description text,
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+alter table public.products add column if not exists supplier_name text;
+alter table public.products add column if not exists supplier_url text;
+alter table public.products add column if not exists internal_cost numeric not null default 0;
+alter table public.products add column if not exists internal_shipping numeric not null default 0;
+alter table public.products add column if not exists customer_shipping numeric not null default 0;
 
 create table if not exists public.product_photos (
   id uuid primary key default gen_random_uuid(),
@@ -59,6 +70,46 @@ create table if not exists public.orders (
   client_id uuid references public.clients(id) on delete set null,
   status text not null default 'pending',
   total numeric not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.order_requests (
+  id uuid primary key default gen_random_uuid(),
+  customer_name text not null,
+  customer_email text not null,
+  fulfillment_method text not null default 'Pickup',
+  notes text,
+  status text not null default 'new',
+  subtotal numeric not null default 0,
+  tax numeric not null default 0,
+  total numeric not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.order_request_items (
+  id uuid primary key default gen_random_uuid(),
+  order_request_id uuid not null references public.order_requests(id) on delete cascade,
+  product_id text,
+  title text not null,
+  size text,
+  quantity integer not null default 1,
+  unit_price numeric not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.supplier_order_packets (
+  id uuid primary key default gen_random_uuid(),
+  order_request_id uuid not null references public.order_requests(id) on delete cascade,
+  supplier_name text not null,
+  supplier_url text,
+  packet_text text not null,
+  customer_total numeric not null default 0,
+  customer_shipping numeric not null default 0,
+  supplier_estimate numeric not null default 0,
+  internal_shipping numeric not null default 0,
+  status text not null default 'prepared',
+  notes text,
+  created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -130,3 +181,11 @@ create table if not exists public.evidence_index (
 create index if not exists idx_uploads_created_at on public.uploads(created_at desc);
 create index if not exists idx_orders_created_at on public.orders(created_at desc);
 create index if not exists idx_products_created_at on public.products(created_at desc);
+create index if not exists idx_order_requests_created_at on public.order_requests(created_at desc);
+create index if not exists idx_order_request_items_order_id on public.order_request_items(order_request_id);
+create index if not exists idx_supplier_order_packets_order_id on public.supplier_order_packets(order_request_id);
+create index if not exists idx_supplier_order_packets_created_at on public.supplier_order_packets(created_at desc);
+
+insert into storage.buckets (id, name, public)
+values ('photo-uploads', 'photo-uploads', true)
+on conflict (id) do nothing;

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split Canvas | Farmhouse Frames</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/site.css">
+    <style>
+        .split-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .split-card {
+            border: 1px solid #d8cfc4;
+            border-radius: 12px;
+            background: #fff;
+            padding: 20px;
+        }
+
+        .split-card h3 {
+            margin-top: 0;
+            color: #5e452b;
+        }
+
+        .split-specs {
+            margin: 10px 0;
+            color: #6d6258;
+            line-height: 1.5;
+        }
+
+        .split-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #7a5c3a;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .split-price {
+            color: #5e452b;
+            font-weight: 700;
+        }
+
+        .split-empty {
+            color: #7a5c3a;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+<header>Farmhouse Frames</header>
+<nav>
+    <a href="index.html">Home</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="splits.html">Split Canvas</a>
+    <a href="catalog.html">Catalog</a>
+    <a href="contact.html">Contact</a>
+</nav>
+
+<section class="section">
+    <h2>Split Canvas Collection</h2>
+    <p class="section-intro">Multi-panel arrangements designed for farmhouse wall displays using local Cadiz photography.</p>
+
+    <div id="splitGrid" class="split-grid"></div>
+</section>
+
+<footer>© 2026 Farmhouse Frames</footer>
+
+<script type="module">
+    import { formatCurrency, loadProducts } from './products/products.js';
+
+    function byKeywords(product, words) {
+        const text = [product.title, product.category, product.description, ...(product.tags || [])].join(' ').toLowerCase();
+        return words.some((word) => text.includes(word));
+    }
+
+    const products = await loadProducts();
+
+    const trio = products.find((product) => byKeywords(product, ['trilogy', 'trio', 'set of 3']))
+        || products.find((product) => byKeywords(product, ['mounted']) && product.sizes.length >= 2);
+
+    const quintet = products.find((product) => byKeywords(product, ['landscape set', '5-piece', 'quintet']))
+        || products.find((product) => byKeywords(product, ['mounted']) && /5/.test(product.description || ''));
+
+    const ensemble = products.find((product) => byKeywords(product, ['ensemble']))
+        || products.find((product) => byKeywords(product, ['premium', 'gallery']) && /5/.test(product.description || ''));
+
+    const layouts = [
+        {
+            title: 'Mounted Quintet (5-Panel Vertical)',
+            specs: '1x 8x20 center panel and 4x 8x8 flank panels.',
+            notes: 'Best for long hallway and staircase walls.',
+            product: quintet
+        },
+        {
+            title: 'Mounted Trio (Multi-Size)',
+            specs: '1x 8x20, 1x 8x10, and 1x 8x8 arrangement.',
+            notes: 'Ideal for narrow farmhouse entry walls.',
+            product: trio
+        },
+        {
+            title: 'Canvas Ensemble (5-Piece Mixed)',
+            specs: '1x 16x20 hero panel, 2x 11x14, and 2x 8x10 side panels.',
+            notes: 'Designed for larger living-room statement walls.',
+            product: ensemble
+        }
+    ];
+
+    const grid = document.getElementById('splitGrid');
+    grid.innerHTML = layouts.map((layout) => {
+        if (!layout.product) {
+            return `
+                <article class="split-card">
+                    <h3>${layout.title}</h3>
+                    <p class="split-specs">${layout.specs}</p>
+                    <p class="split-empty">This layout is currently unavailable.</p>
+                </article>
+            `;
+        }
+
+        return `
+            <article class="split-card">
+                <h3>${layout.title}</h3>
+                <p class="split-specs">${layout.specs}</p>
+                <p class="split-specs">${layout.notes}</p>
+                <p class="split-price">${formatCurrency(layout.product.price, layout.product.currency)}</p>
+                <a class="split-link" href="products/product.html?id=${encodeURIComponent(layout.product.slug)}">View mapped product</a>
+            </article>
+        `;
+    }).join('');
+</script>
+</body>
+</html>

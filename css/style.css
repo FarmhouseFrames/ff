@@ -1,18 +1,31 @@
 /* =========================================================
    GLOBAL STYLES
 ========================================================= */
+:root {
+    --cream: #f6f0e8;
+    --parchment: #ece1d3;
+    --barnwood: #6b4a2f;
+    --barnwood-dark: #4c3422;
+    --field-soil: #8b6a4d;
+    --sage: #607257;
+    --text-main: #2f241b;
+    --border-soft: #ccb79e;
+}
+
 body {
     margin: 0;
-    font-family: Georgia, serif;
-    background-color: #faf8f5;
-    color: #333;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    background:
+        radial-gradient(circle at 20% 10%, rgba(126, 96, 67, 0.1), transparent 35%),
+        linear-gradient(180deg, var(--cream), #f3ece3);
+    color: var(--text-main);
 }
 
 h2 {
     font-family: "Playfair Display", serif;
     font-size: 32px;
-    color: #7a5c3a;
-    border-bottom: 2px solid #d4c7b8;
+    color: var(--barnwood);
+    border-bottom: 2px solid var(--border-soft);
     padding-bottom: 10px;
     margin-bottom: 25px;
 }
@@ -21,39 +34,42 @@ h2 {
    HEADER
 ========================================================= */
 header {
-    background-color: #f0e8df;
+    background: linear-gradient(180deg, #f0e4d5, #e9d8c5);
     padding: 30px 20px;
     text-align: center;
     font-size: 42px;
     font-family: "Playfair Display", serif;
     font-weight: 700;
-    color: #5e452b;
+    color: var(--barnwood-dark);
     letter-spacing: 2px;
-    border-bottom: 3px solid #d4c7b8;
+    border-bottom: 3px solid var(--border-soft);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.55);
 }
 
 /* =========================================================
    NAVIGATION
 ========================================================= */
 nav {
-    background-color: #e6dbcf;
+    background: linear-gradient(180deg, #e5d5c2, #dcc8b2);
     padding: 14px 10px;
     display: flex;
     justify-content: center;
     gap: 32px;
     font-size: 18px;
-    border-bottom: 2px solid #d4c7b8;
+    border-bottom: 2px solid var(--border-soft);
 }
 
 nav a {
-    color: #5e452b;
+    color: var(--barnwood-dark);
     font-weight: bold;
     text-decoration: none;
-    transition: color 0.2s ease;
+    letter-spacing: 0.02em;
+    transition: color 0.2s ease, transform 0.2s ease;
 }
 
 nav a:hover {
-    color: #7a5c3a;
+    color: var(--barnwood);
+    transform: translateY(-1px);
 }
 
 /* =========================================================
@@ -71,11 +87,9 @@ nav a:hover {
 .banner-overlay {
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-        to bottom,
-        rgba(0,0,0,0.15),
-        rgba(250,248,245,0.95)
-    );
+    background:
+        linear-gradient(to bottom, rgba(44,29,18,0.12), rgba(246,240,232,0.94)),
+        radial-gradient(circle at 70% 20%, rgba(255,255,255,0.35), transparent 40%);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -90,9 +104,10 @@ nav a:hover {
     font-size: 110px;
     font-weight: normal;
     margin: 0;
-    color: #5e452b;
+    color: var(--barnwood-dark);
     line-height: 0.8;
     letter-spacing: 1px;
+    text-shadow: 0 2px 8px rgba(255,255,255,0.55);
 }
 
 /* Banner Subtitle */
@@ -100,7 +115,7 @@ nav a:hover {
     font-family: "Playfair Display", serif;
     font-size: 22px;
     margin: 15px 0 25px;
-    color: #7A5C3A;
+    color: var(--barnwood);
     font-weight: 500;
     letter-spacing: 0.5px;
 }
@@ -108,18 +123,19 @@ nav a:hover {
 /* Banner Button */
 .banner-btn {
     display: inline-block;
-    background-color: #7A5C3A;
+    background: linear-gradient(180deg, #7f5a3a, #6c4c31);
     color: white;
     padding: 14px 28px;
     border-radius: 6px;
     text-decoration: none;
     font-weight: bold;
     font-size: 18px;
-    transition: background-color 0.25s ease;
+    transition: background-color 0.25s ease, transform 0.2s ease;
 }
 
 .banner-btn:hover {
-    background-color: #5e452b;
+    background: linear-gradient(180deg, #6e4f33, #5a3f29);
+    transform: translateY(-1px);
 }
 
 /* =========================================================
@@ -170,7 +186,7 @@ nav a:hover {
     height: 100%;
     backface-visibility: hidden;
     border-radius: 10px;
-    border: 1px solid #d8cfc4;
+    border: 1px solid var(--border-soft);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -181,14 +197,14 @@ nav a:hover {
 
 /* Front side */
 .flip-front {
-    background: #ffffff;
-    color: #7a5c3a;
+    background: linear-gradient(180deg, #fffdfa, #f5ece2);
+    color: var(--barnwood);
     overflow: hidden;
 }
 
 /* Back side */
 .flip-back {
-    background: #7a5c3a;
+    background: linear-gradient(180deg, #7a5b3d, #65482f);
     color: #ffffff;
     transform: rotateY(180deg);
     text-align: center;
@@ -206,13 +222,97 @@ nav a:hover {
 }
 
 /* =========================================================
+   FEATURED PRODUCTS
+========================================================= */
+.section-intro {
+    margin-bottom: 30px;
+    color: var(--field-soil);
+    line-height: 1.6;
+}
+
+.featured-products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+}
+
+.featured-product-card {
+    background: #fffdfa;
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+}
+
+.featured-product-image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    display: block;
+    background: linear-gradient(135deg, #ead8c7, #d9bda7);
+}
+
+.featured-product-body {
+    padding: 18px;
+}
+
+.featured-product-category,
+.catalog-status,
+.featured-size {
+    color: var(--barnwood);
+}
+
+.featured-product-body h3 {
+    margin: 0 0 10px;
+    color: var(--barnwood-dark);
+}
+
+.featured-product-body p {
+    margin: 0;
+    color: #5f4e3e;
+    line-height: 1.5;
+}
+
+.featured-product-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 14px 0;
+    font-size: 14px;
+}
+
+.featured-price {
+    color: var(--sage);
+    font-weight: bold;
+}
+
+.featured-product-link {
+    color: var(--barnwood);
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.section-actions {
+    margin-top: 24px;
+    text-align: center;
+}
+
+.catalog-status {
+    padding: 20px;
+    text-align: center;
+    background: #fffdfa;
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+}
+
+/* =========================================================
    FOOTER
 ========================================================= */
 footer {
-    background-color: #e8dfd3;
+    background: linear-gradient(180deg, #e8dccf, #decebc);
     padding: 20px;
     text-align: center;
     margin-top: 40px;
     font-size: 16px;
-    color: #5e452b;
+    color: var(--barnwood-dark);
 }

@@ -2,81 +2,1420 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Farmhouse Frames Photo Cutter</title>
     <style>
-        body { 
-            margin: 0; font-family: Arial, sans-serif; background: #f4f6f8; color: #222; 
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg: #efe6d8;
+            --paper: rgba(255, 251, 246, 0.86);
+            --paper-strong: rgba(255, 249, 241, 0.94);
+            --ink: #2c241d;
+            --muted: #6d6258;
+            --line: rgba(75, 57, 41, 0.14);
+            --accent: #9e5f3b;
+            --accent-deep: #5d3320;
+            --shadow: 0 24px 60px rgba(82, 54, 34, 0.16);
+            --radius: 24px;
         }
-        .sidebar {
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 36%),
+                radial-gradient(circle at right 20%, rgba(198, 145, 106, 0.25), transparent 28%),
+                linear-gradient(140deg, #f3eadf 0%, #ecdccc 52%, #f7f1ea 100%);
+        }
+
+        body::before,
+        body::after {
+            content: '';
             position: fixed;
-            left: 0; top: 0; bottom: 0; width: 200px;
-            background: #263238; color: #fff;
-            padding: 20px 0;
+            inset: auto;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(6px);
         }
-        .sidebar h2 { margin: 0 0 20px 20px; }
-        .sidebar ul { list-style: none; padding: 0; margin: 0; }
-        .sidebar ul li { margin: 20px 0; }
-        .sidebar ul li a { color: #fff; text-decoration: none; padding: 10px 20px; display: block; border-radius: 4px; }
-        .sidebar ul li a:hover { background: #455a64; }
-        .main {
-            margin-left: 220px;
-            padding: 30px;
+
+        body::before {
+            top: -120px;
+            right: -80px;
+            width: 320px;
+            height: 320px;
+            background: rgba(158, 95, 59, 0.18);
+            border-radius: 44% 56% 65% 35% / 44% 38% 62% 56%;
         }
-        .header {
-            background: #fff;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 20px 30px;
-            font-size: 1.5em;
-            font-weight: bold;
+
+        body::after {
+            bottom: -100px;
+            left: -90px;
+            width: 280px;
+            height: 280px;
+            background: rgba(102, 76, 47, 0.12);
+            border-radius: 58% 42% 40% 60% / 54% 50% 50% 46%;
         }
-        .widgets {
-            display: flex; gap: 30px; margin-top: 30px;
+
+        .app-shell {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+            gap: 24px;
+            padding: 24px;
+        }
+
+        .panel,
+        .workspace-card,
+        .panel-card,
+        .stat-card {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+        }
+
+        .panel {
+            padding: 24px;
+            position: sticky;
+            top: 24px;
+            align-self: start;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: var(--muted);
+        }
+
+        .eyebrow::before {
+            content: '';
+            width: 36px;
+            height: 1px;
+            background: rgba(93, 51, 32, 0.38);
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Fraunces', serif;
+            margin: 0;
+            letter-spacing: -0.03em;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 4vw, 3.35rem);
+            line-height: 0.96;
+            margin-top: 10px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+        }
+
+        p {
+            margin: 0;
+            line-height: 1.6;
+            color: var(--muted);
+        }
+
+        .intro {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tool-group {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding-top: 20px;
+            border-top: 1px solid var(--line);
+        }
+
+        .tool-group:first-of-type {
+            border-top: 0;
+            padding-top: 0;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .field-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 0.92rem;
+            color: var(--ink);
+        }
+
+        .value {
+            color: var(--muted);
+            font-size: 0.85rem;
+            min-width: 56px;
+            text-align: right;
+        }
+
+        input[type="file"],
+        select,
+        input[type="number"] {
+            width: 100%;
+            border: 1px solid rgba(93, 51, 32, 0.18);
+            border-radius: 16px;
+            background: var(--paper-strong);
+            color: var(--ink);
+            padding: 14px 16px;
+            font: inherit;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+        }
+
+        .actions,
+        .tool-actions {
+            display: flex;
             flex-wrap: wrap;
+            gap: 10px;
         }
-        .widget {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-            padding: 20px;
-            flex: 1;
-            min-width: 200px;
+
+        button {
+            border: 0;
+            border-radius: 999px;
+            padding: 12px 16px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
         }
-        .widget h3 { margin-top: 0; }
-        @media (max-width: 800px) {
-            .widgets { flex-direction: column; }
-            .main { margin-left: 0; }
-            .sidebar { position: relative; width: 100%; }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #b56b44 0%, #8f4f31 100%);
+            color: #fffaf6;
+            box-shadow: 0 14px 24px rgba(143, 79, 49, 0.22);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 252, 247, 0.9);
+            color: var(--accent-deep);
+            border: 1px solid rgba(93, 51, 32, 0.14);
+        }
+
+        .status {
+            min-height: 22px;
+            font-size: 0.92rem;
+            color: var(--muted);
+        }
+
+        .workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .hero {
+            padding: 28px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.9fr);
+            gap: 20px;
+            align-items: end;
+        }
+
+        .hero-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .hero-copy strong {
+            color: var(--accent-deep);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .stat-card {
+            padding: 18px;
+            background: rgba(255, 250, 245, 0.78);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+        }
+
+        .stat-value {
+            font-family: 'Fraunces', serif;
+            font-size: 1.75rem;
+            margin-top: 8px;
+        }
+
+        .workspace-card {
+            padding: 24px;
+        }
+
+        .workspace-card-header {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .canvas-frame {
+            position: relative;
+            border-radius: 24px;
+            padding: 18px;
+            background:
+                linear-gradient(180deg, rgba(117, 73, 42, 0.08), rgba(117, 73, 42, 0.02)),
+                repeating-linear-gradient(
+                    135deg,
+                    rgba(255, 255, 255, 0.3) 0,
+                    rgba(255, 255, 255, 0.3) 8px,
+                    rgba(255, 255, 255, 0.12) 8px,
+                    rgba(255, 255, 255, 0.12) 16px
+                );
+            border: 1px solid rgba(93, 51, 32, 0.1);
+        }
+
+        #compositionCanvas {
+            width: 100%;
+            display: block;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(80, 57, 38, 0.9), rgba(37, 28, 21, 0.94));
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+        }
+
+        #compositionCanvas.is-dragging {
+            cursor: grabbing;
+        }
+
+        .empty-note {
+            position: absolute;
+            inset: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+            border-radius: 18px;
+            color: rgba(255, 247, 239, 0.82);
+            background: linear-gradient(180deg, rgba(24, 20, 17, 0.18), rgba(24, 20, 17, 0.34));
+            pointer-events: none;
+        }
+
+        .panel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .panel-card {
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel-card canvas {
+            width: 100%;
+            display: block;
+            background: linear-gradient(145deg, #f6efe7, #ebddcf);
+            border-radius: 18px;
+            border: 1px solid rgba(93, 51, 32, 0.08);
+        }
+
+        .panel-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .panel-card-header span {
+            color: var(--muted);
+            font-size: 0.86rem;
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .preset-meta {
+            margin-top: 8px;
+            font-size: 0.84rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 8px 12px;
+            background: rgba(158, 95, 59, 0.08);
+            color: var(--accent-deep);
+            font-size: 0.84rem;
+            font-weight: 700;
+        }
+
+        @media (max-width: 1100px) {
+            .app-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                position: static;
+            }
+
+            .hero {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .app-shell {
+                padding: 14px;
+                gap: 14px;
+            }
+
+            .panel,
+            .workspace-card,
+            .hero,
+            .stat-card,
+            .panel-card {
+                padding: 18px;
+                border-radius: 20px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .workspace-card-header,
+            .panel-card-header,
+            .actions,
+            .tool-actions {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <h2>Admin</h2>
-        <ul>
-            <li><a href="#">Dashboard</a></li>
-            <li><a href="#">Users</a></li>
-            <li><a href="#">Orders</a></li>
-            <li><a href="#">Settings</a></li>
-            <li><a href="#">Log Out</a></li>
-        </ul>
+    <div class="app-shell">
+        <aside class="panel">
+            <div class="intro">
+                <div class="eyebrow">Studio Cutter</div>
+                <h1>Photo editing and canvas cutting tools</h1>
+                <p>Upload one image, dial in the crop, then split it into ready-to-export canvas panels for diptychs, triptychs, quad grids, or five-panel walls.</p>
+            </div>
+
+            <section class="tool-group">
+                <div>
+                    <h2>1. Add a photo</h2>
+                    <p class="help-text">Large images work best. Everything on this page runs in the browser.</p>
+                </div>
+                <div class="field">
+                    <input id="imageInput" type="file" accept="image/*">
+                </div>
+                <div class="actions">
+                    <button id="resetAllBtn" class="btn-secondary" type="button">Reset everything</button>
+                </div>
+                <div id="statusText" class="status">No image loaded.</div>
+            </section>
+
+            <section class="tool-group">
+                <div>
+                    <h2>2. Edit the composition</h2>
+                    <p class="help-text">Zoom, move, rotate, and tone the photo before it is cut into panels.</p>
+                </div>
+
+                <label class="field">
+                    <div class="field-row"><span>Zoom</span><span id="zoomValue" class="value">100%</span></div>
+                    <input id="zoom" type="range" min="1" max="3" step="0.01" value="1">
+                </label>
+
+                <label class="field">
+                    <div class="field-row"><span>Horizontal crop</span><span id="panXValue" class="value">0%</span></div>
+                    <input id="panX" type="range" min="-100" max="100" step="1" value="0">
+                </label>
+
+                <label class="field">
+                    <div class="field-row"><span>Vertical crop</span><span id="panYValue" class="value">0%</span></div>
+                    <input id="panY" type="range" min="-100" max="100" step="1" value="0">
+                </label>
+
+                <label class="field">
+                    <div class="field-row"><span>Rotation</span><span id="rotationValue" class="value">0°</span></div>
+                    <input id="rotation" type="range" min="-180" max="180" step="1" value="0">
+                </label>
+
+                <label class="field">
+                    <div class="field-row"><span>Brightness</span><span id="brightnessValue" class="value">100%</span></div>
+                    <input id="brightness" type="range" min="50" max="150" step="1" value="100">
+                </label>
+
+                <label class="field">
+                    <div class="field-row"><span>Contrast</span><span id="contrastValue" class="value">100%</span></div>
+                    <input id="contrast" type="range" min="50" max="160" step="1" value="100">
+                </label>
+
+                <label class="field">
+                    <div class="field-row"><span>Saturation</span><span id="saturationValue" class="value">100%</span></div>
+                    <input id="saturation" type="range" min="0" max="200" step="1" value="100">
+                </label>
+
+                <label class="field">
+                    <div class="field-row"><span>Grayscale</span><span id="grayscaleValue" class="value">0%</span></div>
+                    <input id="grayscale" type="range" min="0" max="100" step="1" value="0">
+                </label>
+
+                <label class="field">
+                    <div class="field-row"><span>Sepia</span><span id="sepiaValue" class="value">0%</span></div>
+                    <input id="sepia" type="range" min="0" max="100" step="1" value="0">
+                </label>
+            </section>
+
+            <section class="tool-group">
+                <div>
+                    <h2>3. Cut into canvases</h2>
+                    <p class="help-text">Choose the panel arrangement, canvas ratio, and exported panel width.</p>
+                </div>
+
+                <label class="field">
+                    <div class="field-row"><span>Layout</span></div>
+                    <select id="layout">
+                        <option value="diptych">2 panel split</option>
+                        <option value="triptych" selected>3 panel split</option>
+                        <option value="quad">4 panel grid</option>
+                        <option value="fivePanel">5 panel gallery</option>
+                    </select>
+                </label>
+
+                <label class="field">
+                    <div class="field-row"><span>Product preset</span></div>
+                    <select id="presetSelect">
+                        <option value="custom" selected>Custom layout</option>
+                        <option value="mounted-set-3">Mounted Set of 3</option>
+                        <option value="mounted-trilogy">Mounted Trilogy</option>
+                        <option value="mounted-landscape-5">Mounted Landscape Set</option>
+                        <option value="mounted-ensemble-5">Mounted Ensemble of 5</option>
+                    </select>
+                    <div id="presetMeta" class="preset-meta">Use a preset to match the current mounted print catalog sizes and panel counts.</div>
+                </label>
+
+                <label class="field">
+                    <div class="field-row"><span>Canvas ratio</span></div>
+                    <select id="aspect">
+                        <option value="portrait" selected>Portrait 4:5</option>
+                        <option value="square">Square 1:1</option>
+                        <option value="landscape">Landscape 3:2</option>
+                        <option value="panorama">Panorama 16:9</option>
+                    </select>
+                </label>
+
+                <label class="field">
+                    <div class="field-row"><span>Panel edge style</span></div>
+                    <select id="edgeStyle">
+                        <option value="rect" selected>Classic rectangle</option>
+                        <option value="rounded">Rounded corners</option>
+                        <option value="arch">Arch top</option>
+                        <option value="ellipse">Ellipse crop</option>
+                    </select>
+                </label>
+
+                <label class="field">
+                    <div class="field-row"><span>Export panel width</span></div>
+                    <input id="panelWidth" type="number" min="600" max="4000" step="100" value="1600">
+                </label>
+
+                <div class="tool-actions">
+                    <button id="downloadAllBtn" class="btn-primary" type="button">Download all panels</button>
+                    <button id="downloadSheetBtn" class="btn-secondary" type="button">Download contact sheet</button>
+                </div>
+            </section>
+        </aside>
+
+        <main class="workspace">
+            <section class="hero panel">
+                <div class="hero-copy">
+                    <div class="eyebrow">Live Preview</div>
+                    <h2>Move the full artwork once, then let the page cut every panel from the same master composition.</h2>
+                    <p><strong>Best use:</strong> centered family photos, panoramic landscapes, and room mockups that need consistent spacing across multiple canvases.</p>
+                </div>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Panels</div>
+                        <div id="panelCountStat" class="stat-value">3</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Canvas ratio</div>
+                        <div id="aspectStat" class="stat-value">4:5</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Panel size</div>
+                        <div id="resolutionStat" class="stat-value">1600 × 2000</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="workspace-card">
+                <div class="workspace-card-header">
+                    <div>
+                        <div class="eyebrow">Master Composition</div>
+                        <h2>Whole wall preview</h2>
+                    </div>
+                    <div id="layoutBadge" class="pill">3 panel split</div>
+                </div>
+
+                <div class="canvas-frame">
+                    <canvas id="compositionCanvas" width="1200" height="800"></canvas>
+                    <div id="emptyNote" class="empty-note">Upload a photo to start editing and cutting it into multiple canvas panels.</div>
+                </div>
+            </section>
+
+            <section class="workspace-card">
+                <div class="workspace-card-header">
+                    <div>
+                        <div class="eyebrow">Cut Panels</div>
+                        <h2>Individual canvas exports</h2>
+                    </div>
+                    <div class="pill">Transparent PNG export</div>
+                </div>
+
+                <div id="panelGrid" class="panel-grid"></div>
+            </section>
+        </main>
     </div>
-    <div class="main">
-        <div class="header">Dashboard Overview</div>
-        <div class="widgets">
-            <div class="widget">
-                <h3>Users</h3>
-                <p>1,234</p>
-            </div>
-            <div class="widget">
-                <h3>Orders</h3>
-                <p>567</p>
-            </div>
-            <div class="widget">
-                <h3>Revenue</h3>
-                <p>$12,345</p>
-            </div>
-        </div>
-    </div>
+
+    <script>
+        const layouts = {
+            diptych: {
+                label: '2 panel split',
+                cols: 2,
+                rows: 1,
+                panels: [
+                    { x: 0, y: 0, label: 'Panel 1' },
+                    { x: 1, y: 0, label: 'Panel 2' }
+                ]
+            },
+            triptych: {
+                label: '3 panel split',
+                cols: 3,
+                rows: 1,
+                panels: [
+                    { x: 0, y: 0, label: 'Panel 1' },
+                    { x: 1, y: 0, label: 'Panel 2' },
+                    { x: 2, y: 0, label: 'Panel 3' }
+                ]
+            },
+            quad: {
+                label: '4 panel grid',
+                cols: 2,
+                rows: 2,
+                panels: [
+                    { x: 0, y: 0, label: 'Panel 1' },
+                    { x: 1, y: 0, label: 'Panel 2' },
+                    { x: 0, y: 1, label: 'Panel 3' },
+                    { x: 1, y: 1, label: 'Panel 4' }
+                ]
+            },
+            fivePanel: {
+                label: '5 panel gallery',
+                cols: 5,
+                rows: 1,
+                panels: [
+                    { x: 0, y: 0, label: 'Panel 1' },
+                    { x: 1, y: 0, label: 'Panel 2' },
+                    { x: 2, y: 0, label: 'Panel 3' },
+                    { x: 3, y: 0, label: 'Panel 4' },
+                    { x: 4, y: 0, label: 'Panel 5' }
+                ]
+            }
+        };
+
+        const aspects = {
+            portrait: { label: '4:5', width: 4, height: 5 },
+            square: { label: '1:1', width: 1, height: 1 },
+            landscape: { label: '3:2', width: 3, height: 2 },
+            panorama: { label: '16:9', width: 16, height: 9 }
+        };
+
+        const presetCatalog = {
+            custom: {
+                label: 'Custom layout',
+                description: 'Use any layout, aspect ratio, and export size you want.',
+                layout: 'triptych',
+                aspect: 'portrait',
+                panelWidth: 1600,
+                edgeStyle: 'rect',
+                exportLabel: 'Flexible export'
+            },
+            'mounted-set-3': {
+                label: 'Mounted Set of 3',
+                description: '3 × 8×20 vertical panels from the current catalog.',
+                layout: 'triptych',
+                aspect: 'portrait',
+                panelWidth: 800,
+                edgeStyle: 'rect',
+                exportLabel: '3 × 8×20'
+            },
+            'mounted-trilogy': {
+                label: 'Mounted Trilogy',
+                description: 'Catalog trilogy set sized for 11×14 and 8×10 mounted prints.',
+                layout: 'triptych',
+                aspect: 'portrait',
+                panelWidth: 1100,
+                edgeStyle: 'rect',
+                exportLabel: '11×14 hero with 8×10 companions',
+                compositionWidth: 27,
+                compositionHeight: 14,
+                panelDefinitions: [
+                    { label: 'Left companion', x: 0, y: 2, width: 8, height: 10, sizeLabel: '8×10' },
+                    { label: 'Center hero', x: 8, y: 0, width: 11, height: 14, sizeLabel: '11×14' },
+                    { label: 'Right companion', x: 19, y: 2, width: 8, height: 10, sizeLabel: '8×10' }
+                ]
+            },
+            'mounted-landscape-5': {
+                label: 'Mounted Landscape Set',
+                description: '5-piece wall set with 8×20, 8×10, and 8×8 crops in the catalog.',
+                layout: 'fivePanel',
+                aspect: 'square',
+                panelWidth: 800,
+                edgeStyle: 'rect',
+                exportLabel: '8×20 / 8×10 / 8×8 mixed wall',
+                compositionWidth: 24,
+                compositionHeight: 20,
+                panelDefinitions: [
+                    { label: 'Top left', x: 0, y: 0, width: 8, height: 10, sizeLabel: '8×10' },
+                    { label: 'Center tall', x: 8, y: 0, width: 8, height: 20, sizeLabel: '8×20' },
+                    { label: 'Top right', x: 16, y: 0, width: 8, height: 10, sizeLabel: '8×10' },
+                    { label: 'Bottom left', x: 0, y: 12, width: 8, height: 8, sizeLabel: '8×8' },
+                    { label: 'Bottom right', x: 16, y: 12, width: 8, height: 8, sizeLabel: '8×8' }
+                ]
+            },
+            'mounted-ensemble-5': {
+                label: 'Mounted Ensemble of 5',
+                description: 'Premium 5-piece mounted gallery wall from the current catalog.',
+                layout: 'fivePanel',
+                aspect: 'portrait',
+                panelWidth: 1100,
+                edgeStyle: 'rect',
+                exportLabel: '8×20 with 11×14 and 8×10 mix',
+                compositionWidth: 30,
+                compositionHeight: 20,
+                panelDefinitions: [
+                    { label: 'Top left', x: 0, y: 0, width: 11, height: 14, sizeLabel: '11×14' },
+                    { label: 'Center tall', x: 11, y: 0, width: 8, height: 20, sizeLabel: '8×20' },
+                    { label: 'Top right', x: 19, y: 0, width: 11, height: 14, sizeLabel: '11×14' },
+                    { label: 'Bottom left', x: 1.5, y: 10, width: 8, height: 10, sizeLabel: '8×10' },
+                    { label: 'Bottom right', x: 20.5, y: 10, width: 8, height: 10, sizeLabel: '8×10' }
+                ]
+            }
+        };
+
+        const defaultState = {
+            zoom: 1,
+            panX: 0,
+            panY: 0,
+            rotation: 0,
+            brightness: 100,
+            contrast: 100,
+            saturation: 100,
+            grayscale: 0,
+            sepia: 0,
+            layout: 'triptych',
+            aspect: 'portrait',
+            edgeStyle: 'rect',
+            panelWidth: 1600,
+            preset: 'custom'
+        };
+
+        const state = { ...defaultState, image: null, fileName: '' };
+
+        const compositionCanvas = document.getElementById('compositionCanvas');
+        const compositionContext = compositionCanvas.getContext('2d');
+        const panelGrid = document.getElementById('panelGrid');
+        const imageInput = document.getElementById('imageInput');
+        const statusText = document.getElementById('statusText');
+        const emptyNote = document.getElementById('emptyNote');
+        const layoutBadge = document.getElementById('layoutBadge');
+        const panelCountStat = document.getElementById('panelCountStat');
+        const aspectStat = document.getElementById('aspectStat');
+        const resolutionStat = document.getElementById('resolutionStat');
+        const presetMeta = document.getElementById('presetMeta');
+
+        const controls = {
+            zoom: document.getElementById('zoom'),
+            panX: document.getElementById('panX'),
+            panY: document.getElementById('panY'),
+            rotation: document.getElementById('rotation'),
+            brightness: document.getElementById('brightness'),
+            contrast: document.getElementById('contrast'),
+            saturation: document.getElementById('saturation'),
+            grayscale: document.getElementById('grayscale'),
+            sepia: document.getElementById('sepia'),
+            layout: document.getElementById('layout'),
+            preset: document.getElementById('presetSelect'),
+            aspect: document.getElementById('aspect'),
+            edgeStyle: document.getElementById('edgeStyle'),
+            panelWidth: document.getElementById('panelWidth')
+        };
+
+        const outputFields = {
+            zoom: document.getElementById('zoomValue'),
+            panX: document.getElementById('panXValue'),
+            panY: document.getElementById('panYValue'),
+            rotation: document.getElementById('rotationValue'),
+            brightness: document.getElementById('brightnessValue'),
+            contrast: document.getElementById('contrastValue'),
+            saturation: document.getElementById('saturationValue'),
+            grayscale: document.getElementById('grayscaleValue'),
+            sepia: document.getElementById('sepiaValue')
+        };
+
+        let renderQueued = false;
+        let dragState = null;
+
+        function getLayout() {
+            return layouts[state.layout];
+        }
+
+        function getAspect() {
+            return aspects[state.aspect];
+        }
+
+        function getPreset() {
+            return presetCatalog[state.preset] || presetCatalog.custom;
+        }
+
+        function getPanelHeight() {
+            const aspect = getAspect();
+            return Math.round(state.panelWidth * (aspect.height / aspect.width));
+        }
+
+        function getPanelBlueprint() {
+            const preset = getPreset();
+
+            if (preset.panelDefinitions) {
+                const scale = state.panelWidth / 8;
+                return {
+                    mixed: true,
+                    compositionWidth: preset.compositionWidth * scale,
+                    compositionHeight: preset.compositionHeight * scale,
+                    panels: preset.panelDefinitions.map((panel, index) => ({
+                        ...panel,
+                        index,
+                        pxX: Math.round(panel.x * scale),
+                        pxY: Math.round(panel.y * scale),
+                        pxWidth: Math.round(panel.width * scale),
+                        pxHeight: Math.round(panel.height * scale)
+                    }))
+                };
+            }
+
+            const layout = getLayout();
+            const aspect = getAspect();
+            const panelHeight = getPanelHeight();
+
+            return {
+                mixed: false,
+                compositionWidth: layout.cols * state.panelWidth,
+                compositionHeight: layout.rows * panelHeight,
+                panels: layout.panels.map((panel, index) => ({
+                    ...panel,
+                    index,
+                    sizeLabel: `${aspect.label}`,
+                    pxX: panel.x * state.panelWidth,
+                    pxY: panel.y * panelHeight,
+                    pxWidth: state.panelWidth,
+                    pxHeight: panelHeight
+                }))
+            };
+        }
+
+        function getFilterString() {
+            return [
+                `brightness(${state.brightness}%)`,
+                `contrast(${state.contrast}%)`,
+                `saturate(${state.saturation}%)`,
+                `grayscale(${state.grayscale}%)`,
+                `sepia(${state.sepia}%)`
+            ].join(' ');
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(max, Math.max(min, value));
+        }
+
+        function updateOutputs() {
+            outputFields.zoom.textContent = `${Math.round(state.zoom * 100)}%`;
+            outputFields.panX.textContent = `${state.panX}%`;
+            outputFields.panY.textContent = `${state.panY}%`;
+            outputFields.rotation.textContent = `${state.rotation}°`;
+            outputFields.brightness.textContent = `${state.brightness}%`;
+            outputFields.contrast.textContent = `${state.contrast}%`;
+            outputFields.saturation.textContent = `${state.saturation}%`;
+            outputFields.grayscale.textContent = `${state.grayscale}%`;
+            outputFields.sepia.textContent = `${state.sepia}%`;
+
+            const layout = getLayout();
+            const preset = getPreset();
+            panelCountStat.textContent = String(layout.panels.length);
+            aspectStat.textContent = preset.panelDefinitions ? 'Mixed set' : getAspect().label;
+            resolutionStat.textContent = preset.panelDefinitions ? preset.exportLabel : `${state.panelWidth} × ${getPanelHeight()}`;
+            layoutBadge.textContent = layout.label;
+            presetMeta.textContent = `${preset.label}: ${preset.description} ${preset.exportLabel ? `(${preset.exportLabel})` : ''}`;
+        }
+
+        function resetControls() {
+            Object.entries(defaultState).forEach(([key, value]) => {
+                if (key in controls) {
+                    controls[key].value = String(value);
+                    state[key] = typeof value === 'number' ? value : value;
+                }
+            });
+            controls.preset.value = defaultState.preset;
+            updateOutputs();
+            queueRender();
+        }
+
+        function setControlValue(controlName, value) {
+            if (!(controlName in controls)) {
+                return;
+            }
+
+            state[controlName] = value;
+            controls[controlName].value = String(value);
+        }
+
+        function applyPreset(presetKey) {
+            const preset = presetCatalog[presetKey] || presetCatalog.custom;
+            state.preset = presetKey in presetCatalog ? presetKey : 'custom';
+            controls.preset.value = state.preset;
+            setControlValue('layout', preset.layout);
+            setControlValue('aspect', preset.aspect);
+            setControlValue('panelWidth', preset.panelWidth);
+            setControlValue('edgeStyle', preset.edgeStyle);
+            updateOutputs();
+            queueRender();
+        }
+
+        function createDownloadName(index, suffix) {
+            const rawName = state.fileName || 'canvas-design';
+            const safeName = rawName.replace(/\.[^.]+$/, '').replace(/[^a-z0-9-_]+/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'canvas-design';
+            return `${safeName}-${suffix}-${index}.png`;
+        }
+
+        function triggerDownload(dataUrl, fileName) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = fileName;
+            link.click();
+        }
+
+        function applyPanelClip(context, width, height) {
+            context.beginPath();
+
+            if (state.edgeStyle === 'rounded') {
+                const radius = Math.min(width, height) * 0.08;
+                context.roundRect(0, 0, width, height, radius);
+            } else if (state.edgeStyle === 'ellipse') {
+                context.ellipse(width / 2, height / 2, width / 2, height / 2, 0, 0, Math.PI * 2);
+            } else if (state.edgeStyle === 'arch') {
+                const archHeight = height * 0.32;
+                context.moveTo(0, height);
+                context.lineTo(0, archHeight);
+                context.quadraticCurveTo(width / 2, -archHeight * 0.5, width, archHeight);
+                context.lineTo(width, height);
+                context.closePath();
+            } else {
+                context.rect(0, 0, width, height);
+            }
+
+            context.clip();
+        }
+
+        function drawImageAcrossComposition(context, compositionWidth, compositionHeight) {
+            if (!state.image) {
+                return;
+            }
+
+            const image = state.image;
+            const coverScale = Math.max(compositionWidth / image.width, compositionHeight / image.height) * state.zoom;
+            const panOffsetX = (state.panX / 100) * compositionWidth * 0.35;
+            const panOffsetY = (state.panY / 100) * compositionHeight * 0.35;
+
+            context.save();
+            context.filter = getFilterString();
+            context.translate((compositionWidth / 2) + panOffsetX, (compositionHeight / 2) + panOffsetY);
+            context.rotate((state.rotation * Math.PI) / 180);
+            context.scale(coverScale, coverScale);
+            context.drawImage(image, -image.width / 2, -image.height / 2);
+            context.restore();
+        }
+
+        function drawPanelCanvas(canvas, panel, blueprint = getPanelBlueprint()) {
+            const width = panel.pxWidth;
+            const height = panel.pxHeight;
+            const compositionWidth = blueprint.compositionWidth;
+            const compositionHeight = blueprint.compositionHeight;
+            const context = canvas.getContext('2d');
+
+            canvas.width = width;
+            canvas.height = height;
+            context.clearRect(0, 0, width, height);
+
+            context.save();
+            applyPanelClip(context, width, height);
+            context.translate(-panel.pxX, -panel.pxY);
+            drawImageAcrossComposition(context, compositionWidth, compositionHeight);
+            context.restore();
+
+            if (!state.image) {
+                context.fillStyle = '#f1e6d8';
+                context.fillRect(0, 0, width, height);
+                context.fillStyle = '#806955';
+                context.font = `${Math.max(20, width * 0.055)}px Manrope`;
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText('Waiting for photo', width / 2, height / 2);
+            }
+
+            if (state.edgeStyle !== 'rect') {
+                context.save();
+                context.strokeStyle = 'rgba(93, 51, 32, 0.22)';
+                context.lineWidth = Math.max(2, width * 0.006);
+                context.beginPath();
+
+                if (state.edgeStyle === 'rounded') {
+                    const radius = Math.min(width, height) * 0.08;
+                    context.roundRect(context.lineWidth / 2, context.lineWidth / 2, width - context.lineWidth, height - context.lineWidth, radius);
+                } else if (state.edgeStyle === 'ellipse') {
+                    context.ellipse(width / 2, height / 2, (width - context.lineWidth) / 2, (height - context.lineWidth) / 2, 0, 0, Math.PI * 2);
+                } else if (state.edgeStyle === 'arch') {
+                    const archHeight = height * 0.32;
+                    context.moveTo(context.lineWidth / 2, height - context.lineWidth / 2);
+                    context.lineTo(context.lineWidth / 2, archHeight);
+                    context.quadraticCurveTo(width / 2, -archHeight * 0.5, width - context.lineWidth / 2, archHeight);
+                    context.lineTo(width - context.lineWidth / 2, height - context.lineWidth / 2);
+                    context.closePath();
+                }
+
+                context.stroke();
+                context.restore();
+            }
+
+            return { width, height };
+        }
+
+        function drawCompositionPreview() {
+            const layout = getLayout();
+            const blueprint = getPanelBlueprint();
+            const frameWidth = compositionCanvas.parentElement.clientWidth - 36;
+            const previewWidth = Math.max(320, Math.floor(frameWidth));
+            const previewHeight = Math.max(240, Math.floor(previewWidth * (blueprint.compositionHeight / blueprint.compositionWidth)));
+            const deviceRatio = window.devicePixelRatio || 1;
+
+            compositionCanvas.width = Math.floor(previewWidth * deviceRatio);
+            compositionCanvas.height = Math.floor(previewHeight * deviceRatio);
+            compositionCanvas.style.height = `${previewHeight}px`;
+
+            compositionContext.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
+            compositionContext.clearRect(0, 0, previewWidth, previewHeight);
+
+            const background = compositionContext.createLinearGradient(0, 0, previewWidth, previewHeight);
+            background.addColorStop(0, '#4a3528');
+            background.addColorStop(1, '#1e1713');
+            compositionContext.fillStyle = background;
+            compositionContext.fillRect(0, 0, previewWidth, previewHeight);
+
+            if (state.image) {
+                drawImageAcrossComposition(compositionContext, previewWidth, previewHeight);
+            }
+
+            compositionContext.save();
+            compositionContext.strokeStyle = 'rgba(255, 243, 232, 0.85)';
+            compositionContext.lineWidth = 2;
+            compositionContext.setLineDash([10, 10]);
+
+            blueprint.panels.forEach((panel, index) => {
+                const panelX = (panel.pxX / blueprint.compositionWidth) * previewWidth;
+                const panelY = (panel.pxY / blueprint.compositionHeight) * previewHeight;
+                const panelWidth = (panel.pxWidth / blueprint.compositionWidth) * previewWidth;
+                const panelHeight = (panel.pxHeight / blueprint.compositionHeight) * previewHeight;
+
+                compositionContext.strokeRect(panelX, panelY, panelWidth, panelHeight);
+                compositionContext.fillStyle = 'rgba(255, 248, 241, 0.82)';
+                compositionContext.font = '700 14px Manrope';
+                compositionContext.fillText(`${index + 1}`, panelX + 14, panelY + 22);
+            });
+
+            compositionContext.restore();
+            emptyNote.style.display = state.image ? 'none' : 'flex';
+        }
+
+        function markCustomPresetIfNeeded() {
+            const preset = getPreset();
+            const matchesPreset = preset.layout === state.layout
+                && preset.aspect === state.aspect
+                && preset.panelWidth === state.panelWidth
+                && preset.edgeStyle === state.edgeStyle;
+
+            if (!matchesPreset && state.preset !== 'custom') {
+                state.preset = 'custom';
+                controls.preset.value = 'custom';
+            }
+        }
+
+        function rebuildPanels() {
+            const blueprint = getPanelBlueprint();
+            panelGrid.innerHTML = '';
+
+            blueprint.panels.forEach((panel, index) => {
+                const card = document.createElement('article');
+                card.className = 'panel-card';
+
+                const header = document.createElement('div');
+                header.className = 'panel-card-header';
+
+                const titleWrap = document.createElement('div');
+                const title = document.createElement('h3');
+                title.textContent = panel.label;
+                const meta = document.createElement('span');
+                meta.textContent = `${panel.pxWidth} × ${panel.pxHeight} px${panel.sizeLabel ? ` • ${panel.sizeLabel}` : ''}`;
+                titleWrap.appendChild(title);
+                titleWrap.appendChild(meta);
+
+                const downloadButton = document.createElement('button');
+                downloadButton.type = 'button';
+                downloadButton.className = 'btn-secondary';
+                downloadButton.textContent = 'Download';
+
+                const canvas = document.createElement('canvas');
+                drawPanelCanvas(canvas, panel, blueprint);
+
+                downloadButton.addEventListener('click', () => {
+                    if (!state.image) {
+                        statusText.textContent = 'Upload an image before downloading.';
+                        return;
+                    }
+                    triggerDownload(canvas.toDataURL('image/png'), createDownloadName(index + 1, 'panel'));
+                });
+
+                header.appendChild(titleWrap);
+                header.appendChild(downloadButton);
+                card.appendChild(header);
+                card.appendChild(canvas);
+                panelGrid.appendChild(card);
+            });
+        }
+
+        function downloadAllPanels() {
+            if (!state.image) {
+                statusText.textContent = 'Upload an image before downloading.';
+                return;
+            }
+
+            const canvases = panelGrid.querySelectorAll('canvas');
+            canvases.forEach((canvas, index) => {
+                window.setTimeout(() => {
+                    triggerDownload(canvas.toDataURL('image/png'), createDownloadName(index + 1, 'panel'));
+                }, index * 120);
+            });
+            statusText.textContent = 'Downloading panel PNG files.';
+        }
+
+        function downloadContactSheet() {
+            if (!state.image) {
+                statusText.textContent = 'Upload an image before downloading.';
+                return;
+            }
+
+            const blueprint = getPanelBlueprint();
+            const panelWidth = 440;
+            const gap = 24;
+            const previewScale = panelWidth / Math.max(...blueprint.panels.map((panel) => panel.pxWidth));
+            const scaledCompositionWidth = Math.round(blueprint.compositionWidth * previewScale);
+            const scaledCompositionHeight = Math.round(blueprint.compositionHeight * previewScale);
+            const sheetCanvas = document.createElement('canvas');
+            sheetCanvas.width = scaledCompositionWidth + (gap * 2);
+            sheetCanvas.height = scaledCompositionHeight + (gap * 2) + 80;
+            const context = sheetCanvas.getContext('2d');
+
+            const background = context.createLinearGradient(0, 0, sheetCanvas.width, sheetCanvas.height);
+            background.addColorStop(0, '#fff8f0');
+            background.addColorStop(1, '#ead8c9');
+            context.fillStyle = background;
+            context.fillRect(0, 0, sheetCanvas.width, sheetCanvas.height);
+
+            context.fillStyle = '#55311f';
+            context.font = '700 30px Fraunces';
+            context.fillText('Canvas Cut Sheet', gap, 42);
+            context.font = '500 15px Manrope';
+            context.fillStyle = '#7c6758';
+            context.fillText(`${getPreset().label} • ${resolutionStat.textContent} export`, gap, 66);
+
+            blueprint.panels.forEach((panel, index) => {
+                const canvas = document.createElement('canvas');
+                const scaledWidth = Math.max(140, Math.round(panel.pxWidth * previewScale));
+                const scaledHeight = Math.max(140, Math.round(panel.pxHeight * previewScale));
+                canvas.width = scaledWidth;
+                canvas.height = scaledHeight;
+                const scaledBlueprint = {
+                    compositionWidth: scaledCompositionWidth,
+                    compositionHeight: scaledCompositionHeight,
+                    panels: blueprint.panels.map((entry) => ({
+                        ...entry,
+                        pxX: Math.round(entry.pxX * previewScale),
+                        pxY: Math.round(entry.pxY * previewScale),
+                        pxWidth: Math.round(entry.pxWidth * previewScale),
+                        pxHeight: Math.round(entry.pxHeight * previewScale)
+                    }))
+                };
+                const scaledPanel = scaledBlueprint.panels[index];
+                drawPanelCanvas(canvas, scaledPanel, scaledBlueprint);
+                const x = gap + scaledPanel.pxX;
+                const y = 90 + gap + scaledPanel.pxY;
+
+                context.save();
+                context.shadowColor = 'rgba(74, 53, 40, 0.16)';
+                context.shadowBlur = 20;
+                context.shadowOffsetY = 10;
+                context.fillStyle = '#fffaf5';
+                context.fillRect(x - 6, y - 6, scaledWidth + 12, scaledHeight + 12);
+                context.restore();
+                context.drawImage(canvas, x, y);
+                context.fillStyle = '#5f4434';
+                context.font = '600 14px Manrope';
+                context.fillText(`${panel.label} (${panel.sizeLabel || 'custom'})`, x, y + scaledHeight + 24);
+            });
+
+            triggerDownload(sheetCanvas.toDataURL('image/png'), createDownloadName(blueprint.panels.length, 'sheet'));
+            statusText.textContent = 'Downloading contact sheet.';
+        }
+
+        function render() {
+            renderQueued = false;
+            markCustomPresetIfNeeded();
+            updateOutputs();
+            drawCompositionPreview();
+            rebuildPanels();
+        }
+
+        function queueRender() {
+            if (renderQueued) {
+                return;
+            }
+            renderQueued = true;
+            window.requestAnimationFrame(render);
+        }
+
+        function bindControl(id, parser = Number) {
+            controls[id].addEventListener('input', (event) => {
+                state[id] = parser(event.target.value);
+                queueRender();
+            });
+        }
+
+        function syncPanControls() {
+            controls.panX.value = String(Math.round(state.panX));
+            controls.panY.value = String(Math.round(state.panY));
+        }
+
+        function getDragMetrics() {
+            const blueprint = getPanelBlueprint();
+            const rect = compositionCanvas.getBoundingClientRect();
+            return {
+                width: rect.width,
+                height: rect.height,
+                compositionWidth: blueprint.compositionWidth,
+                compositionHeight: blueprint.compositionHeight
+            };
+        }
+
+        function handlePointerDown(event) {
+            if (!state.image) {
+                return;
+            }
+
+            const metrics = getDragMetrics();
+            dragState = {
+                pointerId: event.pointerId,
+                startX: event.clientX,
+                startY: event.clientY,
+                startPanX: state.panX,
+                startPanY: state.panY,
+                metrics
+            };
+            compositionCanvas.classList.add('is-dragging');
+            compositionCanvas.setPointerCapture(event.pointerId);
+            statusText.textContent = 'Dragging composition. Release to keep the crop position.';
+        }
+
+        function handlePointerMove(event) {
+            if (!dragState || dragState.pointerId !== event.pointerId) {
+                return;
+            }
+
+            const deltaX = event.clientX - dragState.startX;
+            const deltaY = event.clientY - dragState.startY;
+            const nextPanX = dragState.startPanX + ((deltaX / dragState.metrics.width) / 0.35) * 100;
+            const nextPanY = dragState.startPanY + ((deltaY / dragState.metrics.height) / 0.35) * 100;
+            state.panX = clamp(Math.round(nextPanX), -100, 100);
+            state.panY = clamp(Math.round(nextPanY), -100, 100);
+            syncPanControls();
+            queueRender();
+        }
+
+        function stopDragging(pointerId) {
+            if (!dragState || dragState.pointerId !== pointerId) {
+                return;
+            }
+
+            compositionCanvas.classList.remove('is-dragging');
+            compositionCanvas.releasePointerCapture(pointerId);
+            dragState = null;
+            statusText.textContent = state.image
+                ? 'Crop position updated. Drag again or fine-tune with the sliders.'
+                : 'No image loaded.';
+        }
+        // Auto-load image from URL parameter if provided (from dashboard upload)
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const imageUrl = params.get('imageUrl');
+            if (imageUrl) {
+                const image = new Image();
+                image.crossOrigin = 'anonymous';
+                image.onload = () => {
+                    state.image = image;
+                    state.fileName = 'Uploaded image';
+                    statusText.textContent = `Loaded from upload at ${image.width} × ${image.height}px.`;
+                    queueRender();
+                };
+                image.onerror = () => {
+                    statusText.textContent = 'Could not load the uploaded image. Try uploading again.';
+                };
+                image.src = imageUrl;
+            }
+        })();
+
+
+        imageInput.addEventListener('change', (event) => {
+            const [file] = event.target.files || [];
+            if (!file) {
+                return;
+            }
+
+            const objectUrl = URL.createObjectURL(file);
+            const image = new Image();
+
+            image.onload = () => {
+                state.image = image;
+                state.fileName = file.name;
+                statusText.textContent = `Loaded ${file.name} at ${image.width} × ${image.height}px.`;
+                queueRender();
+                URL.revokeObjectURL(objectUrl);
+            };
+
+            image.onerror = () => {
+                statusText.textContent = 'That file could not be opened as an image.';
+                URL.revokeObjectURL(objectUrl);
+            };
+
+            image.src = objectUrl;
+        });
+
+        bindControl('zoom');
+        bindControl('panX');
+        bindControl('panY');
+        bindControl('rotation');
+        bindControl('brightness');
+        bindControl('contrast');
+        bindControl('saturation');
+        bindControl('grayscale');
+        bindControl('sepia');
+        bindControl('layout', String);
+        bindControl('preset', String);
+        bindControl('aspect', String);
+        bindControl('edgeStyle', String);
+
+        controls.preset.addEventListener('input', (event) => {
+            applyPreset(event.target.value);
+        });
+
+        controls.panelWidth.addEventListener('input', (event) => {
+            state.panelWidth = clamp(Number(event.target.value) || defaultState.panelWidth, 600, 4000);
+            controls.panelWidth.value = String(state.panelWidth);
+            queueRender();
+        });
+
+        document.getElementById('resetAllBtn').addEventListener('click', () => {
+            resetControls();
+            state.image = null;
+            state.fileName = '';
+            imageInput.value = '';
+            statusText.textContent = 'Editor reset. Upload another image to start again.';
+        });
+
+        compositionCanvas.addEventListener('pointerdown', handlePointerDown);
+        compositionCanvas.addEventListener('pointermove', handlePointerMove);
+        compositionCanvas.addEventListener('pointerup', (event) => stopDragging(event.pointerId));
+        compositionCanvas.addEventListener('pointercancel', (event) => stopDragging(event.pointerId));
+        compositionCanvas.addEventListener('pointerleave', (event) => {
+            if (dragState && dragState.pointerId === event.pointerId && event.buttons === 0) {
+                stopDragging(event.pointerId);
+            }
+        });
+
+        document.getElementById('downloadAllBtn').addEventListener('click', downloadAllPanels);
+        document.getElementById('downloadSheetBtn').addEventListener('click', downloadContactSheet);
+        window.addEventListener('resize', queueRender);
+
+        resetControls();
+    </script>
 </body>
 </html>
