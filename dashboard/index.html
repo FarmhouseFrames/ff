@@ -134,6 +134,12 @@
                 <input id="productCategory" type="text" placeholder="Mounted Prints, Canvas, Puzzles">
               </label>
               <label>
+                <span>Attached photo source (for themed intro text)</span>
+                <select id="productSourcePhoto">
+                  <option value="">Loading uploaded photos…</option>
+                </select>
+              </label>
+              <label>
                 <span>Supplier</span>
                 <select id="productSupplier">
                   <option value="Walmart">Walmart</option>
@@ -151,10 +157,49 @@
                 <input id="productPrice" type="number" step="0.01" min="0" required>
               </label>
               <label>
-                <span>Description</span>
-                <textarea id="productDescription" placeholder="Finished product details your customers will see"></textarea>
+                <span>Your internal product cost (USD)</span>
+                <input id="productInternalCost" type="number" step="0.01" min="0" placeholder="Optional, used for supplier packet estimates">
+              </label>
+              <label>
+                <span>Your internal shipping cost (USD)</span>
+                <input id="productInternalShipping" type="number" step="0.01" min="0" placeholder="Optional">
+              </label>
+              <label>
+                <span>Customer flat shipping (USD)</span>
+                <input id="productCustomerShipping" type="number" step="0.01" min="0" placeholder="Optional">
+              </label>
+              <label>
+                <span>Theme preset for intro style</span>
+                <select id="productThemePreset">
+                  <option value="lbl-lake">LBL Lake Morning</option>
+                  <option value="cadiz-backroads">Cadiz Backroads</option>
+                  <option value="weathered-barn">Weathered Barn</option>
+                  <option value="woodland-light">Woodland Light</option>
+                  <option value="golden-field">Golden Field Sunset</option>
+                </select>
+              </label>
+              <label>
+                <span>Rustic intro (customer-facing mood/story)</span>
+                <textarea id="productIntro" placeholder="Generated from selected photo, then edit as needed"></textarea>
+              </label>
+              <label>
+                <span>Mockup setting (customer-facing scene)</span>
+                <textarea id="productMockupSetting" placeholder="Example: Styled in a warm farmhouse entryway with reclaimed wood, linen textures, and natural morning light."></textarea>
+              </label>
+              <label>
+                <span>Factual details</span>
+                <textarea id="productDescription" placeholder="Short, factual product details that stay clear and to the point."></textarea>
+              </label>
+              <label>
+                <span>Dimensions</span>
+                <input id="productDimensions" type="text" placeholder="Example: 16 x 20 in, 1.25 in depth">
+              </label>
+              <label>
+                <span>Care instructions</span>
+                <textarea id="productCare" placeholder="Example: Dust with dry microfiber cloth. Keep away from direct heat or moisture."></textarea>
               </label>
               <div class="row">
+                <button class="btn" id="generateRusticCopy" type="button">Generate Rustic Intro</button>
                 <button class="btn primary" type="submit">Save Product</button>
               </div>
             </form>
@@ -177,6 +222,11 @@
             <h3>Incoming Order Requests</h3>
             <div id="orderRequestsWrap" class="muted">Loading orders…</div>
           </div>
+
+          <div id="supplierPacketWrap" class="card" style="display: none;">
+            <h3>Supplier Order Packet</h3>
+            <div id="supplierPacketContent" class="muted">Generate a packet from an order to prepare supplier checkout details.</div>
+          </div>
         </div>
 
         <div id="page-other" style="display: none;">
@@ -194,9 +244,115 @@
     import { supabase } from './js/supabaseClient.js';
 
     const $ = (sel) => document.querySelector(sel);
+    const escapeHtml = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    const normalizeKey = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    const money = (value) => `$${Number(value || 0).toFixed(2)}`;
     const msg = $('#message');
     const uploadMsg = $('#uploadMessage');
     const productMsg = $('#productMessage');
+    const uploadedPhotoById = new Map();
+    const THEME_PRESETS = {
+      'lbl-lake': {
+        intro: 'Inspired by [photo], this [product] brings the calm light and open water mood of Land Between the Lakes into your home.',
+        mockup: 'Styled as [category] in a rustic lakeside room with warm wood grain, soft linen, and natural morning glow.'
+      },
+      'cadiz-backroads': {
+        intro: 'Inspired by [photo], this [product] reflects the quiet beauty of Cadiz backroads, fence lines, and country horizons.',
+        mockup: 'Styled as [category] in a farmhouse entry with weathered wood accents and soft neutral textures.'
+      },
+      'weathered-barn': {
+        intro: 'Inspired by [photo], this [product] honors the character of weathered barns and timeless Kentucky craftsmanship.',
+        mockup: 'Styled as [category] with reclaimed timber tones and matte iron accents for a classic barn-house look.'
+      },
+      'woodland-light': {
+        intro: 'Inspired by [photo], this [product] captures filtered woodland light and peaceful tree-line stillness.',
+        mockup: 'Styled as [category] in an earthy, cozy room with woven textures and natural greenery.'
+      },
+      'golden-field': {
+        intro: 'Inspired by [photo], this [product] carries the warmth of golden fields and sunset skies across Western Kentucky.',
+        mockup: 'Styled as [category] with warm farmhouse neutrals and evening light for an inviting glow.'
+      }
+    };
+
+    function titleCase(value) {
+      return String(value || '')
+        .replace(/[-_]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    }
+
+    function getSelectedSourcePhoto() {
+      const selectedId = $('#productSourcePhoto')?.value;
+      return uploadedPhotoById.get(selectedId) || null;
+    }
+
+    function generateRusticIntroCopy() {
+      const productName = $('#productName')?.value.trim() || 'this piece';
+      const productCategory = $('#productCategory')?.value.trim() || 'wall art';
+      const source = getSelectedSourcePhoto();
+      const photoLabel = source?.label || 'local scene';
+      const photoCategory = source?.category || 'Kentucky backroads';
+
+      const presetKey = $('#productThemePreset')?.value || 'cadiz-backroads';
+      const preset = THEME_PRESETS[presetKey] || THEME_PRESETS['cadiz-backroads'];
+      const categoryTitle = titleCase(productCategory);
+
+      const intro = preset.intro
+        .replaceAll('[photo]', photoLabel)
+        .replaceAll('[product]', productName)
+        .replaceAll('[category]', categoryTitle)
+        + ` This piece reflects the beauty around ${photoCategory}, LBL, and Cadiz, Kentucky.`;
+
+      const mockup = preset.mockup
+        .replaceAll('[photo]', photoLabel)
+        .replaceAll('[product]', productName)
+        .replaceAll('[category]', categoryTitle);
+
+      return { intro, mockup };
+    }
+
+    function buildStructuredProductDescription({ intro, mockup, details, dimensions, care }) {
+      const parts = [];
+      if (intro) parts.push(`[INTRO] ${intro}`);
+      if (mockup) parts.push(`[MOCKUP] ${mockup}`);
+      if (details) parts.push(`[DETAILS] ${details}`);
+      if (dimensions) parts.push(`[DIMENSIONS] ${dimensions}`);
+      if (care) parts.push(`[CARE] ${care}`);
+      return parts.join('\n');
+    }
+
+    async function loadProductSourcePhotos() {
+      const select = $('#productSourcePhoto');
+      if (!select) return;
+      select.innerHTML = '<option value="">Loading uploaded photos…</option>';
+
+      const { data, error } = await supabase
+        .from('uploads')
+        .select('id, label, category, file_url, created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) {
+        select.innerHTML = '<option value="">Could not load uploaded photos</option>';
+        return;
+      }
+
+      uploadedPhotoById.clear();
+      const options = (data || []).map((upload) => {
+        uploadedPhotoById.set(upload.id, upload);
+        const label = upload.label || 'Untitled photo';
+        const category = upload.category ? ` - ${upload.category}` : '';
+        return `<option value="${upload.id}">${escapeHtml(label)}${escapeHtml(category)}</option>`;
+      });
+
+      select.innerHTML = `<option value="">Select an uploaded photo</option>${options.join('')}`;
+    }
 
     function showMessage(text, kind = 'ok') {
       msg.hidden = false;
@@ -235,6 +391,7 @@
         if (page) {
           page.style.display = 'block';
           if (route === 'products') {
+            loadProductSourcePhotos();
             loadProductsPage();
           }
           if (route === 'orders') {
@@ -432,7 +589,10 @@
             <tr>
               <th>Name</th>
               <th>Category</th>
-              <th>Price</th>
+              <th>Customer Price</th>
+              <th>Internal Cost</th>
+              <th>Cust. Ship</th>
+              <th>Int. Ship</th>
               <th>Supplier</th>
               <th>Link</th>
             </tr>
@@ -443,6 +603,9 @@
                 <td>${product.name || '—'}</td>
                 <td>${product.category || '—'}</td>
                 <td>$${Number(product.price || 0).toFixed(2)}</td>
+                <td>$${Number(product.internal_cost || 0).toFixed(2)}</td>
+                <td>$${Number(product.customer_shipping || 0).toFixed(2)}</td>
+                <td>$${Number(product.internal_shipping || 0).toFixed(2)}</td>
                 <td>${product.supplier_name || '—'}</td>
                 <td>${product.supplier_url ? `<a href="${product.supplier_url}" target="_blank" rel="noopener">Open</a>` : '—'}</td>
               </tr>
@@ -456,13 +619,36 @@
       event.preventDefault();
       if (productMsg) productMsg.hidden = true;
 
+      const introInput = $('#productIntro');
+      const mockupInput = $('#productMockupSetting');
+      const detailsInput = $('#productDescription');
+      const dimensionsInput = $('#productDimensions');
+      const careInput = $('#productCare');
+
+      if (introInput && !introInput.value.trim()) {
+        const generated = generateRusticIntroCopy();
+        introInput.value = generated.intro;
+        if (mockupInput && !mockupInput.value.trim()) {
+          mockupInput.value = generated.mockup;
+        }
+      }
+
       const payload = {
         name: $('#productName').value.trim(),
         category: $('#productCategory').value.trim() || null,
         supplier_name: $('#productSupplier').value,
         supplier_url: $('#productSupplierUrl').value.trim(),
         price: Number($('#productPrice').value || 0),
-        description: $('#productDescription').value.trim() || null,
+        internal_cost: Number($('#productInternalCost').value || 0),
+        internal_shipping: Number($('#productInternalShipping').value || 0),
+        customer_shipping: Number($('#productCustomerShipping').value || 0),
+        description: buildStructuredProductDescription({
+          intro: introInput?.value.trim() || '',
+          mockup: mockupInput?.value.trim() || '',
+          details: detailsInput?.value.trim() || '',
+          dimensions: dimensionsInput?.value.trim() || '',
+          care: careInput?.value.trim() || ''
+        }) || null,
         active: true
       };
 
@@ -496,6 +682,166 @@
 
       await loadOrderRequests();
       await refreshMetrics();
+    }
+
+    async function generateSupplierPacket(orderId) {
+      const packetWrap = $('#supplierPacketWrap');
+      const packetContent = $('#supplierPacketContent');
+      if (!packetWrap || !packetContent) return;
+
+      packetWrap.style.display = 'block';
+      packetContent.innerHTML = '<p class="muted">Building packet...</p>';
+
+      const [{ data: order, error: orderError }, { data: items, error: itemError }, { data: products, error: productsError }] = await Promise.all([
+        supabase
+          .from('order_requests')
+          .select('*')
+          .eq('id', orderId)
+          .single(),
+        supabase
+          .from('order_request_items')
+          .select('*')
+          .eq('order_request_id', orderId)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('products')
+          .select('name, supplier_name, supplier_url, price, category, internal_cost, internal_shipping, customer_shipping')
+      ]);
+
+      if (orderError || itemError || productsError) {
+        packetContent.innerHTML = `<div class="message error">${(orderError || itemError || productsError)?.message || 'Unable to build supplier packet.'}</div>`;
+        return;
+      }
+
+      if (!items || !items.length) {
+        packetContent.innerHTML = '<p class="muted">This order has no line items.</p>';
+        return;
+      }
+
+      const byProductName = new Map((products || []).map((product) => [normalizeKey(product.name), product]));
+      const grouped = new Map();
+
+      items.forEach((item) => {
+        const match = byProductName.get(normalizeKey(item.title));
+        const supplierName = match?.supplier_name || 'Needs Supplier Mapping';
+        const bucket = grouped.get(supplierName) || {
+          supplierName,
+          supplierUrl: match?.supplier_url || '',
+          lines: [],
+          customerTotal: 0,
+          supplierEstimate: 0,
+          customerShipping: 0,
+          internalShipping: 0
+        };
+
+        const quantity = Number(item.quantity || 0);
+        const customerUnit = Number(item.unit_price || 0);
+        const supplierUnit = Number(match?.internal_cost || match?.price || 0);
+        const customerShipping = Number(match?.customer_shipping || 0);
+        const internalShipping = Number(match?.internal_shipping || 0);
+
+        bucket.lines.push({
+          title: item.title,
+          size: item.size,
+          quantity,
+          customerUnit,
+          supplierUnit,
+          customerShipping,
+          internalShipping,
+          category: match?.category || null
+        });
+
+        bucket.customerTotal += quantity * customerUnit;
+        bucket.supplierEstimate += quantity * supplierUnit;
+        bucket.customerShipping += quantity * customerShipping;
+        bucket.internalShipping += quantity * internalShipping;
+        grouped.set(supplierName, bucket);
+      });
+
+      const packetText = [
+        `Order ID: ${order.id}`,
+        `Created: ${new Date(order.created_at).toLocaleString()}`,
+        `Customer: ${order.customer_name} <${order.customer_email}>`,
+        `Fulfillment: ${order.fulfillment_method || 'Pickup'}`,
+        order.notes ? `Customer Notes: ${order.notes}` : null,
+        '',
+        ...Array.from(grouped.values()).flatMap((group) => {
+          const lines = [
+            `SUPPLIER: ${group.supplierName}`,
+            group.supplierUrl ? `Link: ${group.supplierUrl}` : 'Link: Add supplier link in Products admin',
+            ...group.lines.map((line) => `- ${line.title}${line.size ? ` (${line.size})` : ''} x${line.quantity}`),
+            `Customer total (this supplier group): ${money(group.customerTotal)}`,
+            `Customer shipping estimate: ${money(group.customerShipping)}`,
+            `Supplier cost estimate: ${money(group.supplierEstimate)}`,
+            `Internal shipping estimate: ${money(group.internalShipping)}`,
+            ''
+          ];
+          return lines;
+        })
+      ].filter(Boolean).join('\n');
+
+      const groupedMarkup = Array.from(grouped.values()).map((group) => {
+        const rows = group.lines.map((line) => `
+          <tr>
+            <td>${escapeHtml(line.title)}${line.size ? ` <span class="muted">(${escapeHtml(line.size)})</span>` : ''}</td>
+            <td>${line.quantity}</td>
+            <td>${money(line.customerUnit)}</td>
+            <td>${money(line.supplierUnit)}</td>
+            <td>${money(line.customerShipping)}</td>
+            <td>${money(line.internalShipping)}</td>
+          </tr>
+        `).join('');
+
+        return `
+          <section style="margin-top: 18px; border: 1px solid var(--border); border-radius: 12px; padding: 12px;">
+            <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+              <div>
+                <h4 style="margin:0 0 6px;">${escapeHtml(group.supplierName)}</h4>
+                ${group.supplierUrl ? `<a href="${escapeHtml(group.supplierUrl)}" target="_blank" rel="noopener">Open supplier product link</a>` : '<span class="muted">No supplier link on mapped product</span>'}
+              </div>
+              <div class="muted" style="text-align:right;">
+                <div>Customer total: ${money(group.customerTotal)}</div>
+                <div>Customer shipping est.: ${money(group.customerShipping)}</div>
+                <div>Supplier estimate: ${money(group.supplierEstimate)}</div>
+                <div>Internal shipping est.: ${money(group.internalShipping)}</div>
+              </div>
+            </div>
+            <div style="overflow:auto; margin-top:10px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Customer Unit</th>
+                    <th>Supplier Unit</th>
+                    <th>Cust. Ship</th>
+                    <th>Int. Ship</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          </section>
+        `;
+      }).join('');
+
+      packetContent.innerHTML = `
+        <div class="row" style="margin-bottom: 10px;">
+          <button id="copySupplierPacket" class="btn">Copy Packet Text</button>
+          <span class="muted small">Use this text when placing supplier orders manually.</span>
+        </div>
+        <div class="message" style="white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; max-height: 240px; overflow:auto;">${escapeHtml(packetText)}</div>
+        ${groupedMarkup}
+      `;
+
+      $('#copySupplierPacket')?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(packetText);
+          showMessage('Supplier packet copied to clipboard.', 'ok');
+        } catch {
+          showMessage('Could not copy packet automatically. Select and copy manually.', 'error');
+        }
+      });
     }
 
     async function loadOrderRequests() {
@@ -542,13 +888,16 @@
                 <td>$${Number(order.total || 0).toFixed(2)}</td>
                 <td>${order.status || 'new'}</td>
                 <td>
-                  <select data-order-status="${order.id}">
-                    <option value="new" ${order.status === 'new' ? 'selected' : ''}>New</option>
-                    <option value="ordered" ${order.status === 'ordered' ? 'selected' : ''}>Ordered</option>
-                    <option value="received" ${order.status === 'received' ? 'selected' : ''}>Received</option>
-                    <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Ready</option>
-                    <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
-                  </select>
+                  <div style="display:grid; gap:8px; min-width: 180px;">
+                    <select data-order-status="${order.id}">
+                      <option value="new" ${order.status === 'new' ? 'selected' : ''}>New</option>
+                      <option value="ordered" ${order.status === 'ordered' ? 'selected' : ''}>Ordered</option>
+                      <option value="received" ${order.status === 'received' ? 'selected' : ''}>Received</option>
+                      <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Ready</option>
+                      <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
+                    </select>
+                    <button class="btn" data-generate-packet="${order.id}">Generate Supplier Packet</button>
+                  </div>
                 </td>
               </tr>
             `).join('')}
@@ -559,6 +908,12 @@
       wrap.querySelectorAll('select[data-order-status]').forEach((select) => {
         select.addEventListener('change', async () => {
           await updateOrderRequestStatus(select.dataset.orderStatus, select.value);
+        });
+      });
+
+      wrap.querySelectorAll('button[data-generate-packet]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          await generateSupplierPacket(button.dataset.generatePacket);
         });
       });
     }
@@ -598,6 +953,14 @@
 
     $('#uploadForm').addEventListener('submit', handleFileUpload);
     $('#productForm')?.addEventListener('submit', createProduct);
+    $('#generateRusticCopy')?.addEventListener('click', () => {
+      const generated = generateRusticIntroCopy();
+      const intro = $('#productIntro');
+      const mockup = $('#productMockupSetting');
+      if (intro) intro.value = generated.intro;
+      if (mockup) mockup.value = generated.mockup;
+      showProductMessage('Rustic intro and mockup setting generated. You can edit before saving.', 'ok');
+    });
 
     try {
       await refreshMetrics();

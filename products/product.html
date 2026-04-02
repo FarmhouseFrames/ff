@@ -41,6 +41,43 @@
     const category = params.get('category') || 'all';
     const backHref = `./index.html?category=${encodeURIComponent(category)}`;
 
+    function parseStructuredDescription(raw) {
+      const text = String(raw || '').trim();
+      if (!text) {
+        return { intro: '', mockup: '', details: '', dimensions: '', care: '' };
+      }
+
+      const parsed = { intro: '', mockup: '', details: '', dimensions: '', care: '' };
+      const fallback = [];
+
+      text.split('\n').forEach((line) => {
+        const value = line.trim();
+        if (!value) {
+          return;
+        }
+
+        const match = value.match(/^\[(INTRO|MOCKUP|DETAILS|DIMENSIONS|CARE)\]\s*(.*)$/i);
+        if (!match) {
+          fallback.push(value);
+          return;
+        }
+
+        const key = match[1].toLowerCase();
+        const content = match[2].trim();
+        if (key === 'intro') parsed.intro = content;
+        if (key === 'mockup') parsed.mockup = content;
+        if (key === 'details') parsed.details = content;
+        if (key === 'dimensions') parsed.dimensions = content;
+        if (key === 'care') parsed.care = content;
+      });
+
+      if (!parsed.intro && fallback.length) {
+        parsed.intro = fallback.join(' ');
+      }
+
+      return parsed;
+    }
+
     function renderMissingProduct() {
       detailTitle.textContent = 'Product not found';
       detailIntro.textContent = 'The requested product could not be found in the current product catalog.';
@@ -56,6 +93,8 @@
     function renderProduct(product) {
       detailTitle.textContent = product.title;
       detailIntro.textContent = product.category;
+
+      const description = parseStructuredDescription(product.description);
 
       const sizeOptions = product.sizes.length
         ? product.sizes.map((size) => `<option value="${size}">${size}</option>`).join('')
@@ -77,7 +116,7 @@
                 <span class="pill">${inventoryLabel}</span>
               </div>
               <h2>${product.title}</h2>
-              <p>${product.description || 'No description available yet.'}</p>
+              <p>${description.intro || 'No description available yet.'}</p>
               <div class="price">${formatCurrency(product.price, product.currency)}</div>
               <div class="detail-tags">${tags}</div>
             </div>
@@ -95,11 +134,14 @@
 
             <section class="sidebar-card">
               <h3>Product data</h3>
+              ${description.mockup ? `<p class="muted"><strong>Mockup setting:</strong> ${description.mockup}</p>` : ''}
+              ${description.details ? `<p class="muted"><strong>Details:</strong> ${description.details}</p>` : ''}
               <div class="size-list">
                 ${product.sizes.length ? product.sizes.map((size) => `<span class="pill">${size}</span>`).join('') : '<span class="pill">Custom size</span>'}
               </div>
+              ${description.dimensions ? `<p class="muted"><strong>Dimensions:</strong> ${description.dimensions}</p>` : ''}
+              ${description.care ? `<p class="muted"><strong>Care:</strong> ${description.care}</p>` : ''}
               <p class="muted">Product ID: ${product.id}</p>
-              ${product.notes ? `<p class="muted">Notes: ${product.notes}</p>` : ''}
             </section>
           </aside>
         </section>

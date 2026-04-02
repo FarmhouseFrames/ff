@@ -228,6 +228,19 @@ export function addToCart(product, selectedSize = '') {
 
 export function renderProductCard(product) {
   const sizes = product.sizes.length ? product.sizes.map((size) => `<span class="pill">${size}</span>`).join('') : '<span class="pill">Custom sizing</span>';
+  const summary = (() => {
+    const text = String(product.description || '').trim();
+    if (!text) {
+      return 'No description available yet.';
+    }
+
+    const introMatch = text.match(/\[INTRO\]\s*(.*)/i);
+    if (introMatch && introMatch[1]) {
+      return introMatch[1].trim();
+    }
+
+    return text.split('\n')[0].replace(/^\[[A-Z]+\]\s*/i, '').trim() || 'No description available yet.';
+  })();
 
   return `
     <article class="product-card">
@@ -235,7 +248,7 @@ export function renderProductCard(product) {
       <div class="product-body">
         <div class="product-meta">${product.category}</div>
         <h3>${product.title}</h3>
-        <p>${product.description || 'No description available yet.'}</p>
+        <p>${summary}</p>
         <div class="price">${formatCurrency(product.price, product.currency)}</div>
         <div class="pill-row">${sizes}</div>
         <div class="product-actions">

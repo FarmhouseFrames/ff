@@ -9,6 +9,9 @@ create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   price numeric not null default 0,
+  internal_cost numeric not null default 0,
+  internal_shipping numeric not null default 0,
+  customer_shipping numeric not null default 0,
   category text,
   supplier_name text,
   supplier_url text,
@@ -19,6 +22,9 @@ create table if not exists public.products (
 
 alter table public.products add column if not exists supplier_name text;
 alter table public.products add column if not exists supplier_url text;
+alter table public.products add column if not exists internal_cost numeric not null default 0;
+alter table public.products add column if not exists internal_shipping numeric not null default 0;
+alter table public.products add column if not exists customer_shipping numeric not null default 0;
 
 create table if not exists public.product_photos (
   id uuid primary key default gen_random_uuid(),
