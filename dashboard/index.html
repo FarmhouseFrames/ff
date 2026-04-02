@@ -1298,7 +1298,12 @@
       ]);
 
       if (clientsError || ordersError) {
-        wrap.innerHTML = `<div class="message error">${(clientsError || ordersError)?.message || 'Could not load clients.'}</div>`;
+        const message = String((clientsError || ordersError)?.message || 'Could not load clients.');
+        if (message.toLowerCase().includes('does not exist')) {
+          wrap.innerHTML = '<div class="message error">Client dashboard tables are not fully migrated yet. Apply the latest Supabase SQL and refresh.</div>';
+          return;
+        }
+        wrap.innerHTML = `<div class="message error">${message}</div>`;
         return;
       }
 
@@ -1385,7 +1390,12 @@
         .limit(150);
 
       if (error) {
-        wrap.innerHTML = `<div class="message error">${error.message}</div>`;
+        const message = String(error.message || 'Could not load activity logs.');
+        if (message.toLowerCase().includes('does not exist')) {
+          wrap.innerHTML = '<div class="message error">Activity log table is not migrated yet. Apply the latest Supabase SQL and refresh.</div>';
+          return;
+        }
+        wrap.innerHTML = `<div class="message error">${message}</div>`;
         return;
       }
 
@@ -1430,7 +1440,12 @@
         .maybeSingle();
 
       if (error) {
-        showSettingsMessage(error.message, 'error');
+        const message = String(error.message || 'Could not load settings.');
+        if (message.toLowerCase().includes('does not exist')) {
+          showSettingsMessage('Store settings table is not migrated yet. Apply the latest Supabase SQL and reload.', 'error');
+          return;
+        }
+        showSettingsMessage(message, 'error');
         return;
       }
 

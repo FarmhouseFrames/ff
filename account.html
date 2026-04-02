@@ -102,7 +102,12 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                ordersWrap.textContent = error.message;
+                const message = String(error.message || 'Could not load order history.');
+                if (message.toLowerCase().includes('customer_user_id') || message.toLowerCase().includes('does not exist')) {
+                    ordersWrap.innerHTML = '<p class="muted">Account-linked order history is almost ready. Run the latest Supabase SQL migration, then refresh this page.</p>';
+                    return;
+                }
+                ordersWrap.textContent = message;
                 return;
             }
 
