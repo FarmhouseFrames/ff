@@ -322,6 +322,9 @@
               <div class="row">
                 <button class="btn primary" type="submit">Save sourcing record</button>
                 <button class="btn" id="resetSourcingBtn" type="button">Reset form</button>
+                <button class="btn" id="openUploadsFromSourcing" type="button">Open uploads</button>
+                <button class="btn" id="openSourcingInCutter" type="button">Open artwork in cutter</button>
+                <button class="btn" id="sendSourcingToProducts" type="button">Send to products form</button>
               </div>
             </form>
             <div id="sourcingMessage" class="message" hidden></div>
@@ -450,6 +453,7 @@
     let currentAdminUserId = null;
     let sourcingCatalog = [];
     let sourcingRecords = {};
+    let pendingProductSourcingKey = '';
     const THEME_PRESETS = {
       'lbl-lake': {
         intro: 'Inspired by [photo], this [product] brings the calm light and open water mood of Land Between the Lakes into your home.',
@@ -778,7 +782,7 @@
       const select = $('#productSourcingRecord');
       if (!select) return;
 
-      const currentValue = select.value;
+      const currentValue = pendingProductSourcingKey || select.value;
       const rows = Object.values(sourcingRecords)
         .sort((a, b) => String(a.title || '').localeCompare(String(b.title || '')));
 
@@ -789,6 +793,8 @@
       if (currentValue && sourcingRecords[currentValue]) {
         select.value = currentValue;
       }
+
+      pendingProductSourcingKey = '';
 
       renderProductSourcingSummary(getSelectedProductSourcingRecord());
     }
@@ -826,6 +832,52 @@
       }
 
       showProductMessage('Sourcing record applied to product form. Review and save when ready.', 'ok');
+    }
+
+    function openCurrentSourcingInCutter() {
+      const product = getSelectedSourcingProduct();
+      if (!product) {
+        showSourcingMessage('Choose a sourcing product first.', 'error');
+        return;
+      }
+
+      const record = sourcingRecords[product.key] || createDefaultSourcingRecord(product);
+      const imageUrl = record.artworkUrl || product.image || '';
+      if (!imageUrl) {
+        showSourcingMessage('Add a photo upload/artwork link before opening the cutter.', 'error');
+        return;
+      }
+
+      const preset = record.layoutName || product.defaultLayout || 'custom';
+      window.location.href = buildCutterUrl({
+        imageUrl,
+        preset,
+        supplierUrl: record.supplierUrl || '',
+        productName: record.title || product.title || 'Farmhouse Frames Product'
+      });
+    }
+
+    async function sendCurrentSourcingToProducts() {
+      const product = getSelectedSourcingProduct();
+      if (!product) {
+        showSourcingMessage('Choose a sourcing product first.', 'error');
+        return;
+      }
+
+      if (!sourcingRecords[product.key]) {
+        showSourcingMessage('Save this sourcing record first so it can be loaded in Products.', 'error');
+        return;
+      }
+
+      pendingProductSourcingKey = product.key;
+      navigateToRoute('products');
+      await hydrateProductSourcingOptions();
+      const recordSelect = $('#productSourcingRecord');
+      if (recordSelect) {
+        recordSelect.value = product.key;
+      }
+      renderProductSourcingSummary(getSelectedProductSourcingRecord());
+      applySourcingRecordToProductForm();
     }
 
     async function hydrateProductSourcingOptions() {
@@ -960,7 +1012,13 @@
                 <td>${money(row.retailBeforeShipping)}</td>
                 <td>${money(row.retailAfterShipping)}</td>
                 <td>${row.updatedAt ? new Date(row.updatedAt).toLocaleString() : '—'}</td>
-                <td><button class="btn" type="button" data-load-sourcing="${escapeHtml(row.productKey)}">Load</button></td>
+                <td>
+                  <div style="display:grid; gap:8px; min-width:180px;">
+                    <button class="btn" type="button" data-load-sourcing="${escapeHtml(row.productKey)}">Load</button>
+                    <button class="btn" type="button" data-open-sourcing-cutter="${escapeHtml(row.productKey)}">Open in cutter</button>
+                    <button class="btn" type="button" data-send-sourcing-products="${escapeHtml(row.productKey)}">Send to products</button>
+                  </div>
+                </td>
               </tr>
             `).join('')}
           </tbody>
@@ -973,6 +1031,26 @@
           if (!select) return;
           select.value = button.dataset.loadSourcing || '';
           populateSourcingForm(getSelectedSourcingProduct());
+        });
+      });
+
+      wrap.querySelectorAll('button[data-open-sourcing-cutter]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const select = $('#sourcingProductSelect');
+          if (!select) return;
+          select.value = button.dataset.openSourcingCutter || '';
+          populateSourcingForm(getSelectedSourcingProduct());
+          openCurrentSourcingInCutter();
+        });
+      });
+
+      wrap.querySelectorAll('button[data-send-sourcing-products]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const select = $('#sourcingProductSelect');
+          if (!select) return;
+          select.value = button.dataset.sendSourcingProducts || '';
+          populateSourcingForm(getSelectedSourcingProduct());
+          await sendCurrentSourcingToProducts();
         });
       });
     }
@@ -2204,6 +2282,9 @@
     $('#reloadSettingsBtn')?.addEventListener('click', loadStoreSettings);
     $('#refreshSourcingBtn')?.addEventListener('click', loadSourcingPage);
     $('#resetSourcingBtn')?.addEventListener('click', resetSourcingForm);
+    $('#openUploadsFromSourcing')?.addEventListener('click', () => navigateToRoute('uploads'));
+    $('#openSourcingInCutter')?.addEventListener('click', openCurrentSourcingInCutter);
+    $('#sendSourcingToProducts')?.addEventListener('click', sendCurrentSourcingToProducts);
     $('#refreshClientsBtn')?.addEventListener('click', loadClientsPage);
     $('#refreshLogsBtn')?.addEventListener('click', loadActivityLogs);
     $('#productSourcePhoto')?.addEventListener('change', updateSourcePhotoPreview);
