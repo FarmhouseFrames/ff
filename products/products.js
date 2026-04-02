@@ -120,8 +120,6 @@ function normalizeModernProduct(product) {
     inventory: Number(product.inventory ?? 0),
     notes: product.notes || '',
     source: product.source || 'modern',
-    supplierUrl: product.supplier_url || product.supplierUrl || '',
-    productionPreset: product.production_preset || product.productionPreset || 'custom',
     raw: product
   };
 }
@@ -129,7 +127,7 @@ function normalizeModernProduct(product) {
 async function loadSupabaseProducts() {
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, category, price, description, image, sizes, tags, inventory, supplier_url, production_preset, active, created_at')
+    .select('id, name, category, price, description, image, sizes, tags, inventory, active, created_at')
     .eq('active', true)
     .order('created_at', { ascending: false });
 
