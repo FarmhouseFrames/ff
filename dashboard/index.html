@@ -139,6 +139,9 @@
                   <option value="">Loading uploaded photos…</option>
                 </select>
               </label>
+              <div id="sourcePhotoPreview">
+                <p class="muted small">Select an uploaded photo to use as the storefront image and cutter source.</p>
+              </div>
               <label>
                 <span>Supplier</span>
                 <select id="productSupplier">
@@ -152,6 +155,7 @@
                 <span>Supplier link</span>
                 <input id="productSupplierUrl" type="url" placeholder="https://..." required>
               </label>
+              <p class="muted small">Use the real print-product URL you order from so the cutter and production notes stay matched to the vendor page.</p>
               <label>
                 <span>Your sell price (USD)</span>
                 <input id="productPrice" type="number" step="0.01" min="0" required>
@@ -167,6 +171,28 @@
               <label>
                 <span>Customer flat shipping (USD)</span>
                 <input id="productCustomerShipping" type="number" step="0.01" min="0" placeholder="Optional">
+              </label>
+              <label>
+                <span>Available sizes (comma separated)</span>
+                <input id="productSizes" type="text" placeholder="8x10, 11x14, 16x20">
+              </label>
+              <label>
+                <span>Website tags (comma separated)</span>
+                <input id="productTags" type="text" placeholder="farmhouse, kentucky, wall art">
+              </label>
+              <label>
+                <span>Inventory count</span>
+                <input id="productInventory" type="number" step="1" min="0" value="0">
+              </label>
+              <label>
+                <span>Cutter preset</span>
+                <select id="productProductionPreset">
+                  <option value="custom">Custom layout</option>
+                  <option value="mounted-set-3">Mounted Set of 3</option>
+                  <option value="mounted-trilogy">Mounted Trilogy</option>
+                  <option value="mounted-landscape-5">Mounted Landscape Set</option>
+                  <option value="mounted-ensemble-5">Mounted Ensemble of 5</option>
+                </select>
               </label>
               <label>
                 <span>Theme preset for intro style</span>
@@ -199,6 +225,7 @@
                 <textarea id="productCare" placeholder="Example: Dust with dry microfiber cloth. Keep away from direct heat or moisture."></textarea>
               </label>
               <div class="row">
+                <button class="btn" id="openSourceInCutter" type="button">Open Source In Cutter</button>
                 <button class="btn" id="generateRusticCopy" type="button">Generate Rustic Intro</button>
                 <button class="btn primary" type="submit">Save Product</button>
               </div>
@@ -357,6 +384,45 @@
       });
 
       select.innerHTML = `<option value="">Select an uploaded photo</option>${options.join('')}`;
+      updateSourcePhotoPreview();
+    }
+
+    function updateSourcePhotoPreview() {
+      const preview = $('#sourcePhotoPreview');
+      if (!preview) return;
+
+      const source = getSelectedSourcePhoto();
+      if (!source?.file_url) {
+        preview.innerHTML = '<p class="muted small">Select an uploaded photo to use as the storefront image and cutter source.</p>';
+        return;
+      }
+
+      const label = escapeHtml(source.label || 'Selected upload');
+      const category = source.category ? `<span class="muted small">${escapeHtml(source.category)}</span>` : '';
+      preview.innerHTML = `
+        <div class="row" style="align-items:center; gap:12px;">
+          <img src="${escapeHtml(source.file_url)}" alt="${label}" style="width:72px; height:72px; object-fit:cover; border-radius:12px; border:1px solid rgba(93, 51, 32, 0.16);">
+          <div>
+            <div>${label}</div>
+            ${category}
+          </div>
+        </div>
+      `;
+    }
+
+    function openSelectedSourceInCutter() {
+      const source = getSelectedSourcePhoto();
+      if (!source?.file_url) {
+        showProductMessage('Select an uploaded photo before opening the cutter.', 'error');
+        return;
+      }
+
+      window.location.href = buildCutterUrl({
+        imageUrl: source.file_url,
+        preset: $('#productProductionPreset')?.value || 'custom',
+        supplierUrl: $('#productSupplierUrl')?.value.trim() || '',
+        productName: $('#productName')?.value.trim() || source.label || 'Farmhouse Frames Product'
+      });
     }
 
     function showMessage(text, kind = 'ok') {
@@ -378,10 +444,35 @@
       productMsg.textContent = text;
     }
 
+    function parseCsvList(value) {
+      return String(value || '')
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    }
+
+    function buildCutterUrl({ imageUrl, preset, supplierUrl, productName }) {
+      const params = new URLSearchParams();
+      if (imageUrl) params.set('imageUrl', imageUrl);
+      if (preset) params.set('preset', preset);
+      if (supplierUrl) params.set('supplierUrl', supplierUrl);
+      if (productName) params.set('productName', productName);
+      return `../admin-dashboard.html?${params.toString()}`;
+    }
+
     function setStatus(text, kind = 'neutral') {
       const pill = $('#statusPill');
       pill.textContent = text;
       pill.className = `pill ${kind}`;
+    }
+
+    function navigateToRoute(route) {
+      const currentRoute = (location.hash || '#dashboard').slice(1);
+      if (currentRoute === route) {
+        setTitleFromHash();
+        return;
+      }
+      location.hash = route;
     }
 
     function setPageVisibility(route) {
@@ -593,27 +684,36 @@
         <table>
           <thead>
             <tr>
+              <th>Image</th>
               <th>Name</th>
               <th>Category</th>
               <th>Customer Price</th>
               <th>Internal Cost</th>
               <th>Cust. Ship</th>
               <th>Int. Ship</th>
+              <th>Preset</th>
               <th>Supplier</th>
-              <th>Link</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             ${data.map((product) => `
               <tr>
+                <td>${product.image ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || 'Product image')}" style="width:56px; height:56px; object-fit:cover; border-radius:10px;">` : '—'}</td>
                 <td>${product.name || '—'}</td>
                 <td>${product.category || '—'}</td>
                 <td>$${Number(product.price || 0).toFixed(2)}</td>
                 <td>$${Number(product.internal_cost || 0).toFixed(2)}</td>
                 <td>$${Number(product.customer_shipping || 0).toFixed(2)}</td>
                 <td>$${Number(product.internal_shipping || 0).toFixed(2)}</td>
+                <td>${product.production_preset || 'custom'}</td>
                 <td>${product.supplier_name || '—'}</td>
-                <td>${product.supplier_url ? `<a href="${product.supplier_url}" target="_blank" rel="noopener">Open</a>` : '—'}</td>
+                <td>
+                  <div style="display:grid; gap:8px; min-width: 150px;">
+                    ${product.supplier_url ? `<a href="${escapeHtml(product.supplier_url)}" target="_blank" rel="noopener">Open supplier link</a>` : '<span class="muted">No supplier link</span>'}
+                    ${product.image ? `<a href="${buildCutterUrl({ imageUrl: product.image, preset: product.production_preset || 'custom', supplierUrl: product.supplier_url || '', productName: product.name || 'Farmhouse Frames Product' })}">Open in cutter</a>` : '<span class="muted">No image yet</span>'}
+                  </div>
+                </td>
               </tr>
             `).join('')}
           </tbody>
@@ -639,11 +739,23 @@
         }
       }
 
+      const source = getSelectedSourcePhoto();
+      if (!source?.file_url) {
+        showProductMessage('Select an uploaded photo so the product can appear on the storefront and open in the cutter.', 'error');
+        return;
+      }
+
       const payload = {
         name: $('#productName').value.trim(),
         category: $('#productCategory').value.trim() || null,
         supplier_name: $('#productSupplier').value,
         supplier_url: $('#productSupplierUrl').value.trim(),
+        image: source.file_url,
+        sizes: parseCsvList($('#productSizes').value),
+        tags: parseCsvList($('#productTags').value),
+        inventory: Number($('#productInventory').value || 0),
+        source_upload_id: source.id,
+        production_preset: $('#productProductionPreset').value || 'custom',
         price: Number($('#productPrice').value || 0),
         internal_cost: Number($('#productInternalCost').value || 0),
         internal_shipping: Number($('#productInternalShipping').value || 0),
@@ -671,6 +783,7 @@
 
       showProductMessage('Product saved. It can now be sold from your storefront.', 'ok');
       $('#productForm').reset();
+      updateSourcePhotoPreview();
       await loadProductsPage();
       await refreshMetrics();
     }
@@ -1053,6 +1166,12 @@
 
     setTitleFromHash();
     window.addEventListener('hashchange', setTitleFromHash);
+    document.querySelectorAll('.nav a[data-route]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        navigateToRoute(link.dataset.route || 'dashboard');
+      });
+    });
 
     $('#logoutBtn').addEventListener('click', async () => {
       await signOut();
@@ -1081,6 +1200,8 @@
 
     $('#uploadForm').addEventListener('submit', handleFileUpload);
     $('#productForm')?.addEventListener('submit', createProduct);
+    $('#productSourcePhoto')?.addEventListener('change', updateSourcePhotoPreview);
+    $('#openSourceInCutter')?.addEventListener('click', openSelectedSourceInCutter);
     $('#generateRusticCopy')?.addEventListener('click', () => {
       const generated = generateRusticIntroCopy();
       const intro = $('#productIntro');
@@ -1092,6 +1213,7 @@
 
     try {
       await refreshMetrics();
+      updateSourcePhotoPreview();
     } catch (e) {
       showMessage(e?.message || String(e), 'error');
       setStatus('Error', 'error');

@@ -1,3 +1,5 @@
+import { supabase } from '../dashboard/js/supabaseClient.js';
+
 const FALLBACK_IMAGE_SVG = encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
   <defs>
@@ -118,8 +120,27 @@ function normalizeModernProduct(product) {
     inventory: Number(product.inventory ?? 0),
     notes: product.notes || '',
     source: product.source || 'modern',
+    supplierUrl: product.supplier_url || product.supplierUrl || '',
+    productionPreset: product.production_preset || product.productionPreset || 'custom',
     raw: product
   };
+}
+
+async function loadSupabaseProducts() {
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, name, category, price, description, image, sizes, tags, inventory, supplier_url, production_preset, active, created_at')
+    .eq('active', true)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || []).map((product) => normalizeModernProduct({
+    ...product,
+    source: 'supabase'
+  }));
 }
 
 async function fetchJson(url) {
@@ -131,9 +152,10 @@ async function fetchJson(url) {
 }
 
 export async function loadProducts() {
-  const [legacyCatalog, modernCatalog] = await Promise.allSettled([
+  const [legacyCatalog, modernCatalog, supabaseCatalog] = await Promise.allSettled([
     fetchJson('../data/products.json'),
-    fetchJson('./products.json')
+    fetchJson('./products.json'),
+    loadSupabaseProducts()
   ]);
 
   const products = [];
@@ -148,6 +170,12 @@ export async function loadProducts() {
     const entries = Array.isArray(modernCatalog.value) ? modernCatalog.value : [modernCatalog.value];
     entries.forEach((product) => {
       products.push(normalizeModernProduct(product));
+    });
+  }
+
+  if (supabaseCatalog.status === 'fulfilled' && Array.isArray(supabaseCatalog.value)) {
+    supabaseCatalog.value.forEach((product) => {
+      products.push(product);
     });
   }
 

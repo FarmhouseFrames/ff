@@ -37,6 +37,12 @@ on public.admin_users for select
 to authenticated
 using (public.is_admin());
 
+drop policy if exists "Public can read active products" on public.products;
+create policy "Public can read active products"
+on public.products for select
+to anon, authenticated
+using (active = true);
+
 -- Admin-only CRUD policies
 do $$
 declare

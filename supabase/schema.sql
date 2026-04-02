@@ -15,6 +15,12 @@ create table if not exists public.products (
   category text,
   supplier_name text,
   supplier_url text,
+  image text,
+  sizes text[] not null default '{}'::text[],
+  tags text[] not null default '{}'::text[],
+  inventory integer not null default 0,
+  source_upload_id uuid,
+  production_preset text not null default 'custom',
   description text,
   active boolean not null default true,
   created_at timestamptz not null default now()
@@ -22,6 +28,12 @@ create table if not exists public.products (
 
 alter table public.products add column if not exists supplier_name text;
 alter table public.products add column if not exists supplier_url text;
+alter table public.products add column if not exists image text;
+alter table public.products add column if not exists sizes text[] not null default '{}'::text[];
+alter table public.products add column if not exists tags text[] not null default '{}'::text[];
+alter table public.products add column if not exists inventory integer not null default 0;
+alter table public.products add column if not exists source_upload_id uuid;
+alter table public.products add column if not exists production_preset text not null default 'custom';
 alter table public.products add column if not exists internal_cost numeric not null default 0;
 alter table public.products add column if not exists internal_shipping numeric not null default 0;
 alter table public.products add column if not exists customer_shipping numeric not null default 0;
