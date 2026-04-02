@@ -22,6 +22,7 @@ alter table public.orders enable row level security;
 alter table public.order_requests enable row level security;
 alter table public.order_request_items enable row level security;
 alter table public.supplier_order_packets enable row level security;
+alter table public.sourcing_records enable row level security;
 alter table public.order_items enable row level security;
 alter table public.hours_log enable row level security;
 alter table public.mileage_log enable row level security;
@@ -50,7 +51,7 @@ declare
 begin
   foreach t in array array[
     'products','product_photos','categories','cases','uploads',
-    'clients','orders','order_requests','order_request_items','supplier_order_packets','order_items',
+    'clients','orders','order_requests','order_request_items','supplier_order_packets','sourcing_records','order_items',
     'hours_log','mileage_log','expenses','payments',
     'case_files','case_templates','evidence_index'
   ]

@@ -128,6 +128,33 @@ create table if not exists public.supplier_order_packets (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.sourcing_records (
+  id uuid primary key default gen_random_uuid(),
+  catalog_product_key text not null unique,
+  catalog_product_id text not null,
+  catalog_source_file text not null,
+  title text,
+  category text,
+  supplier_url text,
+  artwork_url text,
+  layout_name text,
+  specs text,
+  supplier_description text,
+  store_description text,
+  base_cost numeric not null default 0,
+  shipping_cost numeric not null default 0,
+  delivery_fee numeric not null default 0,
+  profit_amount numeric not null default 0,
+  retail_before_shipping numeric not null default 0,
+  retail_after_shipping numeric not null default 0,
+  profit_percent numeric not null default 0,
+  notes text,
+  created_by uuid references auth.users(id) on delete set null,
+  updated_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.order_items (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references public.orders(id) on delete cascade,
@@ -221,6 +248,7 @@ create index if not exists idx_order_requests_customer_user_id on public.order_r
 create index if not exists idx_order_request_items_order_id on public.order_request_items(order_request_id);
 create index if not exists idx_supplier_order_packets_order_id on public.supplier_order_packets(order_request_id);
 create index if not exists idx_supplier_order_packets_created_at on public.supplier_order_packets(created_at desc);
+create index if not exists idx_sourcing_records_updated_at on public.sourcing_records(updated_at desc);
 create index if not exists idx_activity_logs_created_at on public.activity_logs(created_at desc);
 
 insert into public.store_settings (id, business_email, tax_rate, currency)
