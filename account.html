@@ -21,13 +21,19 @@
 
         <section class="commerce-hero">
             <h1>My Account</h1>
-            <p id="whoami" class="helper-text">Loading account...</p>
+            <p id="whoami" class="helper-text">Create an account or log in to view your orders from finished Farmhouse Frames products inspired by Cadiz, Trigg County, and Land Between the Lakes.</p>
         </section>
 
         <main class="commerce-layout">
             <section class="checkout-form">
                 <h2>My Orders</h2>
-                <div id="ordersWrap" class="status-message">Loading your order history...</div>
+                <div id="ordersWrap" class="status-message">
+                    <p class="muted">Sign up for a customer account, or log in to your existing account, to view your order history.</p>
+                    <div class="checkout-actions" style="margin-top: 12px;">
+                        <a class="commerce-button-link primary" href="account-login.html?mode=signup">Create customer account</a>
+                        <a class="commerce-button-link" href="account-login.html?mode=signin">Log in to existing account</a>
+                    </div>
+                </div>
             </section>
 
             <aside class="summary-card">
@@ -37,6 +43,10 @@
                     <a class="commerce-button-link" href="cart.html">Open cart</a>
                     <a class="commerce-button-link" href="account-login.html">Sign in as different user</a>
                 </div>
+                <h3 style="margin-top: 18px;">About Farmhouse Frames</h3>
+                <p class="helper-text">Farmhouse Frames is built around the quiet beauty of Western Kentucky. We turn local scenic photography into finished pieces designed for warm farmhouse spaces and meaningful gifts.</p>
+                <h3 style="margin-top: 14px;">Why We Love It</h3>
+                <p class="helper-text">We love preserving everyday moments people often pass by: backroads at sunrise, weathered barns, peaceful waterlines, and seasonal light that feels like home. Every finished product starts with that story.</p>
                 <p class="helper-text">Your account only shows customer-facing order data.</p>
             </aside>
         </main>
@@ -51,17 +61,10 @@
         const loginLinkTop = document.getElementById('loginLinkTop');
         const createLinkTop = document.getElementById('createLinkTop');
 
-        async function requireSession() {
-            const { data, error } = await publicSupabase.auth.getSession();
-            if (error) {
-                throw error;
-            }
-
-            if (!data.session?.user) {
-                return null;
-            }
-
-            return data.session.user;
+        async function enforceSignedOutStart() {
+            // Always start this page as signed-out by design.
+            await publicSupabase.auth.signOut();
+            return null;
         }
 
         function renderOrders(orders) {
@@ -123,7 +126,7 @@
             window.location.href = 'account.html';
         });
 
-        const user = await requireSession();
+        const user = await enforceSignedOutStart();
         if (!user) {
             whoami.textContent = 'You are not signed in yet.';
             ordersWrap.innerHTML = `
