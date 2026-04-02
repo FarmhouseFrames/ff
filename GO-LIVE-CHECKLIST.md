@@ -9,6 +9,16 @@ Run these SQL files in Supabase SQL editor (in order):
 1. `supabase/schema.sql`
 2. `supabase/policies.sql`
 
+Optional one-command terminal path (after environment setup):
+
+1. Install `psql`
+2. Set `SUPABASE_DB_URL` (or `DATABASE_URL`)
+3. Run:
+
+```bash
+./scripts/apply-supabase-sql.sh
+```
+
 This enables:
 - supplier metadata on products (`supplier_name`, `supplier_url`)
 - public checkout order intake tables (`order_requests`, `order_request_items`)
@@ -61,3 +71,45 @@ At your DNS provider:
 4. You place supplier order (Walmart/CanvasChamp/Amazon).
 5. Receive product, apply branding, complete pickup/shipping.
 6. Mark order completed in Admin.
+
+## 7) 10-minute pre-merge smoke test
+
+Run this after each major admin/storefront update:
+
+1. Admin product publish flow
+   - Open `/dashboard/#products`
+   - Create product with:
+     - attached photo selected
+     - theme preset selected
+     - generated rustic intro
+     - factual details, dimensions, care
+     - internal cost/shipping + customer shipping
+   - Expected: save succeeds and product appears in products table.
+
+2. Supplier packet + PO history
+   - Open `/dashboard/#orders`
+   - On an order, click `Generate Supplier Packet`
+   - Click `Save Supplier PO Record`
+   - Expected: record appears under `Supplier PO History`.
+
+3. Storefront customer-safe content
+   - Open `/`, `/gallery.html`, `/splits.html`, `/products/index.html`
+   - Expected: rustic Farmhouse Frames branding and no supplier/vendor names.
+
+4. Product page content format
+   - Open one product detail page
+   - Expected:
+     - intro is rustic and themed
+     - mockup setting appears
+     - dimensions/care appear factual
+     - no raw markers like `[INTRO]` are visible.
+
+## 8) Post-deploy quick checks
+
+1. Verify custom domain resolves at `https://www.farmhouseframes.com`
+2. Verify admin login works for allowlisted account only
+3. Verify one test checkout creates rows in:
+   - `order_requests`
+   - `order_request_items`
+4. Verify supplier packet save creates rows in:
+   - `supplier_order_packets`
