@@ -43,7 +43,8 @@
 	<script type="module">
 		import { buildPageTitle, loadProducts, matchesCategory, renderProductCard } from './products.js';
 
-		const category = document.body.dataset.category || 'all';
+		const params = new URLSearchParams(window.location.search);
+		const category = params.get('category') || 'all';
 		const productsRoot = document.getElementById('productsRoot');
 		const resultsTitle = document.getElementById('resultsTitle');
 		const pageTitle = document.getElementById('pageTitle');
@@ -108,4 +109,3 @@
 	</script>
 </body>
 </html>
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Products - Farmhouse Frames</title><style>body{font-family:Arial;padding:20px;background:#f5f5f5}.products-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}.product-card{background:white;padding:15px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}.product-card h3{margin:0 0 10px 0}.product-card p{color:#666;margin:5px 0}.price{font-size:1.3em;color:#27ae60;font-weight:bold;margin:10px 0}button{background:#27ae60;color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer}button:hover{background:#229954}nav{margin-bottom:20px}nav a{margin-right:15px;text-decoration:none;color:#333}</style></head><body><nav><a href="/">Home</a><a href="/cart.html">Cart</a></nav><h1>Our Products</h1><div id="products" class="products-grid"></div><script>fetch('../data/products.json').then(r=>r.json()).then(products=>{let html='';products.forEach(p=>{html+='<div class="product-card"><h3>'+p.name+'</h3><p>'+p.description+'</p><p class="price">$'+p.sellingPrice.toFixed(2)+'</p><button onclick="addToCart('+p.name+','+p.sellingPrice+')">Add to Cart</button></div>'});document.getElementById('products').innerHTML=html});function addToCart(name,price){let cart=JSON.parse(localStorage.getItem('cart'))||[];cart.push({name:name,price:price});localStorage.setItem('cart',JSON.stringify(cart));alert(name+' added to cart!')}</script></body></html>

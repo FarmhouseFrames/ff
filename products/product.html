@@ -38,6 +38,8 @@
     const detailIntro = document.getElementById('detailIntro');
     const params = new URLSearchParams(window.location.search);
     const productId = params.get('id');
+    const category = params.get('category') || 'all';
+    const backHref = `./index.html?category=${encodeURIComponent(category)}`;
 
     function renderMissingProduct() {
       detailTitle.textContent = 'Product not found';
@@ -46,7 +48,7 @@
         <section class="card empty-state">
           <h2>Missing product</h2>
           <p>Check the product ID in the URL or add the product to the shared JSON catalog.</p>
-          <p><a class="button-link primary" href="./index.html">Browse all products</a></p>
+          <p><a class="button-link primary" href="${backHref}">Browse all products</a></p>
         </section>
       `;
     }
@@ -87,7 +89,7 @@
               <div class="detail-actions">
                 <select id="sizeSelect" aria-label="Choose a size">${sizeOptions}</select>
                 <button id="addToCartButton" class="button" type="button">Add to cart</button>
-                <a class="button-link" href="./index.html">Back to products</a>
+                <a class="button-link" href="${backHref}">Back to products</a>
               </div>
             </section>
 

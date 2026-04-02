@@ -1323,6 +1323,26 @@
                 ? 'Crop position updated. Drag again or fine-tune with the sliders.'
                 : 'No image loaded.';
         }
+        // Auto-load image from URL parameter if provided (from dashboard upload)
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const imageUrl = params.get('imageUrl');
+            if (imageUrl) {
+                const image = new Image();
+                image.crossOrigin = 'anonymous';
+                image.onload = () => {
+                    state.image = image;
+                    state.fileName = 'Uploaded image';
+                    statusText.textContent = `Loaded from upload at ${image.width} × ${image.height}px.`;
+                    queueRender();
+                };
+                image.onerror = () => {
+                    statusText.textContent = 'Could not load the uploaded image. Try uploading again.';
+                };
+                image.src = imageUrl;
+            }
+        })();
+
 
         imageInput.addEventListener('change', (event) => {
             const [file] = event.target.files || [];

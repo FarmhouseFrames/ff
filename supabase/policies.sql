@@ -17,6 +17,8 @@ alter table public.cases enable row level security;
 alter table public.uploads enable row level security;
 alter table public.clients enable row level security;
 alter table public.orders enable row level security;
+alter table public.order_requests enable row level security;
+alter table public.order_request_items enable row level security;
 alter table public.order_items enable row level security;
 alter table public.hours_log enable row level security;
 alter table public.mileage_log enable row level security;
@@ -39,7 +41,7 @@ declare
 begin
   foreach t in array array[
     'products','product_photos','categories','cases','uploads',
-    'clients','orders','order_items',
+    'clients','orders','order_requests','order_request_items','order_items',
     'hours_log','mileage_log','expenses','payments',
     'case_files','case_templates','evidence_index'
   ]
@@ -55,6 +57,26 @@ begin
   end loop;
 end $$;
 
+drop policy if exists "Public can create order requests" on public.order_requests;
+create policy "Public can create order requests"
+on public.order_requests for insert
+to anon, authenticated
+with check (
+  char_length(trim(customer_name)) > 0
+  and position('@' in customer_email) > 1
+  and total >= 0
+);
+
+drop policy if exists "Public can create order request items" on public.order_request_items;
+create policy "Public can create order request items"
+on public.order_request_items for insert
+to anon, authenticated
+with check (
+  quantity > 0
+  and unit_price >= 0
+  and char_length(trim(title)) > 0
+);
+
 -- Storage (run after creating buckets)
 alter table storage.objects enable row level security;
 
@@ -63,7 +85,7 @@ returns boolean
 language sql
 stable
 as $$
-  select bucket = any(array['product-images','uploads','order-files','case-files']);
+  select bucket = any(array['product-images','uploads','photo-uploads','order-files','case-files']);
 $$;
 
 drop policy if exists "Admin can manage objects in admin buckets" on storage.objects;

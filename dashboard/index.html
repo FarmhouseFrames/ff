@@ -13,833 +13,598 @@
         <div class="brand-title">Farmhouse Frames</div>
         <div class="brand-subtitle">Admin</div>
       </div>
+
       <nav class="nav">
         <a href="#dashboard" data-route="dashboard" class="active">Dashboard</a>
         <a href="#products" data-route="products">Products</a>
         <a href="#uploads" data-route="uploads">Uploads</a>
-        <a href="../admin-dashboard.html">Studio Cutter</a>
+        <a href="../admin/splitter-tool.html">Studio Cutter</a>
+        <a href="../admin/manual-entry.html">Manual Entry</a>
         <a href="#orders" data-route="orders">Orders</a>
         <a href="#clients" data-route="clients">Clients</a>
         <a href="#logs" data-route="logs">Logs</a>
         <a href="#settings" data-route="settings">Settings</a>
       </nav>
+
       <div class="sidebar-footer">
         <div id="whoami" class="muted small"></div>
         <button id="logoutBtn" class="btn">Log out</button>
       </div>
     </aside>
+
     <main class="main">
       <header class="topbar">
         <h1 id="pageTitle">Dashboard</h1>
         <div class="topbar-actions">
-          <span id="statusPill" class="pill">Loading&hellip;</span>
+          <span id="statusPill" class="pill">Loading…</span>
         </div>
       </header>
 
       <section id="content" class="content">
-        <div class="card">
-          <h2>Welcome</h2>
-          <p class="muted">
-            This is a Supabase-backed admin panel scaffold. Use the left nav to switch pages.
-          </p>
+        <div id="page-dashboard">
+          <div class="card">
+            <h2>Welcome</h2>
+            <p class="muted">
+              This is a Supabase-backed admin panel scaffold. Use the left nav to switch pages.
+            </p>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h3>Total products</h3>
+              <div id="metricProducts" class="metric">—</div>
+            </div>
+            <div class="card">
+              <h3>Total orders</h3>
+              <div id="metricOrders" class="metric">—</div>
+            </div>
+            <div class="card">
+              <h3>Recent uploads</h3>
+              <div id="metricUploads" class="metric">—</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Quick Actions</h2>
+            <div class="row">
+              <button class="btn primary" id="seedDemoBtn">Seed demo data</button>
+              <button class="btn" id="refreshBtn">Refresh metrics</button>
+              <a class="btn quick-link" href="../admin/splitter-tool.html">Open studio cutter</a>
+              <a class="btn quick-link" href="../admin/manual-entry.html">Open manual entry</a>
+            </div>
+            <p class="muted small">
+              "Seed demo data" inserts a few rows into products/orders/uploads so you can confirm RLS + allowlist works.
+            </p>
+            <div id="message" class="message" hidden></div>
+          </div>
         </div>
 
-        <div class="grid">
+        <div id="page-uploads" style="display: none;">
           <div class="card">
-            <h3>Total products</h3>
-            <div id="metricProducts" class="metric">—</div>
+            <h2>Upload Photo to Editor</h2>
+            <p class="muted">Select a photo to push to the Studio Cutter editor. You can then crop, cut, and apply it to products.</p>
           </div>
+
           <div class="card">
-            <h3>Total orders</h3>
-            <div id="metricOrders" class="metric">—</div>
+            <form id="uploadForm" class="form">
+              <div class="form-group">
+                <label for="uploadFile">Select Image</label>
+                <input id="uploadFile" type="file" accept="image/*" required>
+                <p class="muted small">Supported: JPG, PNG, WebP, GIF (max 20MB)</p>
+              </div>
+
+              <div class="form-group">
+                <label for="uploadLabel">Label (optional)</label>
+                <input id="uploadLabel" type="text" placeholder="e.g., Spring Project #1">
+              </div>
+
+              <div class="form-group">
+                <label for="uploadCategory">Category (optional)</label>
+                <input id="uploadCategory" type="text" placeholder="e.g., Springs, Falls, Winter">
+              </div>
+
+              <div class="row">
+                <button type="submit" class="btn primary" id="uploadBtn">Upload & Open Editor</button>
+              </div>
+
+              <div id="uploadMessage" class="message" style="margin-top: 16px;" hidden></div>
+            </form>
           </div>
-          <div class="card">
-            <h3>Recent uploads</h3>
-            <div id="metricUploads" class="metric">—</div>
+
+          <div id="recentUploads" class="card" style="display: none;">
+            <h3>Recent Uploads</h3>
+            <div id="uploadsList" class="grid"></div>
           </div>
         </div>
 
-        <div class="card">
-          <h2>Quick Actions</h2>
-          <div class="row">
-            <button class="btn primary" id="seedDemoBtn">Seed demo data</button>
-            <button class="btn" id="refreshBtn">Refresh metrics</button>
-            <a class="btn quick-link" href="../admin-dashboard.html">Open studio cutter</a>
+        <div id="page-products" style="display: none;">
+          <div class="card">
+            <h2>Create Sellable Product</h2>
+            <p class="muted">Add a supplier product link (Walmart, CanvasChamp, Amazon) and set your finished retail price.</p>
           </div>
-          <p class="muted small">
-            “Seed demo data” inserts a few rows into products/orders/uploads so you can confirm RLS + allowlist works.
-          </p>
-          <div id="message" class="message" hidden></div>
+
+          <div class="card">
+            <form id="productForm" class="form">
+              <label>
+                <span>Product name</span>
+                <input id="productName" type="text" required>
+              </label>
+              <label>
+                <span>Category</span>
+                <input id="productCategory" type="text" placeholder="Mounted Prints, Canvas, Puzzles">
+              </label>
+              <label>
+                <span>Supplier</span>
+                <select id="productSupplier">
+                  <option value="Walmart">Walmart</option>
+                  <option value="CanvasChamp">CanvasChamp</option>
+                  <option value="Amazon">Amazon</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+              <label>
+                <span>Supplier link</span>
+                <input id="productSupplierUrl" type="url" placeholder="https://..." required>
+              </label>
+              <label>
+                <span>Your sell price (USD)</span>
+                <input id="productPrice" type="number" step="0.01" min="0" required>
+              </label>
+              <label>
+                <span>Description</span>
+                <textarea id="productDescription" placeholder="Finished product details your customers will see"></textarea>
+              </label>
+              <div class="row">
+                <button class="btn primary" type="submit">Save Product</button>
+              </div>
+            </form>
+            <div id="productMessage" class="message" hidden></div>
+          </div>
+
+          <div class="card">
+            <h3>Current Products</h3>
+            <div id="productsTableWrap" class="muted">Loading products…</div>
+          </div>
+        </div>
+
+        <div id="page-orders" style="display: none;">
+          <div class="card">
+            <h2>Customer Orders To Fulfill</h2>
+            <p class="muted">Orders placed on the storefront appear here so you can order from your supplier, brand, then deliver by pickup or shipping.</p>
+          </div>
+
+          <div class="card">
+            <h3>Incoming Order Requests</h3>
+            <div id="orderRequestsWrap" class="muted">Loading orders…</div>
+          </div>
+        </div>
+
+        <div id="page-other" style="display: none;">
+          <div class="card">
+            <h2>Coming Soon</h2>
+            <p class="muted">This page is not yet implemented.</p>
+          </div>
         </div>
       </section>
     </main>
-  </div>
-
-  <!-- Modal overlay -->
-  <div id="modalOverlay" class="modal-overlay" hidden>
-    <div class="modal" role="dialog" aria-modal="true">
-      <div class="modal-header">
-        <h2 id="modalTitle" class="modal-title"></h2>
-        <button id="modalClose" class="btn icon-btn" aria-label="Close">&#x2715;</button>
-      </div>
-      <div id="modalBody" class="modal-body"></div>
-    </div>
   </div>
 
   <script type="module">
     import { requireAdminSession, signOut, getCurrentUser } from './js/auth.js';
     import { supabase } from './js/supabaseClient.js';
 
-    const $  = (sel, ctx = document) => ctx.querySelector(sel);
-    const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
-    const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    const fmt     = n => '$' + Number(n ?? 0).toFixed(2);
-    const fmtDate = s => s ? new Date(s).toLocaleDateString() : '\u2014';
-    const today   = () => new Date().toISOString().slice(0, 10);
+    const $ = (sel) => document.querySelector(sel);
+    const msg = $('#message');
+    const uploadMsg = $('#uploadMessage');
+    const productMsg = $('#productMessage');
+
+    function showMessage(text, kind = 'ok') {
+      msg.hidden = false;
+      msg.className = `message ${kind}`;
+      msg.textContent = text;
+    }
+
+    function showUploadMessage(text, kind = 'ok') {
+      uploadMsg.hidden = false;
+      uploadMsg.className = `message ${kind}`;
+      uploadMsg.textContent = text;
+    }
+
+    function showProductMessage(text, kind = 'ok') {
+      if (!productMsg) return;
+      productMsg.hidden = false;
+      productMsg.className = `message ${kind}`;
+      productMsg.textContent = text;
+    }
 
     function setStatus(text, kind = 'neutral') {
-      const p = $('#statusPill');
-      p.textContent = text;
-      p.className   = 'pill ' + kind;
+      const pill = $('#statusPill');
+      pill.textContent = text;
+      pill.className = `pill ${kind}`;
     }
 
-    function showMsg(form, text, kind = 'ok') {
-      const el = $('#message', form);
-      if (!el) return;
-      el.hidden = false;
-      el.className = 'message ' + kind;
-      el.textContent = text;
+    function setPageVisibility(route) {
+      const pages = document.querySelectorAll('[id^="page-"]');
+      pages.forEach(page => {
+        page.style.display = 'none';
+      });
+
+      const validRoutes = ['dashboard', 'products', 'uploads', 'orders', 'clients', 'logs', 'settings'];
+      if (validRoutes.includes(route)) {
+        const page = $(`#page-${route}`);
+        if (page) {
+          page.style.display = 'block';
+          if (route === 'products') {
+            loadProductsPage();
+          }
+          if (route === 'orders') {
+            loadOrderRequests();
+          }
+        } else {
+          document.getElementById('page-other').style.display = 'block';
+        }
+      } else {
+        document.getElementById('page-other').style.display = 'block';
+      }
     }
 
-    // Modal
-    function openModal(title, bodyHTML) {
-      $('#modalTitle').textContent = title;
-      $('#modalBody').innerHTML    = bodyHTML;
-      $('#modalOverlay').hidden    = false;
-    }
-    function closeModal() { $('#modalOverlay').hidden = true; }
-
-    $('#modalClose').addEventListener('click', closeModal);
-    $('#modalOverlay').addEventListener('click', e => { if (e.target === $('#modalOverlay')) closeModal(); });
-
-    // Router
-    const ROUTES = {
-      dashboard : { title: 'Dashboard', render: renderDashboard },
-      products  : { title: 'Products',  render: renderProducts  },
-      orders    : { title: 'Orders',    render: renderOrders    },
-      clients   : { title: 'Clients',   render: renderClients   },
-      uploads   : { title: 'Uploads',   render: renderUploads   },
-      logs      : { title: 'Logs',      render: renderLogs      },
-      settings  : { title: 'Settings',  render: renderSettings  },
-    };
-
-    async function navigate() {
+    function setTitleFromHash() {
       const route = (location.hash || '#dashboard').slice(1);
-      const def   = ROUTES[route] || ROUTES.dashboard;
-      $('#pageTitle').textContent = def.title;
-      $$('.nav a').forEach(a => a.classList.toggle('active', a.dataset.route === route));
-      setStatus('Loading\u2026', 'neutral');
-      const content = $('#content');
-      content.innerHTML = '<div class="loading-wrap"><div class="loading-spinner"></div></div>';
+      const map = {
+        dashboard: 'Dashboard',
+        products: 'Products',
+        uploads: 'Uploads',
+        orders: 'Orders',
+        clients: 'Clients',
+        logs: 'Logs',
+        settings: 'Settings'
+      };
+      $('#pageTitle').textContent = map[route] || 'Dashboard';
+      document.querySelectorAll('.nav a').forEach(a => {
+        const isActive = a.dataset.route === route;
+        a.classList.toggle('active', isActive);
+      });
+      setPageVisibility(route);
+    }
+
+    async function refreshMetrics() {
+      setStatus('Loading metrics…', 'neutral');
+
+      const [{ count: productsCount }, { count: ordersCount }, { count: uploadsCount }] = await Promise.all([
+        supabase.from('products').select('*', { count: 'exact', head: true }),
+        supabase.from('order_requests').select('*', { count: 'exact', head: true }),
+        supabase.from('uploads').select('*', { count: 'exact', head: true }),
+      ]);
+
+      $('#metricProducts').textContent = productsCount ?? '0';
+      $('#metricOrders').textContent = ordersCount ?? '0';
+      $('#metricUploads').textContent = uploadsCount ?? '0';
+
+      setStatus('Ready', 'ok');
+    }
+
+    async function seedDemoData() {
+      msg.hidden = true;
+      setStatus('Seeding…', 'neutral');
+
+      const { data: prod, error: prodErr } = await supabase
+        .from('products')
+        .insert({
+          name: 'Demo Frame',
+          price: 49.99,
+          category: 'Demo',
+          description: 'Seeded demo product',
+          active: true
+        })
+        .select()
+        .single();
+
+      if (prodErr) throw prodErr;
+
+      const { data: client, error: clientErr } = await supabase
+        .from('clients')
+        .insert({
+          name: 'Demo Client',
+          email: 'demo@example.com',
+          phone: '555-0100',
+          notes: 'Seeded demo client'
+        })
+        .select()
+        .single();
+
+      if (clientErr) throw clientErr;
+
+      const { data: order, error: orderErr } = await supabase
+        .from('orders')
+        .insert({
+          client_id: client.id,
+          status: 'pending',
+          total: 49.99
+        })
+        .select()
+        .single();
+
+      if (orderErr) throw orderErr;
+
+      const user = await getCurrentUser();
+      const { error: uploadErr } = await supabase
+        .from('uploads')
+        .insert({
+          file_url: 'https://example.com/demo.jpg',
+          label: 'Seeded demo upload',
+          category: 'Demo',
+          case_id: null,
+          uploaded_by: user.id
+        });
+
+      if (uploadErr) throw uploadErr;
+
+      showMessage('Seeded demo rows successfully. Refresh metrics to confirm counts increased.', 'ok');
+      setStatus('Ready', 'ok');
+    }
+
+    async function handleFileUpload(event) {
+      event.preventDefault();
+      uploadMsg.hidden = true;
+      setStatus('Uploading…', 'neutral');
+
       try {
-        await def.render(content);
-        setStatus('Ready', 'ok');
-      } catch (e) {
-        content.innerHTML = '<div class="card"><p class="text-err">' + esc(e.message) + '</p></div>';
+        const file = $('#uploadFile').files[0];
+        if (!file) {
+          throw new Error('No file selected');
+        }
+
+        const label = $('#uploadLabel').value.trim();
+        const category = $('#uploadCategory').value.trim();
+        const user = await getCurrentUser();
+
+        // Create a unique file path
+        const timestamp = Date.now();
+        const fileName = `${timestamp}-${file.name}`;
+        const filePath = `uploads/${user.id}/${fileName}`;
+
+        // Upload image to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('photo-uploads')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: publicData } = supabase.storage
+          .from('photo-uploads')
+          .getPublicUrl(filePath);
+
+        const fileUrl = publicData?.publicUrl || '';
+
+        // Save upload metadata to database
+        const { data: record, error: dbError } = await supabase
+          .from('uploads')
+          .insert({
+            file_url: fileUrl,
+            label: label || file.name,
+            category: category || null,
+            case_id: null,
+            uploaded_by: user.id
+          })
+          .select()
+          .single();
+
+        if (dbError) throw dbError;
+
+        showUploadMessage(`✓ Uploaded "${file.name}" successfully!`, 'ok');
+        setStatus('Opening editor…', 'neutral');
+
+        // Redirect to editor with image URL as parameter
+        setTimeout(() => {
+          window.location.href = `../admin-dashboard.html?imageUrl=${encodeURIComponent(fileUrl)}`;
+        }, 800);
+
+      } catch (error) {
+        showUploadMessage(error?.message || 'Upload failed. Please try again.', 'error');
         setStatus('Error', 'error');
       }
     }
 
-    // Dashboard
-    async function renderDashboard(el) {
-      const [
-        { count: pc }, { count: oc }, { count: uc }, { count: cc },
-        { data: orders }
-      ] = await Promise.all([
-        supabase.from('products').select('*', { count: 'exact', head: true }),
-        supabase.from('orders').select('*', { count: 'exact', head: true }),
-        supabase.from('uploads').select('*', { count: 'exact', head: true }),
-        supabase.from('clients').select('*', { count: 'exact', head: true }),
-        supabase.from('orders')
-          .select('id, status, total, created_at, clients(name)')
-          .order('created_at', { ascending: false }).limit(5),
-      ]);
+    async function loadProductsPage() {
+      const wrap = $('#productsTableWrap');
+      if (!wrap) return;
+      wrap.textContent = 'Loading products…';
 
-      const recentRows = (orders || []).map(o =>
-        '<tr>' +
-        '<td class="mono small">' + esc(o.id.slice(0,8)) + '&hellip;</td>' +
-        '<td>' + esc(o.clients?.name ?? '\u2014') + '</td>' +
-        '<td><span class="badge badge-' + esc(o.status) + '">' + esc(o.status) + '</span></td>' +
-        '<td>' + fmt(o.total) + '</td>' +
-        '<td class="muted small">' + fmtDate(o.created_at) + '</td>' +
-        '</tr>'
-      ).join('');
-
-      el.innerHTML =
-        '<div class="grid grid-4">' +
-          '<div class="card metric-card"><div class="metric-label">Products</div><div class="metric">' + (pc ?? 0) + '</div></div>' +
-          '<div class="card metric-card"><div class="metric-label">Orders</div><div class="metric">' + (oc ?? 0) + '</div></div>' +
-          '<div class="card metric-card"><div class="metric-label">Clients</div><div class="metric">' + (cc ?? 0) + '</div></div>' +
-          '<div class="card metric-card"><div class="metric-label">Uploads</div><div class="metric">' + (uc ?? 0) + '</div></div>' +
-        '</div>' +
-        '<div class="card">' +
-          '<div class="card-header"><h2 class="card-title">Recent Orders</h2></div>' +
-          (orders?.length
-            ? '<div class="table-wrap"><table class="table"><thead><tr><th>ID</th><th>Client</th><th>Status</th><th>Total</th><th>Date</th></tr></thead><tbody>' + recentRows + '</tbody></table></div>'
-            : '<p class="muted">No orders yet.</p>') +
-        '</div>' +
-        '<div class="card">' +
-          '<div class="card-header"><h2 class="card-title">Quick Actions</h2></div>' +
-          '<div class="row"><button class="btn primary" id="seedDemoBtn">Seed demo data</button></div>' +
-          '<p class="muted small mt-sm">Inserts a demo product, client, order, and upload to test RLS.</p>' +
-          '<div id="message" class="message" hidden></div>' +
-        '</div>';
-
-      $('#seedDemoBtn').addEventListener('click', async () => {
-        const btn = $('#seedDemoBtn');
-        btn.disabled = true; btn.textContent = 'Seeding\u2026';
-        try {
-          await seedDemoData();
-          showMsg(el, 'Demo data seeded. Navigate to Products / Orders to confirm.', 'ok');
-        } catch (e) {
-          showMsg(el, e.message, 'error');
-        } finally {
-          btn.disabled = false; btn.textContent = 'Seed demo data';
-        }
-      });
-    }
-
-    async function seedDemoData() {
-      const { data: client, error: e1 } = await supabase.from('clients')
-        .insert({ name: 'Demo Client', email: 'demo@example.com', phone: '555-0100', notes: 'Seeded demo client' })
-        .select().single();
-      if (e1) throw e1;
-      const { error: e2 } = await supabase.from('products')
-        .insert({ name: 'Demo Frame', price: 49.99, category: 'Demo', description: 'Seeded demo product', active: true });
-      if (e2) throw e2;
-      const { error: e3 } = await supabase.from('orders')
-        .insert({ client_id: client.id, status: 'pending', total: 49.99 });
-      if (e3) throw e3;
-      const user = await getCurrentUser();
-      if (!user) throw new Error('Session expired. Please log in again.');
-      const { error: e4 } = await supabase.from('uploads')
-        .insert({ file_url: 'https://example.com/demo.jpg', label: 'Demo Upload', category: 'Demo', uploaded_by: user.id });
-      if (e4) throw e4;
-    }
-
-    // Products
-    async function renderProducts(el) {
-      const { data: products, error } = await supabase
-        .from('products').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-
-      const rows = products.map(p =>
-        '<tr>' +
-        '<td>' + esc(p.name) + '</td>' +
-        '<td>' + esc(p.category ?? '\u2014') + '</td>' +
-        '<td>' + fmt(p.price) + '</td>' +
-        '<td><span class="badge ' + (p.active ? 'badge-ok' : 'badge-neutral') + '">' + (p.active ? 'Active' : 'Inactive') + '</span></td>' +
-        '<td class="muted small">' + fmtDate(p.created_at) + '</td>' +
-        '<td><div class="action-row">' +
-          '<button class="btn small" data-action="edit-product" data-id="' + esc(p.id) + '">Edit</button>' +
-          '<button class="btn small danger" data-action="delete-product" data-id="' + esc(p.id) + '">Delete</button>' +
-        '</div></td>' +
-        '</tr>'
-      ).join('');
-
-      el.innerHTML =
-        '<div class="card">' +
-          '<div class="card-header">' +
-            '<h2 class="card-title">Products (' + products.length + ')</h2>' +
-            '<button class="btn primary" id="addProductBtn">+ Add Product</button>' +
-          '</div>' +
-          (products.length
-            ? '<div class="table-wrap"><table class="table"><thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Status</th><th>Added</th><th>Actions</th></tr></thead><tbody id="productRows">' + rows + '</tbody></table></div>'
-            : '<p class="muted">No products yet. Add one to get started.</p>') +
-        '</div>';
-
-      $('#addProductBtn').addEventListener('click', () => openProductForm(null, () => renderProducts(el)));
-
-      const tbody = $('#productRows');
-      if (tbody) {
-        tbody.addEventListener('click', async e => {
-          const btn = e.target.closest('[data-action]');
-          if (!btn) return;
-          const { action, id } = btn.dataset;
-          if (action === 'edit-product') {
-            const p = products.find(x => x.id === id);
-            if (p) openProductForm(p, () => renderProducts(el));
-          }
-          if (action === 'delete-product') {
-            if (!confirm('Delete this product?')) return;
-            const { error } = await supabase.from('products').delete().eq('id', id);
-            if (error) { alert(error.message); return; }
-            await renderProducts(el);
-          }
-        });
-      }
-    }
-
-    function openProductForm(product, onSave) {
-      openModal(product ? 'Edit Product' : 'Add Product',
-        '<form id="productForm" class="form">' +
-          '<div class="form-grid">' +
-            '<label><span>Name *</span><input name="name" value="' + esc(product?.name ?? '') + '" required /></label>' +
-            '<label><span>Category</span><input name="category" value="' + esc(product?.category ?? '') + '" /></label>' +
-            '<label><span>Price</span><input name="price" type="number" step="0.01" min="0" value="' + (product?.price ?? '') + '" /></label>' +
-            '<label class="checkbox-label"><input name="active" type="checkbox" ' + (product?.active !== false ? 'checked' : '') + ' /><span>Active / For Sale</span></label>' +
-          '</div>' +
-          '<label style="margin-top:4px"><span>Description</span><textarea name="description" rows="3">' + esc(product?.description ?? '') + '</textarea></label>' +
-          '<div class="form-actions">' +
-            '<button type="submit" class="btn primary">Save</button>' +
-            '<button type="button" class="btn" id="cancelModal">Cancel</button>' +
-          '</div>' +
-          '<div id="message" class="message" hidden></div>' +
-        '</form>'
-      );
-      $('#cancelModal').addEventListener('click', closeModal);
-      $('#productForm').addEventListener('submit', async e => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        const payload = {
-          name:        fd.get('name').trim(),
-          category:    fd.get('category').trim() || null,
-          price:       parseFloat(fd.get('price')) || 0,
-          description: fd.get('description').trim() || null,
-          active:      fd.has('active'),
-        };
-        const btn = $('[type=submit]', e.target);
-        btn.disabled = true; btn.textContent = 'Saving\u2026';
-        try {
-          if (product) {
-            const { error } = await supabase.from('products').update(payload).eq('id', product.id);
-            if (error) throw error;
-          } else {
-            const { error } = await supabase.from('products').insert(payload);
-            if (error) throw error;
-          }
-          closeModal(); await onSave();
-        } catch (err) {
-          showMsg($('#productForm'), err.message, 'error');
-          btn.disabled = false; btn.textContent = 'Save';
-        }
-      });
-    }
-
-    // Orders
-    const ORDER_STATUSES = ['pending','paid','processing','shipped','delivered','cancelled'];
-
-    async function renderOrders(el) {
-      const { data: orders, error } = await supabase
-        .from('orders')
-        .select('id, status, total, created_at, clients(name, email)')
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
         .order('created_at', { ascending: false });
-      if (error) throw error;
 
-      const rows = orders.map(o =>
-        '<tr>' +
-        '<td class="mono small">' + esc(o.id.slice(0,8)) + '&hellip;</td>' +
-        '<td><div>' + esc(o.clients?.name ?? '\u2014') + '</div>' +
-          (o.clients?.email ? '<div class="muted small">' + esc(o.clients.email) + '</div>' : '') + '</td>' +
-        '<td><select class="select-inline" data-action="update-status" data-id="' + esc(o.id) + '">' +
-          ORDER_STATUSES.map(s => '<option value="' + s + '"' + (o.status === s ? ' selected' : '') + '>' + s + '</option>').join('') +
-        '</select></td>' +
-        '<td>' + fmt(o.total) + '</td>' +
-        '<td class="muted small">' + fmtDate(o.created_at) + '</td>' +
-        '<td><button class="btn small" data-action="view-order" data-id="' + esc(o.id) + '">View</button></td>' +
-        '</tr>'
-      ).join('');
-
-      el.innerHTML =
-        '<div class="card">' +
-          '<div class="card-header"><h2 class="card-title">Orders (' + orders.length + ')</h2></div>' +
-          (orders.length
-            ? '<div class="table-wrap"><table class="table"><thead><tr><th>ID</th><th>Client</th><th>Status</th><th>Total</th><th>Date</th><th>Actions</th></tr></thead><tbody id="orderRows">' + rows + '</tbody></table></div>'
-            : '<p class="muted">No orders yet.</p>') +
-        '</div>';
-
-      const tbody = $('#orderRows');
-      if (tbody) {
-        tbody.addEventListener('change', async e => {
-          const sel = e.target.closest('[data-action="update-status"]');
-          if (!sel) return;
-          const { error } = await supabase.from('orders').update({ status: sel.value }).eq('id', sel.dataset.id);
-          if (error) alert(error.message);
-        });
-        tbody.addEventListener('click', async e => {
-          const btn = e.target.closest('[data-action="view-order"]');
-          if (!btn) return;
-          const order = orders.find(o => o.id === btn.dataset.id);
-          if (order) await viewOrderDetails(order);
-        });
+      if (error) {
+        wrap.innerHTML = `<div class="message error">${error.message}</div>`;
+        return;
       }
-    }
 
-    async function viewOrderDetails(order) {
-      const { data: items } = await supabase
-        .from('order_items').select('qty, unit_price, products(name)').eq('order_id', order.id);
-
-      const itemRows = (items || []).map(i =>
-        '<tr><td>' + esc(i.products?.name ?? '\u2014') + '</td><td>' + i.qty + '</td><td>' + fmt(i.unit_price) + '</td><td>' + fmt(i.qty * i.unit_price) + '</td></tr>'
-      ).join('');
-
-      openModal('Order ' + order.id.slice(0,8) + '\u2026',
-        '<div class="detail-section">' +
-          '<div class="detail-row"><span>Client</span><span>' + esc(order.clients?.name ?? '\u2014') + '</span></div>' +
-          '<div class="detail-row"><span>Status</span><span class="badge badge-' + esc(order.status) + '">' + esc(order.status) + '</span></div>' +
-          '<div class="detail-row"><span>Total</span><span>' + fmt(order.total) + '</span></div>' +
-          '<div class="detail-row"><span>Date</span><span>' + fmtDate(order.created_at) + '</span></div>' +
-        '</div>' +
-        '<h3 style="margin:14px 0 8px">Line Items</h3>' +
-        (items?.length
-          ? '<div class="table-wrap"><table class="table"><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr></thead><tbody>' + itemRows + '</tbody></table></div>'
-          : '<p class="muted">No line items recorded.</p>') +
-        '<div class="form-actions"><button class="btn" id="cancelModal">Close</button></div>'
-      );
-      $('#cancelModal').addEventListener('click', closeModal);
-    }
-
-    // Clients
-    async function renderClients(el) {
-      const { data: clients, error } = await supabase
-        .from('clients').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-
-      const rows = clients.map(c =>
-        '<tr>' +
-        '<td>' + esc(c.name) + '</td>' +
-        '<td>' + (c.email ? '<a href="mailto:' + esc(c.email) + '" class="link">' + esc(c.email) + '</a>' : '\u2014') + '</td>' +
-        '<td>' + esc(c.phone ?? '\u2014') + '</td>' +
-        '<td class="muted small">' + fmtDate(c.created_at) + '</td>' +
-        '<td><div class="action-row">' +
-          '<button class="btn small" data-action="edit-client" data-id="' + esc(c.id) + '">Edit</button>' +
-          '<button class="btn small danger" data-action="delete-client" data-id="' + esc(c.id) + '">Delete</button>' +
-        '</div></td>' +
-        '</tr>'
-      ).join('');
-
-      el.innerHTML =
-        '<div class="card">' +
-          '<div class="card-header">' +
-            '<h2 class="card-title">Clients (' + clients.length + ')</h2>' +
-            '<button class="btn primary" id="addClientBtn">+ Add Client</button>' +
-          '</div>' +
-          (clients.length
-            ? '<div class="table-wrap"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Added</th><th>Actions</th></tr></thead><tbody id="clientRows">' + rows + '</tbody></table></div>'
-            : '<p class="muted">No clients yet.</p>') +
-        '</div>';
-
-      $('#addClientBtn').addEventListener('click', () => openClientForm(null, () => renderClients(el)));
-
-      const tbody = $('#clientRows');
-      if (tbody) {
-        tbody.addEventListener('click', async e => {
-          const btn = e.target.closest('[data-action]');
-          if (!btn) return;
-          const { action, id } = btn.dataset;
-          if (action === 'edit-client') {
-            const c = clients.find(x => x.id === id);
-            if (c) openClientForm(c, () => renderClients(el));
-          }
-          if (action === 'delete-client') {
-            if (!confirm('Delete this client?')) return;
-            const { error } = await supabase.from('clients').delete().eq('id', id);
-            if (error) { alert(error.message); return; }
-            await renderClients(el);
-          }
-        });
+      if (!data || !data.length) {
+        wrap.innerHTML = '<p class="muted">No products yet. Add your first product above.</p>';
+        return;
       }
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Supplier</th>
+              <th>Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map((product) => `
+              <tr>
+                <td>${product.name || '—'}</td>
+                <td>${product.category || '—'}</td>
+                <td>$${Number(product.price || 0).toFixed(2)}</td>
+                <td>${product.supplier_name || '—'}</td>
+                <td>${product.supplier_url ? `<a href="${product.supplier_url}" target="_blank" rel="noopener">Open</a>` : '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
     }
 
-    function openClientForm(client, onSave) {
-      openModal(client ? 'Edit Client' : 'Add Client',
-        '<form id="clientForm" class="form">' +
-          '<div class="form-grid">' +
-            '<label><span>Name *</span><input name="name" value="' + esc(client?.name ?? '') + '" required /></label>' +
-            '<label><span>Email</span><input name="email" type="email" value="' + esc(client?.email ?? '') + '" /></label>' +
-            '<label><span>Phone</span><input name="phone" value="' + esc(client?.phone ?? '') + '" /></label>' +
-          '</div>' +
-          '<label style="margin-top:4px"><span>Notes</span><textarea name="notes" rows="3">' + esc(client?.notes ?? '') + '</textarea></label>' +
-          '<div class="form-actions">' +
-            '<button type="submit" class="btn primary">Save</button>' +
-            '<button type="button" class="btn" id="cancelModal">Cancel</button>' +
-          '</div>' +
-          '<div id="message" class="message" hidden></div>' +
-        '</form>'
-      );
-      $('#cancelModal').addEventListener('click', closeModal);
-      $('#clientForm').addEventListener('submit', async e => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        const payload = {
-          name:  fd.get('name').trim(),
-          email: fd.get('email').trim() || null,
-          phone: fd.get('phone').trim() || null,
-          notes: fd.get('notes').trim() || null,
-        };
-        const btn = $('[type=submit]', e.target);
-        btn.disabled = true; btn.textContent = 'Saving\u2026';
-        try {
-          if (client) {
-            const { error } = await supabase.from('clients').update(payload).eq('id', client.id);
-            if (error) throw error;
-          } else {
-            const { error } = await supabase.from('clients').insert(payload);
-            if (error) throw error;
-          }
-          closeModal(); await onSave();
-        } catch (err) {
-          showMsg($('#clientForm'), err.message, 'error');
-          btn.disabled = false; btn.textContent = 'Save';
-        }
-      });
+    async function createProduct(event) {
+      event.preventDefault();
+      if (productMsg) productMsg.hidden = true;
+
+      const payload = {
+        name: $('#productName').value.trim(),
+        category: $('#productCategory').value.trim() || null,
+        supplier_name: $('#productSupplier').value,
+        supplier_url: $('#productSupplierUrl').value.trim(),
+        price: Number($('#productPrice').value || 0),
+        description: $('#productDescription').value.trim() || null,
+        active: true
+      };
+
+      if (!payload.name || !payload.supplier_url || payload.price < 0) {
+        showProductMessage('Enter a product name, supplier link, and valid price.', 'error');
+        return;
+      }
+
+      const { error } = await supabase.from('products').insert(payload);
+      if (error) {
+        showProductMessage(error.message, 'error');
+        return;
+      }
+
+      showProductMessage('Product saved. It can now be sold from your storefront.', 'ok');
+      $('#productForm').reset();
+      await loadProductsPage();
+      await refreshMetrics();
     }
 
-    // Uploads
-    async function renderUploads(el) {
-      const { data: uploads, error } = await supabase
-        .from('uploads').select('id, file_url, label, category, created_at')
+    async function updateOrderRequestStatus(orderId, status) {
+      const { error } = await supabase
+        .from('order_requests')
+        .update({ status })
+        .eq('id', orderId);
+
+      if (error) {
+        showMessage(error.message, 'error');
+        return;
+      }
+
+      await loadOrderRequests();
+      await refreshMetrics();
+    }
+
+    async function loadOrderRequests() {
+      const wrap = $('#orderRequestsWrap');
+      if (!wrap) return;
+      wrap.textContent = 'Loading orders…';
+
+      const { data, error } = await supabase
+        .from('order_requests')
+        .select('*')
         .order('created_at', { ascending: false });
-      if (error) throw error;
 
-      const rows = uploads.map(u =>
-        '<tr>' +
-        '<td>' + esc(u.label ?? '\u2014') + '</td>' +
-        '<td>' + esc(u.category ?? '\u2014') + '</td>' +
-        '<td><a href="' + esc(u.file_url) + '" target="_blank" rel="noopener" class="link truncate">' + esc(u.file_url) + '</a></td>' +
-        '<td class="muted small">' + fmtDate(u.created_at) + '</td>' +
-        '<td><button class="btn small danger" data-action="delete-upload" data-id="' + esc(u.id) + '">Delete</button></td>' +
-        '</tr>'
-      ).join('');
-
-      el.innerHTML =
-        '<div class="card">' +
-          '<div class="card-header"><h2 class="card-title">Uploads (' + uploads.length + ')</h2></div>' +
-          (uploads.length
-            ? '<div class="table-wrap"><table class="table"><thead><tr><th>Label</th><th>Category</th><th>File URL</th><th>Date</th><th>Actions</th></tr></thead><tbody id="uploadRows">' + rows + '</tbody></table></div>'
-            : '<p class="muted">No uploads yet.</p>') +
-        '</div>';
-
-      const tbody = $('#uploadRows');
-      if (tbody) {
-        tbody.addEventListener('click', async e => {
-          const btn = e.target.closest('[data-action="delete-upload"]');
-          if (!btn || !confirm('Delete this upload record?')) return;
-          const { error } = await supabase.from('uploads').delete().eq('id', btn.dataset.id);
-          if (error) { alert(error.message); return; }
-          await renderUploads(el);
-        });
-      }
-    }
-
-    // Logs
-    async function renderLogs(el) {
-      el.innerHTML =
-        '<div class="tabs" id="logTabs">' +
-          '<button class="tab active" data-tab="hours">Hours</button>' +
-          '<button class="tab" data-tab="mileage">Mileage</button>' +
-          '<button class="tab" data-tab="expenses">Expenses</button>' +
-          '<button class="tab" data-tab="payments">Payments</button>' +
-        '</div>' +
-        '<div id="tabContent"></div>';
-
-      const tabContent = $('#tabContent', el);
-
-      async function switchTab(tab) {
-        $$('.tab', el).forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-        tabContent.innerHTML = '<div class="loading-wrap"><div class="loading-spinner"></div></div>';
-        const fns = { hours: renderHoursTab, mileage: renderMileageTab, expenses: renderExpensesTab, payments: renderPaymentsTab };
-        try { await fns[tab]?.(tabContent); }
-        catch(e) { tabContent.innerHTML = '<div class="card"><p class="text-err">' + esc(e.message) + '</p></div>'; }
+      if (error) {
+        wrap.innerHTML = `<div class="message error">${error.message}</div>`;
+        return;
       }
 
-      $('#logTabs', el).addEventListener('click', e => {
-        const tab = e.target.closest('.tab');
-        if (tab) switchTab(tab.dataset.tab);
-      });
+      if (!data || !data.length) {
+        wrap.innerHTML = '<p class="muted">No customer orders yet.</p>';
+        return;
+      }
 
-      await switchTab('hours');
-    }
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Fulfillment</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map((order) => `
+              <tr>
+                <td>${new Date(order.created_at).toLocaleString()}</td>
+                <td>
+                  ${order.customer_name}<br>
+                  <a href="mailto:${order.customer_email}">${order.customer_email}</a>
+                </td>
+                <td>${order.fulfillment_method || 'Pickup'}</td>
+                <td>$${Number(order.total || 0).toFixed(2)}</td>
+                <td>${order.status || 'new'}</td>
+                <td>
+                  <select data-order-status="${order.id}">
+                    <option value="new" ${order.status === 'new' ? 'selected' : ''}>New</option>
+                    <option value="ordered" ${order.status === 'ordered' ? 'selected' : ''}>Ordered</option>
+                    <option value="received" ${order.status === 'received' ? 'selected' : ''}>Received</option>
+                    <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Ready</option>
+                    <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
+                  </select>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
 
-    async function renderHoursTab(el) {
-      const { data, error } = await supabase.from('hours_log').select('*').order('date', { ascending: false });
-      if (error) throw error;
-      const totalHrs = data.reduce((s, r) => s + Number(r.hours), 0);
-      const rows = data.map(r =>
-        '<tr><td>' + esc(r.date) + '</td><td>' + r.hours + '</td><td>' + esc(r.description ?? '\u2014') + '</td>' +
-        '<td><button class="btn small danger" data-action="delete-hours" data-id="' + esc(r.id) + '">Delete</button></td></tr>'
-      ).join('');
-
-      el.innerHTML =
-        '<div class="card">' +
-          '<div class="card-header">' +
-            '<h2 class="card-title">Hours Log' + (data.length ? ' \u2014 ' + totalHrs.toFixed(1) + ' hrs total' : '') + '</h2>' +
-            '<button class="btn primary" id="addHoursBtn">+ Log Hours</button>' +
-          '</div>' +
-          (data.length
-            ? '<div class="table-wrap"><table class="table"><thead><tr><th>Date</th><th>Hours</th><th>Description</th><th></th></tr></thead><tbody id="hoursRows">' + rows + '</tbody></table></div>'
-            : '<p class="muted">No hours logged.</p>') +
-        '</div>';
-
-      $('#addHoursBtn').addEventListener('click', () => {
-        openModal('Log Hours',
-          '<form id="hoursForm" class="form">' +
-            '<div class="form-grid">' +
-              '<label><span>Date *</span><input name="date" type="date" value="' + today() + '" required /></label>' +
-              '<label><span>Hours *</span><input name="hours" type="number" step="0.5" min="0" required /></label>' +
-            '</div>' +
-            '<label><span>Description</span><textarea name="description" rows="2"></textarea></label>' +
-            '<div class="form-actions"><button type="submit" class="btn primary">Save</button><button type="button" class="btn" id="cancelModal">Cancel</button></div>' +
-            '<div id="message" class="message" hidden></div>' +
-          '</form>'
-        );
-        $('#cancelModal').addEventListener('click', closeModal);
-        $('#hoursForm').addEventListener('submit', async e => {
-          e.preventDefault();
-          const fd = new FormData(e.target);
-          const { error } = await supabase.from('hours_log').insert({
-            date: fd.get('date'), hours: parseFloat(fd.get('hours')),
-            description: fd.get('description').trim() || null,
-          });
-          if (error) { showMsg($('#hoursForm'), error.message, 'error'); return; }
-          closeModal(); await renderHoursTab(el);
+      wrap.querySelectorAll('select[data-order-status]').forEach((select) => {
+        select.addEventListener('change', async () => {
+          await updateOrderRequestStatus(select.dataset.orderStatus, select.value);
         });
       });
-
-      const tbody = $('#hoursRows');
-      if (tbody) {
-        tbody.addEventListener('click', async e => {
-          const btn = e.target.closest('[data-action="delete-hours"]');
-          if (!btn || !confirm('Delete this entry?')) return;
-          const { error } = await supabase.from('hours_log').delete().eq('id', btn.dataset.id);
-          if (error) { alert(error.message); return; }
-          await renderHoursTab(el);
-        });
-      }
     }
 
-    async function renderMileageTab(el) {
-      const { data, error } = await supabase.from('mileage_log').select('*').order('date', { ascending: false });
-      if (error) throw error;
-      const totalMi = data.reduce((s, r) => s + Number(r.miles), 0);
-      const rows = data.map(r =>
-        '<tr><td>' + esc(r.date) + '</td><td>' + r.miles + '</td><td>' + esc(r.purpose ?? '\u2014') + '</td>' +
-        '<td><button class="btn small danger" data-action="delete-mileage" data-id="' + esc(r.id) + '">Delete</button></td></tr>'
-      ).join('');
-
-      el.innerHTML =
-        '<div class="card">' +
-          '<div class="card-header">' +
-            '<h2 class="card-title">Mileage Log' + (data.length ? ' \u2014 ' + totalMi.toFixed(1) + ' mi total' : '') + '</h2>' +
-            '<button class="btn primary" id="addMileageBtn">+ Log Mileage</button>' +
-          '</div>' +
-          (data.length
-            ? '<div class="table-wrap"><table class="table"><thead><tr><th>Date</th><th>Miles</th><th>Purpose</th><th></th></tr></thead><tbody id="mileageRows">' + rows + '</tbody></table></div>'
-            : '<p class="muted">No mileage logged.</p>') +
-        '</div>';
-
-      $('#addMileageBtn').addEventListener('click', () => {
-        openModal('Log Mileage',
-          '<form id="mileageForm" class="form">' +
-            '<div class="form-grid">' +
-              '<label><span>Date *</span><input name="date" type="date" value="' + today() + '" required /></label>' +
-              '<label><span>Miles *</span><input name="miles" type="number" step="0.1" min="0" required /></label>' +
-            '</div>' +
-            '<label><span>Purpose</span><input name="purpose" /></label>' +
-            '<div class="form-actions"><button type="submit" class="btn primary">Save</button><button type="button" class="btn" id="cancelModal">Cancel</button></div>' +
-            '<div id="message" class="message" hidden></div>' +
-          '</form>'
-        );
-        $('#cancelModal').addEventListener('click', closeModal);
-        $('#mileageForm').addEventListener('submit', async e => {
-          e.preventDefault();
-          const fd = new FormData(e.target);
-          const { error } = await supabase.from('mileage_log').insert({
-            date: fd.get('date'), miles: parseFloat(fd.get('miles')),
-            purpose: fd.get('purpose').trim() || null,
-          });
-          if (error) { showMsg($('#mileageForm'), error.message, 'error'); return; }
-          closeModal(); await renderMileageTab(el);
-        });
-      });
-
-      const tbody = $('#mileageRows');
-      if (tbody) {
-        tbody.addEventListener('click', async e => {
-          const btn = e.target.closest('[data-action="delete-mileage"]');
-          if (!btn || !confirm('Delete this entry?')) return;
-          const { error } = await supabase.from('mileage_log').delete().eq('id', btn.dataset.id);
-          if (error) { alert(error.message); return; }
-          await renderMileageTab(el);
-        });
-      }
-    }
-
-    async function renderExpensesTab(el) {
-      const { data, error } = await supabase.from('expenses').select('*').order('date', { ascending: false });
-      if (error) throw error;
-      const total = data.reduce((s, r) => s + Number(r.amount), 0);
-      const rows = data.map(r =>
-        '<tr><td>' + esc(r.date) + '</td><td>' + esc(r.category ?? '\u2014') + '</td><td>' + fmt(r.amount) + '</td><td>' + esc(r.description ?? '\u2014') + '</td>' +
-        '<td><button class="btn small danger" data-action="delete-expense" data-id="' + esc(r.id) + '">Delete</button></td></tr>'
-      ).join('');
-
-      el.innerHTML =
-        '<div class="card">' +
-          '<div class="card-header">' +
-            '<h2 class="card-title">Expenses' + (data.length ? ' \u2014 ' + fmt(total) + ' total' : '') + '</h2>' +
-            '<button class="btn primary" id="addExpenseBtn">+ Add Expense</button>' +
-          '</div>' +
-          (data.length
-            ? '<div class="table-wrap"><table class="table"><thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Description</th><th></th></tr></thead><tbody id="expenseRows">' + rows + '</tbody></table></div>'
-            : '<p class="muted">No expenses logged.</p>') +
-        '</div>';
-
-      $('#addExpenseBtn').addEventListener('click', () => {
-        openModal('Add Expense',
-          '<form id="expenseForm" class="form">' +
-            '<div class="form-grid">' +
-              '<label><span>Date *</span><input name="date" type="date" value="' + today() + '" required /></label>' +
-              '<label><span>Amount *</span><input name="amount" type="number" step="0.01" min="0" required /></label>' +
-              '<label><span>Category</span><input name="category" placeholder="e.g. Supplies, Travel" /></label>' +
-            '</div>' +
-            '<label style="margin-top:4px"><span>Description</span><textarea name="description" rows="2"></textarea></label>' +
-            '<div class="form-actions"><button type="submit" class="btn primary">Save</button><button type="button" class="btn" id="cancelModal">Cancel</button></div>' +
-            '<div id="message" class="message" hidden></div>' +
-          '</form>'
-        );
-        $('#cancelModal').addEventListener('click', closeModal);
-        $('#expenseForm').addEventListener('submit', async e => {
-          e.preventDefault();
-          const fd = new FormData(e.target);
-          const { error } = await supabase.from('expenses').insert({
-            date: fd.get('date'), amount: parseFloat(fd.get('amount')),
-            category: fd.get('category').trim() || null,
-            description: fd.get('description').trim() || null,
-          });
-          if (error) { showMsg($('#expenseForm'), error.message, 'error'); return; }
-          closeModal(); await renderExpensesTab(el);
-        });
-      });
-
-      const tbody = $('#expenseRows');
-      if (tbody) {
-        tbody.addEventListener('click', async e => {
-          const btn = e.target.closest('[data-action="delete-expense"]');
-          if (!btn || !confirm('Delete this entry?')) return;
-          const { error } = await supabase.from('expenses').delete().eq('id', btn.dataset.id);
-          if (error) { alert(error.message); return; }
-          await renderExpensesTab(el);
-        });
-      }
-    }
-
-    async function renderPaymentsTab(el) {
-      const { data, error } = await supabase.from('payments').select('*').order('date', { ascending: false });
-      if (error) throw error;
-      const total = data.reduce((s, r) => s + Number(r.amount), 0);
-      const rows = data.map(r =>
-        '<tr><td>' + esc(r.date) + '</td><td>' + esc(r.method ?? '\u2014') + '</td><td>' + fmt(r.amount) + '</td><td>' + esc(r.note ?? '\u2014') + '</td>' +
-        '<td><button class="btn small danger" data-action="delete-payment" data-id="' + esc(r.id) + '">Delete</button></td></tr>'
-      ).join('');
-
-      el.innerHTML =
-        '<div class="card">' +
-          '<div class="card-header">' +
-            '<h2 class="card-title">Payments' + (data.length ? ' \u2014 ' + fmt(total) + ' received' : '') + '</h2>' +
-            '<button class="btn primary" id="addPaymentBtn">+ Record Payment</button>' +
-          '</div>' +
-          (data.length
-            ? '<div class="table-wrap"><table class="table"><thead><tr><th>Date</th><th>Method</th><th>Amount</th><th>Note</th><th></th></tr></thead><tbody id="paymentRows">' + rows + '</tbody></table></div>'
-            : '<p class="muted">No payments recorded.</p>') +
-        '</div>';
-
-      $('#addPaymentBtn').addEventListener('click', () => {
-        openModal('Record Payment',
-          '<form id="paymentForm" class="form">' +
-            '<div class="form-grid">' +
-              '<label><span>Date *</span><input name="date" type="date" value="' + today() + '" required /></label>' +
-              '<label><span>Amount *</span><input name="amount" type="number" step="0.01" min="0" required /></label>' +
-              '<label><span>Method</span><input name="method" placeholder="e.g. Cash, Stripe, Venmo" /></label>' +
-            '</div>' +
-            '<label style="margin-top:4px"><span>Note</span><input name="note" /></label>' +
-            '<div class="form-actions"><button type="submit" class="btn primary">Save</button><button type="button" class="btn" id="cancelModal">Cancel</button></div>' +
-            '<div id="message" class="message" hidden></div>' +
-          '</form>'
-        );
-        $('#cancelModal').addEventListener('click', closeModal);
-        $('#paymentForm').addEventListener('submit', async e => {
-          e.preventDefault();
-          const fd = new FormData(e.target);
-          const { error } = await supabase.from('payments').insert({
-            date: fd.get('date'), amount: parseFloat(fd.get('amount')),
-            method: fd.get('method').trim() || null,
-            note:   fd.get('note').trim() || null,
-          });
-          if (error) { showMsg($('#paymentForm'), error.message, 'error'); return; }
-          closeModal(); await renderPaymentsTab(el);
-        });
-      });
-
-      const tbody = $('#paymentRows');
-      if (tbody) {
-        tbody.addEventListener('click', async e => {
-          const btn = e.target.closest('[data-action="delete-payment"]');
-          if (!btn || !confirm('Delete this entry?')) return;
-          const { error } = await supabase.from('payments').delete().eq('id', btn.dataset.id);
-          if (error) { alert(error.message); return; }
-          await renderPaymentsTab(el);
-        });
-      }
-    }
-
-    // Settings
-    async function renderSettings(el) {
-      let config = {};
-      try {
-        const resp = await fetch('../data/config.json');
-        if (resp.ok) config = await resp.json();
-      } catch (_) {}
-
-      const user = await getCurrentUser();
-
-      const configRows = Object.entries(config)
-        .filter(([k]) => k !== 'collections')
-        .map(([k, v]) =>
-          '<div class="setting-row">' +
-          '<span class="setting-key">' + esc(k) + '</span>' +
-          '<span class="setting-val">' + esc(typeof v === 'object' ? JSON.stringify(v) : String(v)) + '</span>' +
-          '</div>'
-        ).join('') || '<p class="muted">Could not load config.json.</p>';
-
-      el.innerHTML =
-        '<div class="card">' +
-          '<div class="card-header"><h2 class="card-title">Business Configuration</h2></div>' +
-          '<p class="muted small">Read from <code>data/config.json</code>. Edit the file in the repository to update values.</p>' +
-          '<div class="settings-list" style="margin-top:12px">' + configRows + '</div>' +
-        '</div>' +
-        '<div class="card">' +
-          '<div class="card-header"><h2 class="card-title">Admin Account</h2></div>' +
-          '<div class="detail-section">' +
-            '<div class="detail-row"><span>Email</span><span>' + esc(user?.email ?? '\u2014') + '</span></div>' +
-            '<div class="detail-row"><span>User ID</span><span class="mono small">' + esc(user?.id ?? '\u2014') + '</span></div>' +
-            '<div class="detail-row"><span>Last Sign In</span><span>' + (user?.last_sign_in_at ? fmtDate(user.last_sign_in_at) : '\u2014') + '</span></div>' +
-          '</div>' +
-        '</div>';
-    }
-
-    // Bootstrap
     await requireAdminSession();
+
     const user = await getCurrentUser();
-    $('#whoami').textContent = user?.email ? 'Signed in as ' + user.email : 'Signed in';
+    $('#whoami').textContent = user?.email ? `Signed in as ${user.email}` : 'Signed in';
+
+    setTitleFromHash();
+    window.addEventListener('hashchange', setTitleFromHash);
 
     $('#logoutBtn').addEventListener('click', async () => {
       await signOut();
       window.location.href = './login.html';
     });
 
-    window.addEventListener('hashchange', navigate);
-    await navigate();
+    $('#refreshBtn').addEventListener('click', async () => {
+      msg.hidden = true;
+      try {
+        await refreshMetrics();
+      } catch (e) {
+        showMessage(e?.message || String(e), 'error');
+        setStatus('Error', 'error');
+      }
+    });
+
+    $('#seedDemoBtn').addEventListener('click', async () => {
+      try {
+        await seedDemoData();
+        await refreshMetrics();
+      } catch (e) {
+        showMessage(e?.message || String(e), 'error');
+        setStatus('Error', 'error');
+      }
+    });
+
+    $('#uploadForm').addEventListener('submit', handleFileUpload);
+    $('#productForm')?.addEventListener('submit', createProduct);
+
+    try {
+      await refreshMetrics();
+    } catch (e) {
+      showMessage(e?.message || String(e), 'error');
+      setStatus('Error', 'error');
+    }
   </script>
 </body>
 </html>

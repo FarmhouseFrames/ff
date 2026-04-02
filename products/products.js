@@ -17,6 +17,15 @@ const FALLBACK_IMAGE_SVG = encodeURIComponent(`
 
 const FALLBACK_IMAGE = `data:image/svg+xml;charset=UTF-8,${FALLBACK_IMAGE_SVG}`;
 
+const CATEGORY_ALIASES = {
+  canvas: ['canvas', 'canvas-print', 'canvas-prints', 'desk-canvas', 'desk-canvases'],
+  'split-canvas': ['split-canvas', 'split canvas', 'triptych', 'diptych', 'five-panel', 'multi-panel', 'ensemble', 'quintet'],
+  'mounted-prints': ['mounted-prints', 'mounted print', 'mounted prints', 'mounted'],
+  puzzles: ['puzzles', 'puzzle'],
+  cards: ['cards', 'card', 'greeting-cards', 'greeting cards', 'stationery'],
+  'wall-art': ['wall-art', 'wall art', 'wood-box', 'decor']
+};
+
 function slugify(value) {
   return String(value || '')
     .toLowerCase()
@@ -162,9 +171,42 @@ export function matchesCategory(product, category) {
     return true;
   }
 
-  return slugify(product.category) === slugify(category)
-    || slugify(product.title).includes(slugify(category))
-    || product.tags.some((tag) => slugify(tag) === slugify(category));
+  const target = slugify(category);
+
+  const aliasEntry = Object.entries(CATEGORY_ALIASES).find(([, aliases]) =>
+    aliases.some((alias) => slugify(alias) === target)
+  );
+
+  const normalizedTargets = new Set([target]);
+  if (aliasEntry) {
+    const [canonical, aliases] = aliasEntry;
+    normalizedTargets.add(slugify(canonical));
+    aliases.forEach((alias) => normalizedTargets.add(slugify(alias)));
+  }
+
+  const productTerms = [
+    product.category,
+    product.title,
+    ...(product.tags || [])
+  ].map(slugify);
+
+  return productTerms.some((term) => {
+    if (!term) {
+      return false;
+    }
+
+    if (normalizedTargets.has(term)) {
+      return true;
+    }
+
+    for (const targetTerm of normalizedTargets) {
+      if (term.includes(targetTerm)) {
+        return true;
+      }
+    }
+
+    return false;
+  });
 }
 
 export function findProduct(products, slugOrId) {
@@ -197,7 +239,7 @@ export function renderProductCard(product) {
         <div class="price">${formatCurrency(product.price, product.currency)}</div>
         <div class="pill-row">${sizes}</div>
         <div class="product-actions">
-          <a class="button-link primary" href="./product.html?id=${encodeURIComponent(product.slug)}">View details</a>
+          <a class="button-link primary" href="./product.html?id=${encodeURIComponent(product.slug)}&category=${encodeURIComponent(slugify(product.category))}">View details</a>
         </div>
       </div>
     </article>

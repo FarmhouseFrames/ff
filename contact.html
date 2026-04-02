@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact | Farmhouse Frames</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/site.css">
+    <style>
+        .contact-card {
+            border: 1px solid #d8cfc4;
+            border-radius: 12px;
+            background: #fff;
+            padding: 20px;
+        }
+
+        .contact-form {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .contact-form input,
+        .contact-form textarea {
+            border: 1px solid #d4c7b8;
+            border-radius: 6px;
+            padding: 10px;
+            font: inherit;
+        }
+
+        .contact-form textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+<header>Farmhouse Frames</header>
+<nav>
+    <a href="index.html">Home</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="splits.html">Walmart Splits</a>
+    <a href="catalog.html">Catalog</a>
+    <a href="contact.html">Contact</a>
+</nav>
+
+<section class="section">
+    <h2>Contact Farmhouse Frames</h2>
+    <p class="section-intro">For custom orders, local pickup questions, or print requests, send a direct message.</p>
+
+    <article class="contact-card">
+        <p>Email: <a href="mailto:kristin@farmhouseframes.com">kristin@farmhouseframes.com</a></p>
+        <p>SEO focus: Local Cadiz Photography, Trigg County Scenery, Farmhouse Wall Art.</p>
+
+        <form class="contact-form" action="mailto:kristin@farmhouseframes.com" method="post" enctype="text/plain">
+            <input type="text" name="name" placeholder="Your name" required>
+            <input type="email" name="email" placeholder="Your email" required>
+            <textarea name="message" placeholder="How can we help?" required></textarea>
+            <button type="submit" class="banner-btn">Send Inquiry</button>
+        </form>
+    </article>
+</section>
+
+<footer>© 2026 Farmhouse Frames</footer>
+</body>
+</html>

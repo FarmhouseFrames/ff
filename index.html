@@ -8,7 +8,7 @@
     <!-- Signature font -->
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="assets/css/site.css">
 </head>
 
 <body>
@@ -18,8 +18,10 @@
     </header>
 
     <nav>
-        <a href="#collections">Collections</a>
-        <a href="products/products.html">Products</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="splits.html">Walmart Splits</a>
+        <a href="catalog.html">Catalog</a>
+        <a href="contact.html">Contact</a>
         <a href="pickup.html">Pickup & Shipping</a>
         <a href="certificates.html">Certificates</a>
     </nav>
@@ -28,60 +30,114 @@
         <div class="banner-overlay">
             <h1>Farmhouse Frames</h1>
             <p>Fine Art Photography • Captured in Kentucky</p>
-            <a href="#collections" class="banner-btn">View Collections</a>
+            <a href="collections.html" class="banner-btn">Shop by Product Type</a>
         </div>
     </div>
 
     <section class="section" id="collections">
-        <h2>Collections</h2>
+        <h2>Shop by Product Type</h2>
 
         <div class="collection-list">
 
-            <a href="COLLECTIONS/springs.html" class="flip-card">
+            <a href="products/index.html?category=canvas" class="flip-card">
                 <div class="flip-inner">
-                    <div class="flip-front">Southern Springs & Still Waters</div>
-                    <div class="flip-back">View Collection →</div>
+                    <div class="flip-front">Canvas Prints</div>
+                    <div class="flip-back">Browse Canvas →</div>
                 </div>
             </a>
 
-            <a href="COLLECTIONS/falls.html" class="flip-card">
+            <a href="products/index.html?category=split-canvas" class="flip-card">
                 <div class="flip-inner">
-                    <div class="flip-front">Woodland Falls</div>
-                    <div class="flip-back">View Collection →</div>
+                    <div class="flip-front">Split Canvas</div>
+                    <div class="flip-back">Browse Split Canvas →</div>
                 </div>
             </a>
 
-            <a href="COLLECTIONS/winter.html" class="flip-card">
+            <a href="products/index.html?category=mounted-prints" class="flip-card">
                 <div class="flip-inner">
-                    <div class="flip-front">Winter Roads & Rural Frost</div>
-                    <div class="flip-back">View Collection →</div>
+                    <div class="flip-front">Mounted Prints</div>
+                    <div class="flip-back">Browse Mounted Prints →</div>
                 </div>
             </a>
 
-            <a href="COLLECTIONS/structures.html" class="flip-card">
+            <a href="products/index.html?category=puzzles" class="flip-card">
                 <div class="flip-inner">
-                    <div class="flip-front">Forgotten Structures</div>
-                    <div class="flip-back">View Collection →</div>
+                    <div class="flip-front">Puzzles</div>
+                    <div class="flip-back">Browse Puzzles →</div>
                 </div>
             </a>
 
-            <a href="COLLECTIONS/giants.html" class="flip-card">
+            <a href="products/index.html?category=cards" class="flip-card">
                 <div class="flip-inner">
-                    <div class="flip-front">Woodland Giants</div>
-                    <div class="flip-back">View Collection →</div>
+                    <div class="flip-front">Cards</div>
+                    <div class="flip-back">Browse Cards →</div>
                 </div>
             </a>
 
-            <a href="COLLECTIONS/lakeside.html" class="flip-card">
+            <a href="products/index.html?category=wall-art" class="flip-card">
                 <div class="flip-inner">
-                    <div class="flip-front">Lakeside Horizons</div>
-                    <div class="flip-back">View Collection →</div>
+                    <div class="flip-front">Wall Art</div>
+                    <div class="flip-back">Browse Wall Art →</div>
                 </div>
             </a>
 
         </div>
     </section>
 
+    <section class="section" id="featured-products">
+        <h2>Featured Products</h2>
+        <p class="section-intro">
+            Shop current mounted prints, canvases, and puzzles from the shared Farmhouse Frames catalog.
+        </p>
+
+        <div id="featured-products-grid" class="featured-products-grid">
+            <div class="catalog-status">Loading featured products...</div>
+        </div>
+
+        <div class="section-actions">
+            <a href="products/index.html" class="banner-btn">Shop Full Catalog</a>
+        </div>
+    </section>
+
     <footer>
         © 2026 Farmhouse Frames — Fine Art Photography in Kentucky
     </footer>
+
+    <script type="module">
+        import { formatCurrency, loadProducts } from './products/products.js';
+
+        const grid = document.getElementById('featured-products-grid');
+
+        function renderFeaturedProducts(products) {
+            if (!products.length) {
+                grid.innerHTML = '<div class="catalog-status">No featured products are available yet.</div>';
+                return;
+            }
+
+            grid.innerHTML = products.map((product) => {
+                const sizeText = product.sizes.length ? product.sizes.join(' • ') : 'Custom sizing';
+                return `
+                    <article class="featured-product-card">
+                        <img src="${product.image}" alt="${product.title}" class="featured-product-image">
+                        <div class="featured-product-body">
+                            <div class="featured-product-category">${product.category}</div>
+                            <h3>${product.title}</h3>
+                            <p>${product.description || 'Built from the current shared catalog.'}</p>
+                            <div class="featured-product-meta">
+                                <span class="featured-price">${formatCurrency(product.price, product.currency)}</span>
+                                <span class="featured-size">${sizeText}</span>
+                            </div>
+                            <a href="products/product.html?id=${encodeURIComponent(product.slug)}" class="featured-product-link">View Product</a>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        try {
+            const products = await loadProducts();
+            renderFeaturedProducts(products.slice(0, 4));
+        } catch (error) {
+            grid.innerHTML = `<div class="catalog-status">${error.message}</div>`;
+        }
+    </script>

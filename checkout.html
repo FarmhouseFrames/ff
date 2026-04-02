@@ -3,31 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stripe Checkout</title>
-    <script src="https://js.stripe.com/v3/"></script>
+    <title>Checkout | Farmhouse Frames</title>
+    <link rel="stylesheet" href="css/commerce.css">
 </head>
 <body>
-    <h1>Stripe Checkout</h1>
-    <button id="checkout-button">Checkout</button>
-    <script>
-        var stripe = Stripe('pk_test_51T5OoIIRN8sNwCYegLxa5waYe6Ssm1j7Csh6unmzy481iNJ8SdUyMMBjTM2YgVtdSEG0s9CgT37GugXYYhnG5leX001bZmruH1');
-        var checkoutButton = document.getElementById('checkout-button');
+    <div class="commerce-shell">
+        <header class="commerce-topbar">
+            <a href="index.html">Farmhouse Frames</a>
+            <div class="summary-actions">
+                <a class="commerce-button-link" href="cart.html">Back to cart</a>
+                <a class="commerce-button-link" href="products/index.html">Browse products</a>
+            </div>
+        </header>
 
-        checkoutButton.addEventListener('click', function () {
-            // Call your backend to create the Checkout session
-            fetch('/create-checkout-session', { method: 'POST' })
-                .then(function (response) {
-                    return response.json();
-                })
-                .then(function (sessionId) {
-                    return stripe.redirectToCheckout({ sessionId: sessionId });
-                })
-                .then(function (result) {
-                    if (result.error) {
-                        alert(result.error.message);
+        <section class="commerce-hero">
+            <h1>Checkout</h1>
+            <p>This checkout flow is static-hosting safe. It prepares a full order request from the shared cart and sends it to the store email.</p>
+        </section>
+
+        <main id="checkoutRoot" class="commerce-layout"></main>
+    </div>
+
+    <script type="module">
+        import { calculateCartTotals, clearCart, formatCartSummary, formatCurrency, loadStoreConfig, readCart } from './js/commerce.js';
+        import { publicSupabase } from './js/supabasePublic.js';
+
+        const checkoutRoot = document.getElementById('checkoutRoot');
+        const config = await loadStoreConfig();
+
+        function renderEmptyCheckout() {
+            checkoutRoot.innerHTML = `
+                <section class="empty-card">
+                    <h2>Your cart is empty</h2>
+                    <p>Add products before going to checkout.</p>
+                    <p><a class="commerce-button-link primary" href="products/index.html">Browse products</a></p>
+                </section>
+            `;
+        }
+
+        function renderCheckout() {
+            const items = readCart();
+            if (!items.length) {
+                renderEmptyCheckout();
+                return;
+            }
+
+            const totals = calculateCartTotals(items, config.tax);
+            checkoutRoot.innerHTML = `
+                <section class="checkout-form">
+                    <h2>Customer details</h2>
+                    <div class="checkout-grid">
+                        <label>
+                            Full name
+                            <input id="customerName" type="text" autocomplete="name" required>
+                        </label>
+                        <label>
+                            Email
+                            <input id="customerEmail" type="email" autocomplete="email" required>
+                        </label>
+                        <label>
+                            Fulfillment
+                            <select id="fulfillmentMethod">
+                                <option value="Pickup">Pickup</option>
+                                <option value="Shipping">Shipping</option>
+                            </select>
+                        </label>
+                        <label>
+                            Notes
+                            <textarea id="orderNotes" placeholder="Pickup timing, shipping preferences, frame notes, or anything else useful."></textarea>
+                        </label>
+                    </div>
+                    <div class="checkout-actions" style="margin-top: 16px;">
+                        <button id="sendOrderButton" class="commerce-button primary" type="button">Prepare order email</button>
+                        <button id="clearAfterSendButton" class="commerce-button" type="button">Clear cart</button>
+                    </div>
+                    <p id="checkoutStatus" class="status-message">Payment processing is not live here yet, so this checkout prepares a structured order request email.</p>
+                </section>
+
+                <aside class="summary-card">
+                    <h2>Order summary</h2>
+                    <div class="summary-list">
+                        ${items.map((item) => `
+                            <div class="summary-line"><span>${item.title}${item.size ? ` (${item.size})` : ''} × ${item.quantity}</span><span>${formatCurrency(item.price * item.quantity, config.currency)}</span></div>
+                        `).join('')}
+                        <div class="summary-line"><span>Subtotal</span><span>${formatCurrency(totals.subtotal, config.currency)}</span></div>
+                        <div class="summary-line"><span>Estimated tax</span><span>${formatCurrency(totals.tax, config.currency)}</span></div>
+                        <div class="summary-line total"><span>Total</span><span>${formatCurrency(totals.total, config.currency)}</span></div>
+                    </div>
+                    <p class="helper-text">Store contact: ${config.businessEmail}</p>
+                </aside>
+            `;
+
+            const status = document.getElementById('checkoutStatus');
+            document.getElementById('sendOrderButton').addEventListener('click', async () => {
+                const formValues = {
+                    name: document.getElementById('customerName').value.trim(),
+                    email: document.getElementById('customerEmail').value.trim(),
+                    fulfillment: document.getElementById('fulfillmentMethod').value,
+                    notes: document.getElementById('orderNotes').value.trim()
+                };
+
+                if (!formValues.name || !formValues.email) {
+                    status.textContent = 'Enter your name and email before preparing the order request.';
+                    return;
+                }
+
+                status.textContent = 'Saving your order request...';
+
+                try {
+                    const { data: orderRequest, error: orderError } = await publicSupabase
+                        .from('order_requests')
+                        .insert({
+                            customer_name: formValues.name,
+                            customer_email: formValues.email,
+                            fulfillment_method: formValues.fulfillment,
+                            notes: formValues.notes || null,
+                            subtotal: totals.subtotal,
+                            tax: totals.tax,
+                            total: totals.total,
+                            status: 'new'
+                        })
+                        .select()
+                        .single();
+
+                    if (orderError) {
+                        throw orderError;
                     }
-                });
-        });
+
+                    const lineItems = items.map((item) => ({
+                        order_request_id: orderRequest.id,
+                        product_id: item.productId || null,
+                        title: item.title,
+                        size: item.size || null,
+                        quantity: item.quantity,
+                        unit_price: item.price
+                    }));
+
+                    const { error: itemError } = await publicSupabase
+                        .from('order_request_items')
+                        .insert(lineItems);
+
+                    if (itemError) {
+                        throw itemError;
+                    }
+
+                    status.textContent = `Order saved (ID: ${orderRequest.id}). Opening your email client...`;
+                } catch (error) {
+                    status.textContent = `Could not save order to dashboard queue. Email fallback still works. (${error.message})`;
+                }
+
+                const subject = encodeURIComponent(`Farmhouse Frames order request for ${formValues.name}`);
+                const body = formatCartSummary(items, config, formValues);
+                window.location.href = `mailto:${encodeURIComponent(config.businessEmail)}?subject=${subject}&body=${body}`;
+                status.textContent = 'Your email client should open with the prefilled order request. Your order has also been routed to the admin queue when available.';
+            });
+
+            document.getElementById('clearAfterSendButton').addEventListener('click', () => {
+                clearCart();
+                renderEmptyCheckout();
+            });
+        }
+
+        renderCheckout();
     </script>
 </body>
 </html>
