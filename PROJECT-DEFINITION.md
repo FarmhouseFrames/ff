@@ -25,16 +25,20 @@ The storefront is designed to stay simple, fast, static-first, and GitHub Pages 
 
 ### Current public pages
 
-- [index.html](/workspaces/ff/index.html): homepage.
+**Blueprint-aligned primary pages:**
+- [index.html](/workspaces/ff/index.html): homepage with mission statement and featured products.
+- [gallery.html](/workspaces/ff/gallery.html): product type showcase (Canvas, Mounted, Clocks, Puzzles, Cards, Wall Art).
+- [splits.html](/workspaces/ff/splits.html): multi-panel canvas arrangements (Quintet, Trio, Ensemble).
+- [catalog.html](/workspaces/ff/catalog.html): standard catalog with category sections (Canvas, Mounted, Clocks, Puzzles, Stationery).
+- [contact.html](/workspaces/ff/contact.html): contact form for inquiries.
+
+**Supporting pages:**
 - [pickup.html](/workspaces/ff/pickup.html): pickup and shipping details.
 - [cart.html](/workspaces/ff/cart.html): cart flow.
 - [checkout.html](/workspaces/ff/checkout.html): checkout flow.
-- [products/index.html](/workspaces/ff/products/index.html): product listing entry point.
-- [products/canvas.html](/workspaces/ff/products/canvas.html): canvas category page.
-- [products/mounted-canvas.html](/workspaces/ff/products/mounted-canvas.html): mounted category page.
-- [products/desk-canvas.html](/workspaces/ff/products/desk-canvas.html): desk canvas page.
-- [products/puzzles.html](/workspaces/ff/products/puzzles.html): puzzle page.
-- [COLLECTIONS](/workspaces/ff/COLLECTIONS): themed collection pages.
+- [products/index.html](/workspaces/ff/products/index.html): product listing entry point (query-parameter driven).
+- [products/product.html](/workspaces/ff/products/product.html): product detail page (query-parameter driven).
+- [COLLECTIONS](/workspaces/ff/COLLECTIONS): themed collection pages (legacy, data-sourced from products.json).
 - [legal](/workspaces/ff/legal): privacy, shipping, and terms pages.
 
 ### Recommended page conventions
@@ -103,12 +107,31 @@ The admin area is private and should use Supabase for authentication and protect
 
 ### Current admin surfaces
 
+**Private authenticated admin dashboard:**
 - [dashboard/login.html](/workspaces/ff/dashboard/login.html): admin login UI.
-- [dashboard/index.html](/workspaces/ff/dashboard/index.html): authenticated admin scaffold with metrics and navigation.
+- [dashboard/index.html](/workspaces/ff/dashboard/index.html): authenticated admin command center with hash-route interface:
+  - **Dashboard:** metrics (products, orders, uploads).
+  - **Uploads (`#uploads`):** upload one image, write upload metadata, then redirect into studio cutter with `imageUrl`.
+  - **Products:** product creation, pricing, inventory, supplier mapping, and cutter integration.
+  - **Orders:** customer order requests, fulfillment status, and supplier packet generation.
+  - **Clients:** customer CRM (structure ready, UI pending).
+  - **Logs:** activity logging (structure ready, UI pending).
+  - **Settings:** business configuration (structure ready, UI pending).
 - [dashboard/js/auth.js](/workspaces/ff/dashboard/js/auth.js): sign-in, sign-out, current user lookup, and allowlist enforcement.
 - [dashboard/js/supabaseClient.js](/workspaces/ff/dashboard/js/supabaseClient.js): Supabase client bootstrap.
 - [dashboard/css/admin.css](/workspaces/ff/dashboard/css/admin.css): admin styling.
-- [admin-dashboard.html](/workspaces/ff/admin-dashboard.html): standalone studio cutter and image preparation tool.
+
+**Admin tools:**
+- [admin/manual-entry.html](/workspaces/ff/admin/manual-entry.html): Kristin-only manual order entry for photo-to-frame alignment verification.
+- [admin/splitter-tool.html](/workspaces/ff/admin/splitter-tool.html): splitter preview tool (redirects to admin-dashboard.html).
+- [admin-dashboard.html](/workspaces/ff/admin-dashboard.html): studio cutter and image preparation tool for visualizing photo crops across Trio, Quintet, and Ensemble layouts.
+
+**Upload-to-editor bridge (implemented):**
+- Upload starts in [dashboard/index.html](/workspaces/ff/dashboard/index.html) at `#uploads`.
+- File is stored in Supabase Storage bucket `photo-uploads`.
+- Upload row is saved in `public.uploads` with `uploaded_by`.
+- App redirects to [admin-dashboard.html](/workspaces/ff/admin-dashboard.html) using `?imageUrl=...`.
+- Studio cutter auto-loads `imageUrl` if present.
 
 ### Legacy admin files
 
@@ -119,11 +142,20 @@ These files still implement a direct login-and-upload flow and should be treated
 
 ### Admin feature direction
 
-- Login with Supabase Auth.
-- Enforce admin allowlisting through an `admin_users` table.
-- Upload and view images through Supabase Storage and related database records.
-- Manage product catalog, inventory, and pricing in a future UI.
-- Add order, client, and analytics views later without changing the overall dashboard entry point.
+**✓ Implemented:**
+- Login with Supabase Auth + allowlist enforcement for Kristin Canada.
+- Photo Asset Manager: bulk upload and Supabase Storage integration.
+- Splitter Preview Tool: visualize photo crops across Trio/Quintet/Ensemble layouts.
+- Manual Order Entry: create orders manually to ensure photo-to-frame alignment.
+- Printify Sync Bridge: SKU/inventory updates and price override for custom margins (supplier packet generation).
+- Product catalog management: create, edit, and manage products with pricing, supplier links, and production presets.
+- Order workflow: track order status from new → ordered → received → ready → completed.
+- Customer order requests: storefront orders appear in admin for fulfillment.
+
+**Future enhancements (UI pending):**
+- Customer CRM: view order history and mailing lists per customer.
+- Activity Logs: audit trail for admin actions.
+- Business Settings: tax rates, shipping costs, customer communication preferences.
 
 ## 5. File and Folder Architecture
 
@@ -132,17 +164,33 @@ This is the GitHub-ready architecture for the current repository.
 ```text
 ff/
 ├── index.html
+├── gallery.html
+├── splits.html
+├── catalog.html
+├── contact.html
 ├── pickup.html
 ├── cart.html
 ├── checkout.html
 ├── admin-dashboard.html
 ├── dashboard.html
 ├── app.js
+├── assets/
+│   ├── css/
+│   │   ├── site.css
+│   │   └── style.css
+│   ├── js/
+│   │   └── (shared modules)
+│   └── photography/
+│       └── (high-res Cadiz photography)
 ├── css/
-│   └── style.css
+│   ├── style.css
+│   └── commerce.css
 ├── data/
 │   ├── config.json
 │   └── products.json
+├── admin/
+│   ├── manual-entry.html
+│   └── splitter-tool.html
 ├── dashboard/
 │   ├── index.html
 │   ├── login.html
@@ -153,13 +201,13 @@ ff/
 │       └── supabaseClient.js
 ├── products/
 │   ├── index.html
-│   ├── canvas.html
-│   ├── mounted-canvas.html
-│   ├── desk-canvas.html
-│   ├── puzzles.html
+│   ├── product.html
+│   ├── products.js
+│   ├── styles.css
 │   └── products.json
 ├── COLLECTIONS/
 ├── images/
+├── js/
 ├── legal/
 └── supabase/
     ├── policies.sql

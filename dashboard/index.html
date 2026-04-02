@@ -608,6 +608,11 @@
           throw new Error('No file selected');
         }
 
+        const maxBytes = 20 * 1024 * 1024;
+        if (file.size > maxBytes) {
+          throw new Error('File is larger than 20MB. Choose a smaller image.');
+        }
+
         const label = $('#uploadLabel').value.trim();
         const category = $('#uploadCategory').value.trim();
         const user = await getCurrentUser();
@@ -617,16 +622,30 @@
         const fileName = `${timestamp}-${file.name}`;
         const filePath = `uploads/${user.id}/${fileName}`;
 
-        // Upload image to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('photo-uploads')
-          .upload(filePath, file);
+        // Upload image to Supabase Storage with fallback bucket support.
+        const bucketCandidates = ['photo-uploads', 'uploads'];
+        let selectedBucket = bucketCandidates[0];
+        let uploadError = null;
+
+        for (const bucket of bucketCandidates) {
+          const { error } = await supabase.storage
+            .from(bucket)
+            .upload(filePath, file);
+
+          if (!error) {
+            selectedBucket = bucket;
+            uploadError = null;
+            break;
+          }
+
+          uploadError = error;
+        }
 
         if (uploadError) throw uploadError;
 
         // Get public URL
         const { data: publicData } = supabase.storage
-          .from('photo-uploads')
+          .from(selectedBucket)
           .getPublicUrl(filePath);
 
         const fileUrl = publicData?.publicUrl || '';

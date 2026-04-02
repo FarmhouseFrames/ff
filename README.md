@@ -10,9 +10,28 @@ Primary project documentation:
 Current implementation highlights:
 
 - Public storefront pages live at the repository root, with product-category pages under [products](/workspaces/ff/products).
-- The authenticated admin lives under [dashboard](/workspaces/ff/dashboard).
+- The authenticated admin lives under [dashboard](/workspaces/ff/dashboard), including the Uploads route for image ingestion.
 - Legacy admin upload flow still exists in [dashboard.html](/workspaces/ff/dashboard.html) and [app.js](/workspaces/ff/app.js).
 - Product and business data currently live in [data](/workspaces/ff/data) and [products/products.json](/workspaces/ff/products/products.json).
+
+## Admin Upload To Editor Flow
+
+Use this URL to go directly to uploads:
+
+- https://farmhouseframes.com/dashboard/#uploads
+
+Current flow:
+
+- Upload an image in [dashboard/index.html](/workspaces/ff/dashboard/index.html) on the Uploads route.
+- File is uploaded to Supabase Storage bucket `photo-uploads`.
+- Metadata is written to `public.uploads`.
+- User is redirected to [admin-dashboard.html](/workspaces/ff/admin-dashboard.html) with `imageUrl` query param.
+- Studio cutter auto-loads that image for crop/split/product prep.
+
+Required Supabase objects:
+
+- Storage bucket: `photo-uploads` (public)
+- RLS policy allowlist includes bucket: `photo-uploads`
 
 ## Automatic SQL Apply Setup
 
