@@ -292,6 +292,27 @@ create table if not exists public.activity_logs (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.contact_help_answers (
+  id uuid primary key default gen_random_uuid(),
+  question text not null,
+  answer text not null,
+  tags text[] not null default '{}'::text[],
+  display_order integer not null default 100,
+  active boolean not null default true,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.contact_help_answers add column if not exists question text;
+alter table public.contact_help_answers add column if not exists answer text;
+alter table public.contact_help_answers add column if not exists tags text[] not null default '{}'::text[];
+alter table public.contact_help_answers add column if not exists display_order integer not null default 100;
+alter table public.contact_help_answers add column if not exists active boolean not null default true;
+alter table public.contact_help_answers add column if not exists created_by uuid references auth.users(id) on delete set null;
+alter table public.contact_help_answers add column if not exists created_at timestamptz not null default now();
+alter table public.contact_help_answers add column if not exists updated_at timestamptz not null default now();
+
 create index if not exists idx_uploads_created_at on public.uploads(created_at desc);
 create index if not exists idx_orders_created_at on public.orders(created_at desc);
 create index if not exists idx_products_created_at on public.products(created_at desc);
@@ -304,6 +325,7 @@ create index if not exists idx_supplier_order_packets_order_id on public.supplie
 create index if not exists idx_supplier_order_packets_created_at on public.supplier_order_packets(created_at desc);
 create index if not exists idx_sourcing_records_updated_at on public.sourcing_records(updated_at desc);
 create index if not exists idx_activity_logs_created_at on public.activity_logs(created_at desc);
+create index if not exists idx_contact_help_answers_active_order on public.contact_help_answers(active, display_order, created_at desc);
 
 insert into public.store_settings (id, business_email, tax_rate, currency)
 values ('storefront', 'kristin@farmhouseframes.com', 0.06, 'USD')

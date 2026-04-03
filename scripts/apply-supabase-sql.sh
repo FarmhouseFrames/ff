@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -59,3 +60,22 @@ else
 fi
 
 echo "Success: Supabase SQL updates applied."
+1. Connection string
+Copy the connection details for your database.
+Details:
+host:db.mrmnstplsfupynafleht.supabase.coport:5432database:postgresuser:postgres
+Code:
+File: Code
+```
+postgresql://postgres:[YOUR-PASSWORD]@db.mrmnstplsfupynafleht.supabase.co:5432/postgres
+```
+
+2. Install Agent Skills (Optional)
+Agent Skills give AI coding tools ready-made instructions, scripts, and resources for working with Supabase more accurately and efficiently.
+Details:
+npx skills add supabase/agent-skills
+Code:
+File: Code
+```
+npx skills add supabase/agent-skills
+```

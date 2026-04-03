@@ -153,6 +153,20 @@
             }
         }
 
+        function buildOrderNotes({ phone, address, notes }) {
+            const lines = [];
+            if (phone) {
+                lines.push(`Phone: ${phone}`);
+            }
+            if (address) {
+                lines.push(`Address: ${address}`);
+            }
+            if (notes) {
+                lines.push(`Customer notes: ${notes}`);
+            }
+            return lines.join('\n\n') || null;
+        }
+
         function renderEmptyCheckout() {
             checkoutRoot.innerHTML = `
                 <section class="empty-card">
@@ -204,11 +218,19 @@
                             <input id="customerEmail" type="email" autocomplete="email" required>
                         </label>
                         <label>
+                            Phone
+                            <input id="customerPhone" type="tel" autocomplete="tel" required>
+                        </label>
+                        <label>
                             Fulfillment
                             <select id="fulfillmentMethod">
                                 <option value="Pickup">Pickup</option>
                                 <option value="Shipping">Shipping</option>
                             </select>
+                        </label>
+                        <label class="full-span">
+                            Mailing address
+                            <textarea id="customerAddress" placeholder="Street address, city, state, postal code, country"></textarea>
                         </label>
                         <label>
                             Notes
@@ -218,8 +240,8 @@
                     ${customer ? `
                         <div class="status-message" style="margin-top: 14px;">
                             <strong>Saved account details</strong><br>
-                            Phone: ${profile.phone || 'Add in your account'}<br>
-                            Address: ${addressReady ? mailingAddress.replace(/\n/g, '<br>') : 'Add your mailing address in your account before using shipping.'}
+                            Phone: ${profile.phone || 'You can type one below for this order'}<br>
+                            Address: ${addressReady ? mailingAddress.replace(/\n/g, '<br>') : 'You can type a mailing address below for this order'}
                         </div>
                     ` : ''}
                     <div class="checkout-actions" style="margin-top: 16px;">
@@ -275,6 +297,12 @@
                 if (profile.preferredFulfillment) {
                     document.getElementById('fulfillmentMethod').value = profile.preferredFulfillment;
                 }
+                if (profile.phone) {
+                    document.getElementById('customerPhone').value = profile.phone;
+                }
+                if (mailingAddress) {
+                    document.getElementById('customerAddress').value = mailingAddress;
+                }
                 if (profile.savedNotes) {
                     document.getElementById('orderNotes').value = profile.savedNotes;
                 }
@@ -283,19 +311,19 @@
                     const formValues = {
                         name: document.getElementById('customerName').value.trim(),
                         email: document.getElementById('customerEmail').value.trim(),
+                        phone: document.getElementById('customerPhone').value.trim(),
                         fulfillment: document.getElementById('fulfillmentMethod').value,
                         notes: document.getElementById('orderNotes').value.trim(),
-                        phone: profile.phone || '',
-                        address: mailingAddress
+                        address: document.getElementById('customerAddress').value.trim()
                     };
 
-                    if (!formValues.name || !formValues.email) {
-                        status.textContent = 'Enter your name and email before preparing the order request.';
+                    if (!formValues.name || !formValues.email || !formValues.phone) {
+                        status.textContent = 'Enter your name, email, and phone before preparing the order request.';
                         return;
                     }
 
-                    if (formValues.fulfillment === 'Shipping' && customer && !addressReady) {
-                        status.textContent = 'Add your mailing address in My Account before preparing a shipping order.';
+                    if (formValues.fulfillment === 'Shipping' && !formValues.address) {
+                        status.textContent = 'Enter a mailing address before preparing a shipping order.';
                         return;
                     }
 
@@ -307,7 +335,7 @@
                             name: formValues.name,
                             email: formValues.email,
                             fulfillment: formValues.fulfillment,
-                            notes: formValues.notes,
+                            notes: buildOrderNotes(formValues),
                             totals,
                             items
                         });
@@ -327,13 +355,15 @@
                 document.getElementById('payNowButton')?.addEventListener('click', async () => {
                     const name = document.getElementById('customerName').value.trim();
                     const email = document.getElementById('customerEmail').value.trim();
-                    if (!name || !email) {
-                        status.textContent = 'Enter name and email before continuing to payment.';
+                    const phone = document.getElementById('customerPhone').value.trim();
+                    const address = document.getElementById('customerAddress').value.trim();
+                    if (!name || !email || !phone) {
+                        status.textContent = 'Enter name, email, and phone before continuing to payment.';
                         return;
                     }
 
-                    if (document.getElementById('fulfillmentMethod').value === 'Shipping' && customer && !addressReady) {
-                        status.textContent = 'Add your mailing address in My Account before continuing to payment for shipping.';
+                    if (document.getElementById('fulfillmentMethod').value === 'Shipping' && !address) {
+                        status.textContent = 'Enter a mailing address before continuing to payment for shipping.';
                         return;
                     }
 
@@ -346,7 +376,11 @@
                             name,
                             email,
                             fulfillment: document.getElementById('fulfillmentMethod').value,
-                            notes: document.getElementById('orderNotes').value.trim(),
+                            notes: buildOrderNotes({
+                                phone,
+                                address,
+                                notes: document.getElementById('orderNotes').value.trim()
+                            }),
                             totals,
                             items
                         });
