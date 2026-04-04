@@ -19,6 +19,7 @@
         <a href="#dashboard" data-route="dashboard" class="active">Dashboard</a>
         <a href="#products" data-route="products">Products</a>
         <a href="#sourcing" data-route="sourcing">Sourcing</a>
+        <a href="#fulfillment" data-route="fulfillment">Fulfillment</a>
         <a href="#uploads" data-route="uploads">Uploads</a>
         <a href="../admin/splitter-tool.html">Studio Cutter</a>
         <a href="../admin/manual-entry.html">Manual Entry</a>
@@ -459,6 +460,58 @@
           </div>
         </div>
 
+        <div id="page-fulfillment" style="display: none;">
+          <div class="card">
+            <h2>Fulfillment Workflow</h2>
+            <p class="muted">Provider to studio to customer workflow foundation for Farmhouse Frames. Use this page to verify that each data stage is in place before moving orders forward.</p>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h3>Provider products</h3>
+              <div id="metricProviderProducts" class="metric">—</div>
+            </div>
+            <div class="card">
+              <h3>Photos</h3>
+              <div id="metricPhotos" class="metric">—</div>
+            </div>
+            <div class="card">
+              <h3>Print-ready derivatives</h3>
+              <div id="metricDerivatives" class="metric">—</div>
+            </div>
+            <div class="card">
+              <h3>In production orders</h3>
+              <div id="metricInProduction" class="metric">—</div>
+            </div>
+            <div class="card">
+              <h3>At studio (unbranded)</h3>
+              <div id="metricAtStudioUnbranded" class="metric">—</div>
+            </div>
+            <div class="card">
+              <h3>Branded ready</h3>
+              <div id="metricBrandedReady" class="metric">—</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Build Stages</h3>
+            <ol class="info-list">
+              <li>Provider intake: Save provider metadata to <strong>provider_products</strong>.</li>
+              <li>Internal product mapping: Connect storefront products to provider products and derived studio-arrival timeframe.</li>
+              <li>Photo metadata: Track aspect ratio, orientation, review status, and compatibility.</li>
+              <li>Print-ready assets: Generate derivatives for print-ready, provider-specific, and web output.</li>
+              <li>Mockups and imagery: Create mockups and assign them to storefront products.</li>
+              <li>Order execution: Send paid orders to provider with ship-to-studio flow and track inbound shipment.</li>
+              <li>Studio branding: Record inspection and branding completion before pickup or shipping.</li>
+              <li>Delivery completion: Finish via meetup/pickup or studio shipping with final completion audit.</li>
+            </ol>
+            <div class="row">
+              <button class="btn" id="refreshFulfillmentBtn" type="button">Refresh fulfillment metrics</button>
+            </div>
+            <div id="fulfillmentMessage" class="message" hidden></div>
+          </div>
+        </div>
+
         <div id="page-other" style="display: none;">
           <div class="card">
             <h2>Coming Soon</h2>
@@ -487,6 +540,7 @@
     const productMsg = $('#productMessage');
     const sourcingMsg = $('#sourcingMessage');
     const settingsMsg = $('#settingsMessage');
+    const fulfillmentMsg = $('#fulfillmentMessage');
     const uploadedPhotoById = new Map();
     let currentAdminUserId = null;
     let sourcingCatalog = [];
@@ -1494,7 +1548,7 @@
         page.style.display = 'none';
       });
 
-      const validRoutes = ['dashboard', 'products', 'sourcing', 'uploads', 'orders', 'clients', 'logs', 'settings'];
+      const validRoutes = ['dashboard', 'products', 'sourcing', 'fulfillment', 'uploads', 'orders', 'clients', 'logs', 'settings'];
       if (validRoutes.includes(route)) {
         const page = $(`#page-${route}`);
         if (page) {
@@ -1506,6 +1560,9 @@
           }
           if (route === 'sourcing') {
             loadSourcingPage();
+          }
+          if (route === 'fulfillment') {
+            loadFulfillmentWorkspace();
           }
           if (route === 'orders') {
             loadOrderRequests();
@@ -1534,6 +1591,7 @@
         dashboard: 'Dashboard',
         products: 'Products',
         sourcing: 'Sourcing',
+        fulfillment: 'Fulfillment',
         uploads: 'Uploads',
         orders: 'Orders',
         clients: 'Clients',
@@ -1561,6 +1619,51 @@
       $('#metricOrders').textContent = ordersCount ?? '0';
       $('#metricUploads').textContent = uploadsCount ?? '0';
 
+      setStatus('Ready', 'ok');
+    }
+
+    function showFulfillmentMessage(text, kind = 'ok') {
+      if (!fulfillmentMsg) return;
+      fulfillmentMsg.hidden = false;
+      fulfillmentMsg.className = `message ${kind}`;
+      fulfillmentMsg.textContent = text;
+    }
+
+    async function loadFulfillmentWorkspace() {
+      if (fulfillmentMsg) fulfillmentMsg.hidden = true;
+      setStatus('Loading fulfillment workspace…', 'neutral');
+
+      const results = await Promise.allSettled([
+        supabase.from('provider_products').select('*', { count: 'exact', head: true }),
+        supabase.from('photos').select('*', { count: 'exact', head: true }),
+        supabase.from('photo_derivatives').select('*', { count: 'exact', head: true }).eq('type', 'print_ready'),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('order_status', 'in_production'),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('order_status', 'at_studio_unbranded'),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('order_status', 'branded_ready_for_delivery')
+      ]);
+
+      const safeCount = (result) => {
+        if (result.status !== 'fulfilled') return '—';
+        const value = result.value;
+        if (!value || value.error) return '—';
+        return String(value.count ?? 0);
+      };
+
+      $('#metricProviderProducts').textContent = safeCount(results[0]);
+      $('#metricPhotos').textContent = safeCount(results[1]);
+      $('#metricDerivatives').textContent = safeCount(results[2]);
+      $('#metricInProduction').textContent = safeCount(results[3]);
+      $('#metricAtStudioUnbranded').textContent = safeCount(results[4]);
+      $('#metricBrandedReady').textContent = safeCount(results[5]);
+
+      const hasMissingTables = results.some((result) => result.status !== 'fulfilled' || result.value?.error);
+      if (hasMissingTables) {
+        showFulfillmentMessage('Some fulfillment tables are not available yet. Apply latest Supabase migration, then refresh this page.', 'error');
+        setStatus('Fulfillment partial', 'error');
+        return;
+      }
+
+      showFulfillmentMessage('Fulfillment workspace is connected and metrics are up to date.', 'ok');
       setStatus('Ready', 'ok');
     }
 
@@ -2531,6 +2634,7 @@
     });
     $('#applySourcingToProduct')?.addEventListener('click', applySourcingRecordToProductForm);
     $('#openSourcingBtn')?.addEventListener('click', () => navigateToRoute('sourcing'));
+    $('#refreshFulfillmentBtn')?.addEventListener('click', loadFulfillmentWorkspace);
     $('#openSourceInCutter')?.addEventListener('click', openSelectedSourceInCutter);
     $('#generateRusticCopy')?.addEventListener('click', () => {
       const generated = generateRusticIntroCopy();
