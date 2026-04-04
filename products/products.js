@@ -127,8 +127,9 @@ function normalizeModernProduct(product) {
 async function loadSupabaseProducts() {
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, category, price, description, image, sizes, tags, inventory, active, created_at')
+    .select('id, name, category, price, description, image, sizes, tags, inventory, active, status, created_at')
     .eq('active', true)
+    .or('status.eq.active,status.is.null')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -155,6 +156,10 @@ export async function loadProducts() {
     fetchJson('./products.json'),
     loadSupabaseProducts()
   ]);
+
+  if (supabaseCatalog.status === 'fulfilled' && Array.isArray(supabaseCatalog.value) && supabaseCatalog.value.length) {
+    return supabaseCatalog.value.sort((left, right) => left.title.localeCompare(right.title));
+  }
 
   const products = [];
 

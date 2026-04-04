@@ -213,6 +213,16 @@
                 </select>
               </label>
               <label>
+                <span>Listing status</span>
+                <select id="productListingStatus">
+                  <option value="draft">Draft (not visible)</option>
+                  <option value="pending_approval">Pending approval</option>
+                  <option value="active" selected>Active (visible on storefront)</option>
+                  <option value="inactive">Inactive (hidden)</option>
+                </select>
+              </label>
+              <p class="muted small">Only products saved with <strong>Active</strong> status are shown on storefront product pages.</p>
+              <label>
                 <span>Theme preset for intro style</span>
                 <select id="productThemePreset">
                   <option value="lbl-lake">LBL Lake Morning</option>
@@ -494,6 +504,83 @@
           </div>
 
           <div class="card">
+            <h3>Provider Intake</h3>
+            <p class="muted">Capture provider product metadata, costs, and inbound timing so products can map to studio-ready fulfillment.</p>
+            <form id="providerProductForm" class="form">
+              <input id="providerProductOriginalId" type="hidden">
+              <label>
+                <span>Provider Name</span>
+                <input id="providerProductName" type="text" placeholder="Amazon, Walmart, Printify, CanvasChamp" required>
+              </label>
+              <label>
+                <span>Provider Product ID</span>
+                <input id="providerProductId" type="text" placeholder="provider sku / id" required>
+              </label>
+              <label>
+                <span>Provider Product URL</span>
+                <input id="providerProductUrl" type="url" placeholder="https://...">
+              </label>
+              <label>
+                <span>Product Type</span>
+                <input id="providerProductType" type="text" placeholder="framed print, canvas, puzzle">
+              </label>
+              <label>
+                <span>Available Sizes (comma separated)</span>
+                <input id="providerAvailableSizes" type="text" placeholder="8x10, 11x14, 16x20">
+              </label>
+              <label>
+                <span>Available Frame Styles (comma separated)</span>
+                <input id="providerFrameStyles" type="text" placeholder="black, oak, walnut">
+              </label>
+              <label>
+                <span>Paper Type</span>
+                <input id="providerPaperType" type="text" placeholder="matte, luster, archival">
+              </label>
+              <label>
+                <span>Print Method</span>
+                <input id="providerPrintMethod" type="text" placeholder="giclee, UV, dye-sub">
+              </label>
+              <div class="grid sourcing-math-grid">
+                <label>
+                  <span>Base Cost (USD)</span>
+                  <input id="providerBaseCost" type="number" min="0" step="0.01" value="0">
+                </label>
+                <label>
+                  <span>Production Min Days</span>
+                  <input id="providerProductionMinDays" type="number" min="0" step="1" value="0">
+                </label>
+                <label>
+                  <span>Production Max Days</span>
+                  <input id="providerProductionMaxDays" type="number" min="0" step="1" value="0">
+                </label>
+                <label>
+                  <span>Ship to Studio Min Days</span>
+                  <input id="providerShippingMinDays" type="number" min="0" step="1" value="0">
+                </label>
+                <label>
+                  <span>Ship to Studio Max Days</span>
+                  <input id="providerShippingMaxDays" type="number" min="0" step="1" value="0">
+                </label>
+              </div>
+              <label>
+                <span>Provider Notes</span>
+                <textarea id="providerNotes" placeholder="Internal notes about templates, quality checks, and order process."></textarea>
+              </label>
+              <div class="row">
+                <button class="btn primary" type="submit">Save provider product</button>
+                <button class="btn" id="providerProductResetBtn" type="button">Clear form</button>
+                <button class="btn" id="refreshProviderProductsBtn" type="button">Reload provider products</button>
+              </div>
+            </form>
+            <div id="providerProductMessage" class="message" hidden></div>
+          </div>
+
+          <div class="card">
+            <h3>Provider Product Records</h3>
+            <div id="providerProductsWrap" class="muted">Loading provider products…</div>
+          </div>
+
+          <div class="card">
             <h3>Build Stages</h3>
             <ol class="info-list">
               <li>Provider intake: Save provider metadata to <strong>provider_products</strong>.</li>
@@ -541,6 +628,7 @@
     const sourcingMsg = $('#sourcingMessage');
     const settingsMsg = $('#settingsMessage');
     const fulfillmentMsg = $('#fulfillmentMessage');
+    const providerProductMsg = $('#providerProductMessage');
     const uploadedPhotoById = new Map();
     let currentAdminUserId = null;
     let sourcingCatalog = [];
@@ -1510,6 +1598,48 @@
       settingsMsg.textContent = text;
     }
 
+    function normalizeOrderWorkflowStatus(status, fulfillmentMethod = '') {
+      const value = String(status || 'new').toLowerCase();
+      if (value === 'ordered') return 'in_production';
+      if (value === 'received') return 'at_studio_unbranded';
+      if (value === 'ready') {
+        const shipping = String(fulfillmentMethod || '').toLowerCase().includes('ship');
+        return shipping ? 'in_transit_to_customer' : 'ready_for_pickup_or_meetup';
+      }
+      return value;
+    }
+
+    function getNextOrderStatus(currentStatus, fulfillmentMethod = '') {
+      const status = normalizeOrderWorkflowStatus(currentStatus, fulfillmentMethod);
+      const shipping = String(fulfillmentMethod || '').toLowerCase().includes('ship');
+      const map = {
+        new: 'in_production',
+        in_production: 'in_transit_to_studio',
+        in_transit_to_studio: 'at_studio_unbranded',
+        at_studio_unbranded: 'branded_ready_for_delivery',
+        branded_ready_for_delivery: shipping ? 'in_transit_to_customer' : 'ready_for_pickup_or_meetup',
+        ready_for_pickup_or_meetup: 'completed',
+        in_transit_to_customer: 'completed'
+      };
+      return map[status] || null;
+    }
+
+    async function logAuditEvent(actionType, targetType, targetId, metadata = {}) {
+      try {
+        await supabase
+          .from('audit_log')
+          .insert({
+            action_type: actionType,
+            actor: currentAdminUserId,
+            target_type: targetType,
+            target_id: String(targetId || ''),
+            metadata
+          });
+      } catch {
+        // Audit logging should never block workflow actions.
+      }
+    }
+
     function parseCsvList(value) {
       return String(value || '')
         .split(',')
@@ -1629,6 +1759,177 @@
       fulfillmentMsg.textContent = text;
     }
 
+    function showProviderProductMessage(text, kind = 'ok') {
+      if (!providerProductMsg) return;
+      providerProductMsg.hidden = false;
+      providerProductMsg.className = `message ${kind}`;
+      providerProductMsg.textContent = text;
+    }
+
+    function resetProviderProductForm() {
+      const form = $('#providerProductForm');
+      if (form) form.reset();
+      $('#providerProductOriginalId').value = '';
+      $('#providerProductId').disabled = false;
+      $('#providerBaseCost').value = '0';
+      $('#providerProductionMinDays').value = '0';
+      $('#providerProductionMaxDays').value = '0';
+      $('#providerShippingMinDays').value = '0';
+      $('#providerShippingMaxDays').value = '0';
+      if (providerProductMsg) providerProductMsg.hidden = true;
+    }
+
+    function populateProviderProductForm(record) {
+      $('#providerProductOriginalId').value = record.provider_product_id || '';
+      $('#providerProductName').value = record.provider_name || '';
+      $('#providerProductId').value = record.provider_product_id || '';
+      $('#providerProductId').disabled = true;
+      $('#providerProductUrl').value = record.provider_product_url || '';
+      $('#providerProductType').value = record.product_type || '';
+      $('#providerAvailableSizes').value = Array.isArray(record.available_sizes) ? record.available_sizes.join(', ') : '';
+      $('#providerFrameStyles').value = Array.isArray(record.available_frame_styles) ? record.available_frame_styles.join(', ') : '';
+      $('#providerPaperType').value = record.paper_type || '';
+      $('#providerPrintMethod').value = record.print_method || '';
+      $('#providerBaseCost').value = String(Number(record.base_cost || 0));
+      $('#providerProductionMinDays').value = String(Number(record.production_time_min_days || 0));
+      $('#providerProductionMaxDays').value = String(Number(record.production_time_max_days || 0));
+      $('#providerShippingMinDays').value = String(Number(record.shipping_time_min_days || 0));
+      $('#providerShippingMaxDays').value = String(Number(record.shipping_time_max_days || 0));
+      $('#providerNotes').value = record.provider_notes || '';
+      showProviderProductMessage(`Editing provider product: ${record.provider_product_id}`, 'ok');
+    }
+
+    async function loadProviderProductsTable() {
+      const wrap = $('#providerProductsWrap');
+      if (!wrap) return;
+      wrap.textContent = 'Loading provider products…';
+
+      const { data, error } = await supabase
+        .from('provider_products')
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        const message = String(error.message || 'Could not load provider products.');
+        if (message.toLowerCase().includes('does not exist')) {
+          wrap.innerHTML = '<div class="message error">Provider products table is not migrated yet. Apply the latest Supabase SQL and refresh.</div>';
+          return;
+        }
+        wrap.innerHTML = `<div class="message error">${escapeHtml(message)}</div>`;
+        return;
+      }
+
+      if (!data || !data.length) {
+        wrap.innerHTML = '<p class="muted">No provider products saved yet.</p>';
+        return;
+      }
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Provider Product ID</th>
+              <th>Type</th>
+              <th>Sizes</th>
+              <th>Base Cost</th>
+              <th>Studio Arrival Est.</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map((row) => {
+              const sizes = Array.isArray(row.available_sizes) && row.available_sizes.length ? row.available_sizes.join(', ') : '—';
+              const minDays = Number(row.production_time_min_days || 0) + Number(row.shipping_time_min_days || 0);
+              const maxDays = Number(row.production_time_max_days || 0) + Number(row.shipping_time_max_days || 0);
+              return `
+                <tr>
+                  <td>${escapeHtml(row.provider_name || '—')}</td>
+                  <td><code>${escapeHtml(row.provider_product_id || '—')}</code></td>
+                  <td>${escapeHtml(row.product_type || '—')}</td>
+                  <td>${escapeHtml(sizes)}</td>
+                  <td>${money(row.base_cost)}</td>
+                  <td>${minDays}-${maxDays} days</td>
+                  <td>
+                    <div style="display:grid; gap:8px; min-width:160px;">
+                      <button class="btn" data-edit-provider-product="${escapeHtml(row.provider_product_id)}">Edit</button>
+                      ${row.provider_product_url ? `<a href="${escapeHtml(row.provider_product_url)}" target="_blank" rel="noopener">Open provider page</a>` : '<span class="muted">No URL</span>'}
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+
+      const byId = new Map((data || []).map((row) => [row.provider_product_id, row]));
+      wrap.querySelectorAll('button[data-edit-provider-product]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const record = byId.get(button.dataset.editProviderProduct);
+          if (!record) return;
+          populateProviderProductForm(record);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      });
+    }
+
+    async function saveProviderProduct(event) {
+      event.preventDefault();
+      if (providerProductMsg) providerProductMsg.hidden = true;
+
+      const originalId = $('#providerProductOriginalId').value.trim();
+      const providerProductId = $('#providerProductId').value.trim();
+      const providerName = $('#providerProductName').value.trim();
+      const payload = {
+        provider_product_id: providerProductId,
+        provider_name: providerName,
+        provider_product_url: $('#providerProductUrl').value.trim() || null,
+        product_type: $('#providerProductType').value.trim() || null,
+        available_sizes: parseCsvList($('#providerAvailableSizes').value),
+        available_frame_styles: parseCsvList($('#providerFrameStyles').value),
+        paper_type: $('#providerPaperType').value.trim() || null,
+        print_method: $('#providerPrintMethod').value.trim() || null,
+        base_cost: Number($('#providerBaseCost').value || 0),
+        production_time_min_days: Number($('#providerProductionMinDays').value || 0),
+        production_time_max_days: Number($('#providerProductionMaxDays').value || 0),
+        shipping_time_min_days: Number($('#providerShippingMinDays').value || 0),
+        shipping_time_max_days: Number($('#providerShippingMaxDays').value || 0),
+        fulfillment_method: 'ship_to_studio',
+        provider_notes: $('#providerNotes').value.trim() || null,
+        updated_at: new Date().toISOString()
+      };
+
+      if (!providerProductId || !providerName) {
+        showProviderProductMessage('Provider name and provider product ID are required.', 'error');
+        return;
+      }
+
+      if (payload.production_time_max_days < payload.production_time_min_days || payload.shipping_time_max_days < payload.shipping_time_min_days) {
+        showProviderProductMessage('Max days must be greater than or equal to min days.', 'error');
+        return;
+      }
+
+      const result = originalId
+        ? await supabase.from('provider_products').update(payload).eq('provider_product_id', originalId)
+        : await supabase.from('provider_products').insert(payload);
+
+      if (result.error) {
+        showProviderProductMessage(result.error.message, 'error');
+        return;
+      }
+
+      showProviderProductMessage('Provider product saved.', 'ok');
+      await logActivity('provider_product_saved', 'provider_products', providerProductId, {
+        provider_name: providerName,
+        product_type: payload.product_type,
+        base_cost: payload.base_cost
+      });
+      resetProviderProductForm();
+      await loadProviderProductsTable();
+      await loadFulfillmentWorkspace();
+    }
+
     async function loadFulfillmentWorkspace() {
       if (fulfillmentMsg) fulfillmentMsg.hidden = true;
       setStatus('Loading fulfillment workspace…', 'neutral');
@@ -1637,9 +1938,9 @@
         supabase.from('provider_products').select('*', { count: 'exact', head: true }),
         supabase.from('photos').select('*', { count: 'exact', head: true }),
         supabase.from('photo_derivatives').select('*', { count: 'exact', head: true }).eq('type', 'print_ready'),
-        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('order_status', 'in_production'),
-        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('order_status', 'at_studio_unbranded'),
-        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('order_status', 'branded_ready_for_delivery')
+        supabase.from('order_requests').select('*', { count: 'exact', head: true }).eq('status', 'in_production'),
+        supabase.from('order_requests').select('*', { count: 'exact', head: true }).eq('status', 'at_studio_unbranded'),
+        supabase.from('order_requests').select('*', { count: 'exact', head: true }).eq('status', 'branded_ready_for_delivery')
       ]);
 
       const safeCount = (result) => {
@@ -1660,9 +1961,11 @@
       if (hasMissingTables) {
         showFulfillmentMessage('Some fulfillment tables are not available yet. Apply latest Supabase migration, then refresh this page.', 'error');
         setStatus('Fulfillment partial', 'error');
+        await loadProviderProductsTable();
         return;
       }
 
+      await loadProviderProductsTable();
       showFulfillmentMessage('Fulfillment workspace is connected and metrics are up to date.', 'ok');
       setStatus('Ready', 'ok');
     }
@@ -1840,6 +2143,7 @@
               <th>Image</th>
               <th>Name</th>
               <th>Category</th>
+              <th>Status</th>
               <th>Customer Price</th>
               <th>Internal Cost</th>
               <th>Cust. Ship</th>
@@ -1855,6 +2159,7 @@
                 <td>${product.image ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || 'Product image')}" style="width:56px; height:56px; object-fit:cover; border-radius:10px;">` : '—'}</td>
                 <td>${product.name || '—'}</td>
                 <td>${product.category || '—'}</td>
+                <td>${product.status || (product.active ? 'active' : 'inactive')}</td>
                 <td>$${Number(product.price || 0).toFixed(2)}</td>
                 <td>$${Number(product.internal_cost || 0).toFixed(2)}</td>
                 <td>$${Number(product.customer_shipping || 0).toFixed(2)}</td>
@@ -1927,6 +2232,7 @@
         internal_cost: Number($('#productInternalCost').value || 0),
         internal_shipping: Number($('#productInternalShipping').value || 0),
         customer_shipping: Number($('#productCustomerShipping').value || 0),
+        status: $('#productListingStatus').value || 'draft',
         description: buildStructuredProductDescription({
           intro: introInput?.value.trim() || '',
           mockup: mockupInput?.value.trim() || '',
@@ -1934,7 +2240,7 @@
           dimensions: dimensionsInput?.value.trim() || '',
           care: careInput?.value.trim() || ''
         }) || null,
-        active: true
+        active: ($('#productListingStatus').value || 'draft') === 'active'
       };
 
       const selectedSourcingRecord = getSelectedProductSourcingRecord();
@@ -1967,7 +2273,7 @@
       await refreshMetrics();
     }
 
-    async function updateOrderRequestStatus(orderId, status) {
+    async function updateOrderRequestStatus(orderId, status, metadata = {}) {
       const { error } = await supabase
         .from('order_requests')
         .update({ status })
@@ -1980,7 +2286,12 @@
 
       await loadOrderRequests();
       await refreshMetrics();
+      await loadFulfillmentWorkspace();
       await logActivity('order_status_updated', 'order_requests', orderId, { status });
+      await logAuditEvent('order_status_updated', 'order_request', orderId, {
+        status,
+        ...metadata
+      });
     }
 
     async function saveSupplierOrderPacket(record) {
@@ -2291,6 +2602,17 @@
         return;
       }
 
+      const statusOptions = [
+        'new',
+        'in_production',
+        'in_transit_to_studio',
+        'at_studio_unbranded',
+        'branded_ready_for_delivery',
+        'ready_for_pickup_or_meetup',
+        'in_transit_to_customer',
+        'completed'
+      ];
+
       wrap.innerHTML = `
         <table>
           <thead>
@@ -2305,6 +2627,20 @@
           </thead>
           <tbody>
             ${data.map((order) => `
+              ${(() => {
+                const normalizedStatus = normalizeOrderWorkflowStatus(order.status, order.fulfillment_method);
+                const nextStatus = getNextOrderStatus(normalizedStatus, order.fulfillment_method);
+                const shipping = String(order.fulfillment_method || '').toLowerCase().includes('ship');
+                const statusSelect = `
+                    <select data-order-status="${order.id}">
+                      ${statusOptions.map((opt) => `<option value="${opt}" ${normalizedStatus === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                    </select>
+                `;
+                const buttons = `
+                    ${nextStatus ? `<button class="btn" data-advance-order="${order.id}" data-next-status="${nextStatus}">Advance to ${nextStatus}</button>` : '<span class="muted">Final stage</span>'}
+                    ${normalizedStatus === 'branded_ready_for_delivery' ? `<button class="btn" data-order-path="${order.id}" data-path-status="${shipping ? 'in_transit_to_customer' : 'ready_for_pickup_or_meetup'}">${shipping ? 'Start studio shipping' : 'Ready for pickup/meetup'}</button>` : ''}
+                  `;
+                return `
               <tr>
                 <td>${new Date(order.created_at).toLocaleString()}</td>
                 <td>
@@ -2313,20 +2649,17 @@
                 </td>
                 <td>${order.fulfillment_method || 'Pickup'}</td>
                 <td>$${Number(order.total || 0).toFixed(2)}</td>
-                <td>${order.status || 'new'}</td>
+                <td>${normalizedStatus}</td>
                 <td>
                   <div style="display:grid; gap:8px; min-width: 180px;">
-                    <select data-order-status="${order.id}">
-                      <option value="new" ${order.status === 'new' ? 'selected' : ''}>New</option>
-                      <option value="ordered" ${order.status === 'ordered' ? 'selected' : ''}>Ordered</option>
-                      <option value="received" ${order.status === 'received' ? 'selected' : ''}>Received</option>
-                      <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Ready</option>
-                      <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
-                    </select>
+                    ${statusSelect}
+                    ${buttons}
                     <button class="btn" data-generate-packet="${order.id}">Generate Supplier Packet</button>
                   </div>
                 </td>
               </tr>
+            `;
+              })()}
             `).join('')}
           </tbody>
         </table>
@@ -2334,7 +2667,25 @@
 
       wrap.querySelectorAll('select[data-order-status]').forEach((select) => {
         select.addEventListener('change', async () => {
-          await updateOrderRequestStatus(select.dataset.orderStatus, select.value);
+          await updateOrderRequestStatus(select.dataset.orderStatus, select.value, {
+            source: 'manual-status-select'
+          });
+        });
+      });
+
+      wrap.querySelectorAll('button[data-advance-order]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          await updateOrderRequestStatus(button.dataset.advanceOrder, button.dataset.nextStatus, {
+            source: 'advance-button'
+          });
+        });
+      });
+
+      wrap.querySelectorAll('button[data-order-path]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          await updateOrderRequestStatus(button.dataset.orderPath, button.dataset.pathStatus, {
+            source: 'delivery-path-button'
+          });
         });
       });
 
@@ -2635,6 +2986,9 @@
     $('#applySourcingToProduct')?.addEventListener('click', applySourcingRecordToProductForm);
     $('#openSourcingBtn')?.addEventListener('click', () => navigateToRoute('sourcing'));
     $('#refreshFulfillmentBtn')?.addEventListener('click', loadFulfillmentWorkspace);
+    $('#providerProductForm')?.addEventListener('submit', saveProviderProduct);
+    $('#providerProductResetBtn')?.addEventListener('click', resetProviderProductForm);
+    $('#refreshProviderProductsBtn')?.addEventListener('click', loadProviderProductsTable);
     $('#openSourceInCutter')?.addEventListener('click', openSelectedSourceInCutter);
     $('#generateRusticCopy')?.addEventListener('click', () => {
       const generated = generateRusticIntroCopy();
