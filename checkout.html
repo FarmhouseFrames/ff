@@ -63,7 +63,7 @@
     </div>
 
     <script type="module">
-        import { calculateCartTotals, clearCart, formatCartSummary, formatCurrency, loadStoreConfig, readCart } from './js/commerce.js';
+        import { calculateCartTotals, clearCart, estimateCustomerShipping, formatCartSummary, formatCurrency, loadStoreConfig, readCart } from './js/commerce.js';
         import { publicSupabase } from './js/supabasePublic.js';
         import { formatMailingAddress, formatProfileName, getSignedInCustomerAccount, hasMailingAddress } from './js/customerAccount.js';
 
@@ -167,6 +167,17 @@
             return lines.join('\n\n') || null;
         }
 
+        function getCheckoutTotals(items, fulfillment, address) {
+            const baseTotals = calculateCartTotals(items, config.tax, 0);
+            const shipping = estimateCustomerShipping({
+                address,
+                fulfillment,
+                itemCount: baseTotals.itemCount,
+                subtotal: baseTotals.subtotal
+            });
+            return calculateCartTotals(items, config.tax, shipping);
+        }
+
         function renderEmptyCheckout() {
             checkoutRoot.innerHTML = `
                 <section class="empty-card">
@@ -198,7 +209,6 @@
                 return;
             }
 
-            const totals = calculateCartTotals(items, config.tax);
             getSignedInCustomerAccount().then(({ user: customer, profile }) => {
                 const customerName = formatProfileName(profile);
                 const mailingAddress = formatMailingAddress(profile);
@@ -258,11 +268,13 @@
                         ${items.map((item) => `
                             <div class="summary-line"><span>${item.title}${item.size ? ` (${item.size})` : ''} × ${item.quantity}</span><span>${formatCurrency(item.price * item.quantity, config.currency)}</span></div>
                         `).join('')}
-                        <div class="summary-line"><span>Subtotal</span><span>${formatCurrency(totals.subtotal, config.currency)}</span></div>
-                        <div class="summary-line"><span>Estimated tax</span><span>${formatCurrency(totals.tax, config.currency)}</span></div>
-                        <div class="summary-line total"><span>Total</span><span>${formatCurrency(totals.total, config.currency)}</span></div>
+                        <div class="summary-line"><span>Subtotal</span><span id="summarySubtotal">${formatCurrency(0, config.currency)}</span></div>
+                        <div class="summary-line"><span>Estimated tax</span><span id="summaryTax">${formatCurrency(0, config.currency)}</span></div>
+                        <div class="summary-line"><span>Estimated shipping</span><span id="summaryShipping">${formatCurrency(0, config.currency)}</span></div>
+                        <div class="summary-line total"><span>Total</span><span id="summaryTotal">${formatCurrency(0, config.currency)}</span></div>
                     </div>
                     <p class="helper-text">Store contact: ${config.businessEmail}</p>
+                    <p class="helper-text">Shipping is automatically estimated from studio location to the address entered above.</p>
                     <p class="helper-text">Guest orders remain tied to the details entered here until payment is completed and a confirmation number is created.</p>
                     <div class="page-footer-links">
                         <a href="pickup.html">Pickup & Shipping</a>
@@ -307,6 +319,24 @@
                     document.getElementById('orderNotes').value = profile.savedNotes;
                 }
 
+                function updateSummaryTotals() {
+                    const fulfillment = document.getElementById('fulfillmentMethod').value;
+                    const address = document.getElementById('customerAddress').value.trim();
+                    const totals = getCheckoutTotals(items, fulfillment, address);
+
+                    document.getElementById('summarySubtotal').textContent = formatCurrency(totals.subtotal, config.currency);
+                    document.getElementById('summaryTax').textContent = formatCurrency(totals.tax, config.currency);
+                    document.getElementById('summaryShipping').textContent = formatCurrency(totals.shipping, config.currency);
+                    document.getElementById('summaryTotal').textContent = formatCurrency(totals.total, config.currency);
+
+                    return totals;
+                }
+
+                document.getElementById('fulfillmentMethod').addEventListener('change', updateSummaryTotals);
+                document.getElementById('customerAddress').addEventListener('input', updateSummaryTotals);
+                const currentTotals = () => updateSummaryTotals();
+                updateSummaryTotals();
+
                 document.getElementById('sendOrderButton').addEventListener('click', async () => {
                     const formValues = {
                         name: document.getElementById('customerName').value.trim(),
@@ -327,6 +357,8 @@
                         return;
                     }
 
+                    const totals = currentTotals();
+
                     status.textContent = 'Saving your order request...';
 
                     try {
@@ -346,7 +378,7 @@
                     }
 
                     const subject = encodeURIComponent(`Farmhouse Frames order request for ${formValues.name}`);
-                    const body = formatCartSummary(items, config, formValues);
+                    const body = formatCartSummary(items, config, formValues, totals);
                     window.location.href = `mailto:${encodeURIComponent(config.businessEmail)}?subject=${subject}&body=${body}`;
                     status.textContent = 'Your email client should open with the prefilled order request. Your order has also been routed to the admin queue when available.';
                 });
@@ -366,6 +398,8 @@
                         status.textContent = 'Enter a mailing address before continuing to payment for shipping.';
                         return;
                     }
+
+                    const totals = currentTotals();
 
                     status.textContent = 'Saving order before payment...';
                     let orderId = '';
