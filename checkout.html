@@ -63,7 +63,7 @@
     </div>
 
     <script type="module">
-        import { calculateCartTotals, clearCart, estimateCustomerShipping, formatCartSummary, formatCurrency, loadStoreConfig, readCart } from './js/commerce.js';
+        import { calculateCartTotals, clearCart, estimateDestinationTaxRate, formatCartSummary, formatCurrency, loadStoreConfig, quoteCustomerShipping, readCart } from './js/commerce.js';
         import { publicSupabase } from './js/supabasePublic.js';
         import { formatMailingAddress, formatProfileName, getSignedInCustomerAccount, hasMailingAddress } from './js/customerAccount.js';
 
@@ -167,15 +167,29 @@
             return lines.join('\n\n') || null;
         }
 
-        function getCheckoutTotals(items, fulfillment, address) {
-            const baseTotals = calculateCartTotals(items, config.tax, 0);
-            const shipping = estimateCustomerShipping({
+        async function getCheckoutTotals(items, fulfillment, address) {
+            const baseTotals = calculateCartTotals(items, 0, 0);
+            const shippingQuote = await quoteCustomerShipping({
                 address,
                 fulfillment,
                 itemCount: baseTotals.itemCount,
-                subtotal: baseTotals.subtotal
+                subtotal: baseTotals.subtotal,
+                apiUrl: config.shippingQuoteApiUrl || config.shipping_quote_api_url || '',
+                originZip: config.shippingOriginZip || config.shipping_origin_zip || '42701'
             });
-            return calculateCartTotals(items, config.tax, shipping);
+            const taxRate = estimateDestinationTaxRate({
+                address,
+                fulfillment,
+                defaultTaxRate: Number(config.tax || 0),
+                taxMode: config.taxMode || config.tax_mode || 'destination_state'
+            });
+
+            const totals = calculateCartTotals(items, taxRate, shippingQuote.amount);
+            return {
+                ...totals,
+                shippingSource: shippingQuote.source,
+                taxRate
+            };
         }
 
         function renderEmptyCheckout() {
@@ -274,7 +288,7 @@
                         <div class="summary-line total"><span>Total</span><span id="summaryTotal">${formatCurrency(0, config.currency)}</span></div>
                     </div>
                     <p class="helper-text">Store contact: ${config.businessEmail}</p>
-                    <p class="helper-text">Shipping is automatically estimated from studio location to the address entered above.</p>
+                    <p id="quoteSourceText" class="helper-text">Shipping is automatically estimated from studio location to the address entered above.</p>
                     <p class="helper-text">Guest orders remain tied to the details entered here until payment is completed and a confirmation number is created.</p>
                     <div class="page-footer-links">
                         <a href="pickup.html">Pickup & Shipping</a>
@@ -319,23 +333,59 @@
                     document.getElementById('orderNotes').value = profile.savedNotes;
                 }
 
-                function updateSummaryTotals() {
+                let totalsRequestSequence = 0;
+
+                async function updateSummaryTotals() {
                     const fulfillment = document.getElementById('fulfillmentMethod').value;
                     const address = document.getElementById('customerAddress').value.trim();
-                    const totals = getCheckoutTotals(items, fulfillment, address);
+                    const quoteSource = document.getElementById('quoteSourceText');
+                    const requestId = ++totalsRequestSequence;
+
+                    if (quoteSource && fulfillment === 'Shipping') {
+                        quoteSource.textContent = 'Calculating shipping quote...';
+                    }
+
+                    const totals = await getCheckoutTotals(items, fulfillment, address);
+                    if (requestId !== totalsRequestSequence) {
+                        return totals;
+                    }
 
                     document.getElementById('summarySubtotal').textContent = formatCurrency(totals.subtotal, config.currency);
                     document.getElementById('summaryTax').textContent = formatCurrency(totals.tax, config.currency);
                     document.getElementById('summaryShipping').textContent = formatCurrency(totals.shipping, config.currency);
                     document.getElementById('summaryTotal').textContent = formatCurrency(totals.total, config.currency);
 
+                    if (quoteSource) {
+                        if (fulfillment !== 'Shipping') {
+                            quoteSource.textContent = 'Pickup selected, so shipping is not added.';
+                        } else if (totals.shippingSource === 'carrier_api') {
+                            quoteSource.textContent = 'Shipping quote source: carrier API.';
+                        } else if (totals.shippingSource === 'estimate_fallback') {
+                            quoteSource.textContent = 'Shipping quote source: fallback estimate (carrier API unavailable).';
+                        } else {
+                            quoteSource.textContent = 'Shipping quote source: studio estimate.';
+                        }
+                    }
+
                     return totals;
                 }
 
-                document.getElementById('fulfillmentMethod').addEventListener('change', updateSummaryTotals);
-                document.getElementById('customerAddress').addEventListener('input', updateSummaryTotals);
-                const currentTotals = () => updateSummaryTotals();
-                updateSummaryTotals();
+                document.getElementById('fulfillmentMethod').addEventListener('change', () => {
+                    void updateSummaryTotals();
+                });
+
+                let addressDebounce = null;
+                document.getElementById('customerAddress').addEventListener('input', () => {
+                    if (addressDebounce) {
+                        clearTimeout(addressDebounce);
+                    }
+                    addressDebounce = setTimeout(() => {
+                        void updateSummaryTotals();
+                    }, 250);
+                });
+
+                const currentTotals = async () => updateSummaryTotals();
+                void updateSummaryTotals();
 
                 document.getElementById('sendOrderButton').addEventListener('click', async () => {
                     const formValues = {
@@ -357,7 +407,7 @@
                         return;
                     }
 
-                    const totals = currentTotals();
+                    const totals = await currentTotals();
 
                     status.textContent = 'Saving your order request...';
 
@@ -399,7 +449,7 @@
                         return;
                     }
 
-                    const totals = currentTotals();
+                    const totals = await currentTotals();
 
                     status.textContent = 'Saving order before payment...';
                     let orderId = '';

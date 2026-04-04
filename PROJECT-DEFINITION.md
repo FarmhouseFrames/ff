@@ -117,7 +117,7 @@ The admin area is private and should use Supabase for authentication and protect
   - **Orders:** customer order requests, fulfillment status, and supplier packet generation.
   - **Clients:** customer directory and order summary rollups.
   - **Logs:** activity log viewer for admin operations.
-  - **Settings:** storefront email/tax/currency/hosted-payment configuration.
+  - **Settings:** storefront email, tax mode/rate, shipping origin + optional shipping quote API, currency, and hosted-payment configuration.
 - [dashboard/js/auth.js](/workspaces/ff/dashboard/js/auth.js): sign-in, sign-out, current user lookup, and allowlist enforcement.
 - [dashboard/js/supabaseClient.js](/workspaces/ff/dashboard/js/supabaseClient.js): Supabase client bootstrap.
 - [dashboard/css/admin.css](/workspaces/ff/dashboard/css/admin.css): admin styling.
@@ -307,6 +307,9 @@ Based on [data/config.json](/workspaces/ff/data/config.json):
   "profitMargin": 0.5,
   "currency": "USD",
   "tax": 0.06,
+  "taxMode": "destination_state",
+  "shippingOriginZip": "42701",
+  "shippingQuoteApiUrl": "",
   "collections": ["string"]
 }
 ```

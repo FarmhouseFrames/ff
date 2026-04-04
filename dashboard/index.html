@@ -440,7 +440,7 @@
         <div id="page-settings" style="display: none;">
           <div class="card">
             <h2>Storefront Settings</h2>
-            <p class="muted">Configure checkout email destination, tax rate, currency, and hosted payment link.</p>
+            <p class="muted">Configure checkout email destination, tax behavior, shipping quote source, currency, and hosted payment link.</p>
           </div>
 
           <div class="card">
@@ -454,8 +454,23 @@
                 <input id="settingTaxRate" type="number" step="0.001" min="0" required>
               </label>
               <label>
+                <span>Tax Mode</span>
+                <select id="settingTaxMode" required>
+                  <option value="destination_state">Destination state (shipping orders)</option>
+                  <option value="flat">Flat rate (all orders)</option>
+                </select>
+              </label>
+              <label>
                 <span>Currency</span>
                 <input id="settingCurrency" type="text" maxlength="3" required>
+              </label>
+              <label>
+                <span>Shipping Origin ZIP</span>
+                <input id="settingShippingOriginZip" type="text" maxlength="10" placeholder="42701">
+              </label>
+              <label>
+                <span>Shipping Quote API URL (optional)</span>
+                <input id="settingShippingQuoteApiUrl" type="url" placeholder="https://...">
               </label>
               <label>
                 <span>Hosted Payment URL</span>
@@ -2877,13 +2892,19 @@
       const settings = data || {
         business_email: 'kristin@farmhouseframes.com',
         tax_rate: 0.06,
+        tax_mode: 'destination_state',
         currency: 'USD',
-        hosted_payment_url: ''
+        hosted_payment_url: '',
+        shipping_origin_zip: '42701',
+        shipping_quote_api_url: ''
       };
 
       $('#settingBusinessEmail').value = settings.business_email || '';
       $('#settingTaxRate').value = String(Number(settings.tax_rate ?? 0));
+      $('#settingTaxMode').value = settings.tax_mode || 'destination_state';
       $('#settingCurrency').value = String(settings.currency || 'USD').toUpperCase();
+      $('#settingShippingOriginZip').value = settings.shipping_origin_zip || '42701';
+      $('#settingShippingQuoteApiUrl').value = settings.shipping_quote_api_url || '';
       $('#settingHostedPaymentUrl').value = settings.hosted_payment_url || '';
     }
 
@@ -2895,7 +2916,10 @@
         id: 'storefront',
         business_email: $('#settingBusinessEmail').value.trim(),
         tax_rate: Number($('#settingTaxRate').value || 0),
+        tax_mode: $('#settingTaxMode').value,
         currency: $('#settingCurrency').value.trim().toUpperCase(),
+        shipping_origin_zip: $('#settingShippingOriginZip').value.trim() || '42701',
+        shipping_quote_api_url: $('#settingShippingQuoteApiUrl').value.trim() || null,
         hosted_payment_url: $('#settingHostedPaymentUrl').value.trim() || null,
         updated_by: currentAdminUserId,
         updated_at: new Date().toISOString()
@@ -2903,6 +2927,11 @@
 
       if (!payload.business_email || payload.tax_rate < 0 || !payload.currency) {
         showSettingsMessage('Enter a valid business email, tax rate, and currency.', 'error');
+        return;
+      }
+
+      if (!['destination_state', 'flat'].includes(payload.tax_mode)) {
+        showSettingsMessage('Choose a valid tax mode.', 'error');
         return;
       }
 
@@ -2919,7 +2948,10 @@
       await logActivity('settings_saved', 'store_settings', 'storefront', {
         business_email: payload.business_email,
         tax_rate: payload.tax_rate,
+        tax_mode: payload.tax_mode,
         currency: payload.currency,
+        shipping_origin_zip: payload.shipping_origin_zip,
+        shipping_quote_api_url_configured: Boolean(payload.shipping_quote_api_url),
         hosted_payment_url_configured: Boolean(payload.hosted_payment_url)
       });
     }

@@ -276,11 +276,22 @@ create table if not exists public.store_settings (
   id text primary key,
   business_email text,
   tax_rate numeric not null default 0,
+  tax_mode text not null default 'destination_state',
   currency text not null default 'USD',
+  shipping_origin_zip text not null default '42701',
+  shipping_quote_api_url text,
   hosted_payment_url text,
   updated_by uuid references auth.users(id) on delete set null,
   updated_at timestamptz not null default now()
 );
+
+alter table public.store_settings add column if not exists tax_mode text not null default 'destination_state';
+alter table public.store_settings add column if not exists shipping_origin_zip text not null default '42701';
+alter table public.store_settings add column if not exists shipping_quote_api_url text;
+alter table public.store_settings drop constraint if exists store_settings_tax_mode_chk;
+alter table public.store_settings
+  add constraint store_settings_tax_mode_chk
+  check (tax_mode in ('destination_state', 'flat'));
 
 create table if not exists public.activity_logs (
   id uuid primary key default gen_random_uuid(),
@@ -327,8 +338,8 @@ create index if not exists idx_sourcing_records_updated_at on public.sourcing_re
 create index if not exists idx_activity_logs_created_at on public.activity_logs(created_at desc);
 create index if not exists idx_contact_help_answers_active_order on public.contact_help_answers(active, display_order, created_at desc);
 
-insert into public.store_settings (id, business_email, tax_rate, currency)
-values ('storefront', 'kristin@farmhouseframes.com', 0.06, 'USD')
+insert into public.store_settings (id, business_email, tax_rate, tax_mode, currency, shipping_origin_zip)
+values ('storefront', 'kristin@farmhouseframes.com', 0.06, 'destination_state', 'USD', '42701')
 on conflict (id) do nothing;
 
 insert into storage.buckets (id, name, public)
