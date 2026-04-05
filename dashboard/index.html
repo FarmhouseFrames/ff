@@ -469,6 +469,14 @@
                 <input id="settingShippingOriginZip" type="text" maxlength="10" placeholder="42701">
               </label>
               <label>
+                <span>Outbound Shipping Min Days</span>
+                <input id="settingOutboundShippingMinDays" type="number" min="0" step="1" value="2" required>
+              </label>
+              <label>
+                <span>Outbound Shipping Max Days</span>
+                <input id="settingOutboundShippingMaxDays" type="number" min="0" step="1" value="5" required>
+              </label>
+              <label>
                 <span>Shipping Quote API URL (optional)</span>
                 <input id="settingShippingQuoteApiUrl" type="url" placeholder="https://...">
               </label>
@@ -1637,6 +1645,55 @@
         in_transit_to_customer: 'completed'
       };
       return map[status] || null;
+    }
+
+    function addDaysFromNow(dayCount) {
+      const date = new Date();
+      date.setDate(date.getDate() + Math.max(0, Number(dayCount || 0)));
+      return date;
+    }
+
+    function toDateOnlyIso(value) {
+      const date = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(date.getTime())) return null;
+      return date.toISOString().slice(0, 10);
+    }
+
+    function formatDateForCustomer(value) {
+      if (!value) return 'TBD';
+      const date = new Date(`${value}T12:00:00Z`);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function parseLineList(value) {
+      return String(value || '')
+        .split(/\n|,/)
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    }
+
+    function generateDeliveryResponseToken() {
+      if (window.crypto?.randomUUID) {
+        return `${window.crypto.randomUUID()}-${Date.now()}`;
+      }
+      return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function buildLocalDeliveryResponseUrl({ orderId, email, token, locations, timeframes }) {
+      const url = new URL('../local-delivery.html', window.location.origin + '/dashboard/index.html');
+      url.searchParams.set('order', String(orderId || ''));
+      url.searchParams.set('email', String(email || ''));
+      url.searchParams.set('token', String(token || ''));
+      locations.forEach((value) => url.searchParams.append('loc', value));
+      timeframes.forEach((value) => url.searchParams.append('time', value));
+      return url.toString();
+    }
+
+    function openCustomerStatusEmail({ order, subject, bodyLines }) {
+      const encodedSubject = encodeURIComponent(subject);
+      const body = encodeURIComponent(bodyLines.join('\n'));
+      window.location.href = `mailto:${encodeURIComponent(order.customer_email)}?subject=${encodedSubject}&body=${body}`;
     }
 
     async function logAuditEvent(actionType, targetType, targetId, metadata = {}) {
@@ -2896,7 +2953,9 @@
         currency: 'USD',
         hosted_payment_url: '',
         shipping_origin_zip: '42701',
-        shipping_quote_api_url: ''
+        shipping_quote_api_url: '',
+        outbound_shipping_min_days: 2,
+        outbound_shipping_max_days: 5
       };
 
       $('#settingBusinessEmail').value = settings.business_email || '';
@@ -2904,6 +2963,8 @@
       $('#settingTaxMode').value = settings.tax_mode || 'destination_state';
       $('#settingCurrency').value = String(settings.currency || 'USD').toUpperCase();
       $('#settingShippingOriginZip').value = settings.shipping_origin_zip || '42701';
+      $('#settingOutboundShippingMinDays').value = String(Number(settings.outbound_shipping_min_days ?? 2));
+      $('#settingOutboundShippingMaxDays').value = String(Number(settings.outbound_shipping_max_days ?? 5));
       $('#settingShippingQuoteApiUrl').value = settings.shipping_quote_api_url || '';
       $('#settingHostedPaymentUrl').value = settings.hosted_payment_url || '';
     }
@@ -2919,6 +2980,8 @@
         tax_mode: $('#settingTaxMode').value,
         currency: $('#settingCurrency').value.trim().toUpperCase(),
         shipping_origin_zip: $('#settingShippingOriginZip').value.trim() || '42701',
+        outbound_shipping_min_days: Number($('#settingOutboundShippingMinDays').value || 2),
+        outbound_shipping_max_days: Number($('#settingOutboundShippingMaxDays').value || 5),
         shipping_quote_api_url: $('#settingShippingQuoteApiUrl').value.trim() || null,
         hosted_payment_url: $('#settingHostedPaymentUrl').value.trim() || null,
         updated_by: currentAdminUserId,
@@ -2932,6 +2995,14 @@
 
       if (!['destination_state', 'flat'].includes(payload.tax_mode)) {
         showSettingsMessage('Choose a valid tax mode.', 'error');
+        return;
+      }
+
+      if (!Number.isFinite(payload.outbound_shipping_min_days)
+        || !Number.isFinite(payload.outbound_shipping_max_days)
+        || payload.outbound_shipping_min_days < 0
+        || payload.outbound_shipping_max_days < payload.outbound_shipping_min_days) {
+        showSettingsMessage('Enter a valid outbound shipping day range.', 'error');
         return;
       }
 
@@ -2951,6 +3022,8 @@
         tax_mode: payload.tax_mode,
         currency: payload.currency,
         shipping_origin_zip: payload.shipping_origin_zip,
+        outbound_shipping_min_days: payload.outbound_shipping_min_days,
+        outbound_shipping_max_days: payload.outbound_shipping_max_days,
         shipping_quote_api_url_configured: Boolean(payload.shipping_quote_api_url),
         hosted_payment_url_configured: Boolean(payload.hosted_payment_url)
       });

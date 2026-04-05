@@ -96,10 +96,20 @@ create table if not exists public.order_requests (
   subtotal numeric not null default 0,
   tax numeric not null default 0,
   total numeric not null default 0,
+  eta_min_date date,
+  eta_max_date date,
+  local_delivery_slots jsonb not null default '[]'::jsonb,
+  local_delivery_response_token text,
+  customer_notification_sent_at timestamptz,
   created_at timestamptz not null default now()
 );
 
 alter table public.order_requests add column if not exists customer_user_id uuid references auth.users(id) on delete set null;
+alter table public.order_requests add column if not exists eta_min_date date;
+alter table public.order_requests add column if not exists eta_max_date date;
+alter table public.order_requests add column if not exists local_delivery_slots jsonb not null default '[]'::jsonb;
+alter table public.order_requests add column if not exists local_delivery_response_token text;
+alter table public.order_requests add column if not exists customer_notification_sent_at timestamptz;
 
 create table if not exists public.customer_profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -280,6 +290,8 @@ create table if not exists public.store_settings (
   currency text not null default 'USD',
   shipping_origin_zip text not null default '42701',
   shipping_quote_api_url text,
+  outbound_shipping_min_days integer not null default 2,
+  outbound_shipping_max_days integer not null default 5,
   hosted_payment_url text,
   updated_by uuid references auth.users(id) on delete set null,
   updated_at timestamptz not null default now()
@@ -288,10 +300,30 @@ create table if not exists public.store_settings (
 alter table public.store_settings add column if not exists tax_mode text not null default 'destination_state';
 alter table public.store_settings add column if not exists shipping_origin_zip text not null default '42701';
 alter table public.store_settings add column if not exists shipping_quote_api_url text;
+alter table public.store_settings add column if not exists outbound_shipping_min_days integer not null default 2;
+alter table public.store_settings add column if not exists outbound_shipping_max_days integer not null default 5;
 alter table public.store_settings drop constraint if exists store_settings_tax_mode_chk;
 alter table public.store_settings
   add constraint store_settings_tax_mode_chk
   check (tax_mode in ('destination_state', 'flat'));
+alter table public.store_settings drop constraint if exists store_settings_outbound_shipping_days_chk;
+alter table public.store_settings
+  add constraint store_settings_outbound_shipping_days_chk
+  check (
+    outbound_shipping_min_days >= 0
+    and outbound_shipping_max_days >= outbound_shipping_min_days
+  );
+
+create table if not exists public.delivery_meetup_responses (
+  id uuid primary key default gen_random_uuid(),
+  order_request_id uuid not null references public.order_requests(id) on delete cascade,
+  response_token text not null,
+  customer_email text not null,
+  selected_location text not null,
+  selected_timeframe text not null,
+  notes text,
+  created_at timestamptz not null default now()
+);
 
 create table if not exists public.activity_logs (
   id uuid primary key default gen_random_uuid(),
@@ -337,9 +369,11 @@ create index if not exists idx_supplier_order_packets_created_at on public.suppl
 create index if not exists idx_sourcing_records_updated_at on public.sourcing_records(updated_at desc);
 create index if not exists idx_activity_logs_created_at on public.activity_logs(created_at desc);
 create index if not exists idx_contact_help_answers_active_order on public.contact_help_answers(active, display_order, created_at desc);
+create unique index if not exists idx_delivery_meetup_responses_order_email on public.delivery_meetup_responses(order_request_id, customer_email);
+create index if not exists idx_delivery_meetup_responses_order_id on public.delivery_meetup_responses(order_request_id);
 
-insert into public.store_settings (id, business_email, tax_rate, tax_mode, currency, shipping_origin_zip)
-values ('storefront', 'kristin@farmhouseframes.com', 0.06, 'destination_state', 'USD', '42701')
+insert into public.store_settings (id, business_email, tax_rate, tax_mode, currency, shipping_origin_zip, outbound_shipping_min_days, outbound_shipping_max_days)
+values ('storefront', 'kristin@farmhouseframes.com', 0.06, 'destination_state', 'USD', '42701', 2, 5)
 on conflict (id) do nothing;
 
 insert into storage.buckets (id, name, public)

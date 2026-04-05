@@ -54,7 +54,7 @@ begin
     'products','product_photos','categories','cases','uploads',
     'clients','orders','order_requests','customer_profiles','order_request_items','supplier_order_packets','sourcing_records','order_items',
     'hours_log','mileage_log','expenses','payments',
-    'case_files','case_templates','evidence_index'
+    'case_files','case_templates','evidence_index','delivery_meetup_responses'
   ]
   loop
     execute format('drop policy if exists "Admin CRUD %s" on public.%I;', t, t);

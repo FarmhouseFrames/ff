@@ -56,7 +56,7 @@ begin
     'products','product_photos','categories','cases','uploads',
     'clients','orders','order_requests','customer_profiles','order_request_items','supplier_order_packets','sourcing_records','store_settings','activity_logs','order_items',
     'hours_log','mileage_log','expenses','payments',
-    'case_files','case_templates','evidence_index'
+    'case_files','case_templates','evidence_index','delivery_meetup_responses'
   ]
   loop
     execute format('drop policy if exists "Admin CRUD %s" on public.%I;', t, t);
@@ -134,6 +134,19 @@ create policy "Public can read storefront settings"
 on public.store_settings for select
 to anon, authenticated
 using (id = 'storefront');
+
+alter table public.delivery_meetup_responses enable row level security;
+
+drop policy if exists "Public can submit delivery meetup responses" on public.delivery_meetup_responses;
+create policy "Public can submit delivery meetup responses"
+on public.delivery_meetup_responses for insert
+to anon, authenticated
+with check (
+  char_length(trim(response_token)) >= 20
+  and position('@' in customer_email) > 1
+  and char_length(trim(selected_location)) > 0
+  and char_length(trim(selected_timeframe)) > 0
+);
 
 -- Storage (run after creating buckets)
 create or replace function public.is_admin_bucket(bucket text)
