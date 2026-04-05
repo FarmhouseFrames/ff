@@ -99,10 +99,12 @@
         const loginLinkTop = document.getElementById('loginLinkTop');
         const createLinkTop = document.getElementById('createLinkTop');
 
-        async function enforceSignedOutStart() {
-            // Always start this page as signed-out by design.
-            await publicSupabase.auth.signOut();
-            return null;
+        async function getSignedInUser() {
+            const { data, error } = await publicSupabase.auth.getSession();
+            if (error) {
+                throw error;
+            }
+            return data.session?.user || null;
         }
 
         function renderOrders(orders) {
@@ -164,7 +166,7 @@
             window.location.href = 'account.html';
         });
 
-        const user = await enforceSignedOutStart();
+        const user = await getSignedInUser();
         if (!user) {
             whoami.textContent = 'You are not signed in yet.';
             ordersWrap.innerHTML = `
