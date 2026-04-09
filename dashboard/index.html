@@ -489,9 +489,28 @@
 
     const $ = (sel) => document.querySelector(sel);
 
+
     // Printify Integration Logic
     let printifyShopId = null;
     let printifyProducts = [];
+
+    // Attempt to load Printify API token from secure file on page load
+    (async () => {
+      try {
+        await printifyApi.loadPrintifyToken();
+        $('#printifyApiStatus').textContent = 'API token loaded from secure file.';
+        // Try to fetch shops to verify
+        const shops = await printifyApi.fetchPrintifyShops();
+        printifyShopId = shops[0]?.id || null;
+        if (printifyShopId) {
+          $('#printifyApiStatus').textContent = 'API token valid. Shop loaded.';
+        } else {
+          $('#printifyApiStatus').textContent = 'API token loaded, but no shop found.';
+        }
+      } catch (err) {
+        // Silent fail if not present, user can still enter manually
+      }
+    })();
 
     $('#printifyApiForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
