@@ -1,14 +1,29 @@
 
-{
-  "id": "mounted-medium-trilogy-001",
-  "title": "Mounted Medium Trilogy (1×11×14 + 2×8×10)",
-  "category": "Mounted Prints",
-  "price": 44.88,
-  "currency": "USD",
-  "description": "Create your own gallery wall. Includes (1) 11×14 and (2) 8×10 mounted prints printed on high‑quality Fujifilm photo paper and mounted on a lightweight 1\" thick durable mounting board with black trimmed edges. Ready to hang. Customizable. Available same day.",
-  "image": "/ff/images/mounted-medium-trilogy.jpg",
-  "sizes": ["11x14","8x10"],
-  "tags": ["mounted","trilogy","gallery-wall","ready-to-hang","customizable"],
-  "inventory": 50,
-  "notes": "Walmart style 3-piece set; price before taxes/fees/profits."
-}
+[
+  {
+    "id": "mounted-medium-trilogy-001",
+    "title": "Mounted Medium Trilogy (1×11×14 + 2×8×10)",
+    "category": "Mounted Prints",
+    "price": 44.88,
+    "currency": "USD",
+    "description": "Create your own gallery wall. Includes (1) 11×14 and (2) 8×10 mounted prints printed on high‑quality Fujifilm photo paper and mounted on a lightweight 1\" thick durable mounting board with black trimmed edges. Ready to hang. Customizable. Available same day.",
+    "image": "/ff/images/mounted-medium-trilogy.jpg",
+    "sizes": ["11x14","8x10"],
+    "tags": ["mounted","trilogy","gallery-wall","ready-to-hang","customizable"],
+    "inventory": 50,
+    "notes": "Walmart style 3-piece set; price before taxes/fees/profits."
+  },
+  {
+    "id": "cypress-triptych-canvas-001",
+    "title": "Bayou Cypress Triptych Canvas Print",
+    "category": "Split Canvas",
+    "price": 0,
+    "currency": "USD",
+    "description": "Three majestic cypress trees rise from still, mirror-like water in this stunning 3-panel split canvas. Captured at golden light, the scene evokes the timeless beauty of the Southern bayou. Each panel is printed on premium gallery-wrapped canvas — together they form one breathtaking panoramic image for your wall.\n\nSet includes 3 vertical canvas panels, each 20\"h × 8\"w. Sourced through Canvas Champ.",
+    "image": "/ff/images/lakeside/PH-cypress-triptych.jpg",
+    "sizes": ["3 panels · 20×8 each"],
+    "tags": ["canvas","split-canvas","triptych","nature","bayou","cypress","water","landscape","gallery-wrap"],
+    "inventory": 10,
+    "notes": "3-panel canvas triptych from Canvas Champ. Each panel 20\"h × 8\"w. Price TBD — update before going live."
+  }
+]
