@@ -121,6 +121,21 @@
 
         <div id="page-products" style="display: none;">
           <div class="card">
+            <h2>Printify Integration</h2>
+            <form id="printifyApiForm" class="form" style="margin-bottom: 1em;">
+              <label>
+                <span>Printify API Key</span>
+                <input id="printifyApiKey" type="password" placeholder="Paste API key (admin only)" autocomplete="off" required>
+              </label>
+              <button class="btn primary" type="submit">Set API Key</button>
+              <span id="printifyApiStatus" class="muted small"></span>
+            </form>
+            <div class="row">
+              <button class="btn" id="fetchPrintifyProductsBtn">Sync Printify Products</button>
+            </div>
+            <div id="printifyProductsWrap" class="muted">No Printify products loaded yet.</div>
+          </div>
+          <div class="card">
             <h2>Create Sellable Product</h2>
             <p class="muted">Add a supplier product link (Walmart, CanvasChamp, Amazon) and set your finished retail price.</p>
           </div>
@@ -468,10 +483,99 @@
   </div>
 
   <script type="module">
+    import * as printifyApi from './js/printifyApi.js';
     import { requireAdminSession, signOut, getCurrentUser } from './js/auth.js';
     import { supabase } from './js/supabaseClient.js';
 
     const $ = (sel) => document.querySelector(sel);
+
+    // Printify Integration Logic
+    let printifyShopId = null;
+    let printifyProducts = [];
+
+    $('#printifyApiForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const key = $('#printifyApiKey').value.trim();
+      try {
+        printifyApi.setApiKey(key);
+        $('#printifyApiStatus').textContent = 'API key set.';
+        // Try to fetch shops to verify
+        const shops = await printifyApi.fetchPrintifyShops();
+        printifyShopId = shops[0]?.id || null;
+        if (printifyShopId) {
+          $('#printifyApiStatus').textContent = 'API key valid. Shop loaded.';
+        } else {
+          $('#printifyApiStatus').textContent = 'API key set, but no shop found.';
+        }
+      } catch (err) {
+        $('#printifyApiStatus').textContent = 'Invalid API key or error: ' + err.message;
+      }
+    });
+
+    $('#fetchPrintifyProductsBtn')?.addEventListener('click', async () => {
+      if (!printifyShopId) {
+        $('#printifyProductsWrap').textContent = 'Set a valid API key first.';
+        return;
+      }
+      $('#printifyProductsWrap').textContent = 'Loading products…';
+      try {
+        const data = await printifyApi.fetchPrintifyProducts(printifyShopId);
+        printifyProducts = data.data || [];
+        if (printifyProducts.length === 0) {
+          $('#printifyProductsWrap').textContent = 'No products found in Printify.';
+        } else {
+          $('#printifyProductsWrap').innerHTML = '<ul>' + printifyProducts.map(p =>
+            `<li><b>${escapeHtml(p.title)}</b> (ID: ${p.id}) <button class="btn small" data-printify-product="${p.id}">Send to Customer…</button></li>`
+          ).join('') + '</ul>';
+        }
+      } catch (err) {
+        $('#printifyProductsWrap').textContent = 'Error loading products: ' + err.message;
+      }
+    });
+
+    // Handle Send to Customer (order creation)
+    $('#printifyProductsWrap')?.addEventListener('click', async (e) => {
+      if (e.target.matches('[data-printify-product]')) {
+        const productId = e.target.getAttribute('data-printify-product');
+        const customerEmail = prompt('Enter customer email for this order:');
+        if (!customerEmail) return;
+        if (!printifyShopId) {
+          alert('No Printify shop loaded.');
+          return;
+        }
+        try {
+          // Minimal order creation: you may want to expand this for real use
+          const res = await fetch(`https://api.printify.com/v1/shops/${printifyShopId}/orders.json`, {
+            method: 'POST',
+            headers: printifyApi["getHeaders"](),
+            body: JSON.stringify({
+              external_id: 'ff-' + Date.now(),
+              line_items: [{
+                product_id: productId,
+                variant_id: 0, // You may want to prompt for variant
+                quantity: 1
+              }],
+              send_shipping_notification: true,
+              address_to: {
+                email: customerEmail,
+                country: 'US',
+                // You should prompt for full address in production
+                first_name: 'Customer',
+                last_name: '',
+                address1: '',
+                city: '',
+                region: '',
+                zip: ''
+              }
+            })
+          });
+          if (!res.ok) throw new Error('Order creation failed');
+          alert('Order sent to Printify for customer!');
+        } catch (err) {
+          alert('Error sending order: ' + err.message);
+        }
+      }
+    });
     const escapeHtml = (value) => String(value ?? '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
