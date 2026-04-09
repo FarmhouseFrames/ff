@@ -8,7 +8,24 @@ const PRINTIFY_API_BASE = 'https://api.printify.com/v1';
  * Set your Printify API key here for local testing.
  * In production, use a secure method to inject this value.
  */
-let PRINTIFY_API_KEY = null; // Set via setApiKey()
+
+let PRINTIFY_API_KEY = null; // Set via setApiKey() or loadPrintifyToken()
+
+/**
+ * Loads the Printify API token from /data/printify-token.txt (local/admin only).
+ * Returns a promise that resolves when the token is loaded.
+ */
+export async function loadPrintifyToken() {
+    if (PRINTIFY_API_KEY) return;
+    try {
+        const res = await fetch('/data/printify-token.txt', { cache: 'no-store' });
+        if (!res.ok) throw new Error('Token file not found');
+        PRINTIFY_API_KEY = (await res.text()).trim();
+    } catch (e) {
+        console.error('Failed to load Printify API token:', e);
+        throw e;
+    }
+}
 
 export function setApiKey(key) {
     PRINTIFY_API_KEY = key;
