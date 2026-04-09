@@ -3,92 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Account | Farmhouse Frames</title>
+    <title>My Account - Farmhouse Frames</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect fill='%234d3425' width='200' height='200'/><rect fill='%23e8d5be' x='60' y='60' width='80' height='80' stroke='%234d3425' stroke-width='4'/><line x1='100' y1='60' x2='100' y2='140' stroke='%234d3425' stroke-width='2'/><line x1='60' y1='100' x2='140' y2='100' stroke='%234d3425' stroke-width='2'/></svg>">
+    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/commerce.css">
-    <style>
-        body {
-            background:
-                linear-gradient(rgba(246, 240, 232, 0.5), rgba(246, 240, 232, 0.5)),
-                url("images/banner-photo.jpg") center center / cover no-repeat fixed;
-        }
-
-        .commerce-hero,
-        .checkout-form,
-        .summary-card {
-            background: rgba(255, 250, 245, 0.84);
-            border: 1px solid rgba(204, 183, 158, 0.9);
-            box-shadow: 0 14px 28px rgba(76, 52, 34, 0.12);
-            backdrop-filter: blur(4px);
-        }
-
-        .commerce-hero {
-            text-align: center;
-        }
-
-        .checkout-form h2,
-        .summary-card h2 {
-            text-align: center;
-            text-decoration: underline;
-            text-underline-offset: 4px;
-        }
-    </style>
 </head>
 <body>
     <nav class="site-nav">
-        <a href="index.html">Home</a>
-        <a href="gallery.html">Gallery</a>
-        <a href="splits.html">Split Canvas</a>
-        <a href="catalog.html">Catalog</a>
-        <a href="contact.html">Contact</a>
-        <a href="pickup.html">Pickup & Shipping</a>
-        <a href="account.html" aria-current="page">Account</a>
-        <a href="certificates.html">Certificates</a>
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Farmhouse Frames</a>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/catalog.html">Catalog</a></li>
+                <li><a href="/gallery.html">Gallery</a></li>
+                <li><a href="/pickup.html">Local Pickup</a></li>
+                <li><a href="/contact.html">Contact</a></li>
+                <li><a href="/cart.html">Cart</a></li>
+            </ul>
+        </div>
     </nav>
 
-    <div class="commerce-shell">
-        <header class="commerce-topbar">
-            <a href="index.html">Farmhouse Frames</a>
-            <div class="summary-actions">
-                <a class="commerce-button-link" href="products/index.html">Shop products</a>
-                <a class="commerce-button-link" href="checkout.html">Checkout</a>
-                <a id="loginLinkTop" class="commerce-button-link" href="account-login.html?mode=signin">Log in</a>
-                <a id="createLinkTop" class="commerce-button-link" href="account-login.html?mode=signup">Create account</a>
-                <button id="signOutBtn" class="commerce-button" type="button" style="display:none;">Sign out</button>
-            </div>
-        </header>
-
+    <div class="commerce-hero-background">
         <section class="commerce-hero">
             <h1>My Account</h1>
-            <p id="whoami" class="helper-text">Create an account or log in to view your orders from finished Farmhouse Frames products inspired by Cadiz, Trigg County, and Land Between the Lakes.</p>
+            <p>Manage your profile and view your orders</p>
         </section>
+    </div>
 
-        <main class="commerce-layout">
-            <section class="checkout-form">
-                <h2>My Orders</h2>
-                <div id="ordersWrap" class="status-message">
-                    <p class="muted">Sign up for a customer account, or log in to your existing account, to view your order history.</p>
-                    <div class="checkout-actions" style="margin-top: 12px;">
-                        <a class="commerce-button-link primary" href="account-login.html?mode=signup">Create customer account</a>
-                        <a class="commerce-button-link" href="account-login.html?mode=signin">Log in to existing account</a>
+    <main class="commerce-container">
+        <div class="account-layout">
+            <!-- Main content: Profile & Orders -->
+            <div class="account-main">
+                <div id="profile-section" class="mini-card">
+                    <div class="card-header">
+                        <h2>Profile</h2>
+                        <button id="edit-profile-toggle" class="action-btn">Edit</button>
+                    </div>
+
+                    <!-- Display Mode -->
+                    <div id="profile-display" class="info-stack" style="display: none;">
+                        <div class="info-item">
+                            <label>Name</label>
+                            <p id="profile-name">—</p>
+                        </div>
+                        <div class="info-item">
+                            <label>Email</label>
+                            <p id="profile-email">—</p>
+                        </div>
+                        <div class="info-item">
+                            <label>Phone</label>
+                            <p id="profile-phone">—</p>
+                        </div>
+                        <div class="info-item">
+                            <label>Address</label>
+                            <p id="profile-address" style="white-space: pre-wrap;">—</p>
+                        </div>
+                        <div class="info-item">
+                            <label>Preferred Fulfillment</label>
+                            <p id="profile-fulfillment">—</p>
+                        </div>
+                    </div>
+
+                    <!-- Edit Mode -->
+                    <form id="profile-form" class="profile-grid" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="first_name">First Name</label>
+                                <input type="text" id="first_name" name="first_name" placeholder="First name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="last_name">Last Name</label>
+                                <input type="text" id="last_name" name="last_name" placeholder="Last name" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="profile_email">Email</label>
+                                <input type="email" id="profile_email" name="email" placeholder="email@example.com" disabled style="background-color: #f5f5f5; cursor: not-allowed;">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="phone">Phone</label>
+                                <input type="tel" id="phone" name="phone" placeholder="(123) 456-7890">
+                            </div>
+                            <div class="form-group">
+                                <label for="preferred_fulfillment">Preferred Fulfillment</label>
+                                <select id="preferred_fulfillment" name="preferred_fulfillment">
+                                    <option value="">Select...</option>
+                                    <option value="shipping">Shipping</option>
+                                    <option value="local_pickup">Local Pickup</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="address_line_1">Address Line 1</label>
+                                <input type="text" id="address_line_1" name="address_line_1" placeholder="Street address">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="address_line_2">Address Line 2</label>
+                                <input type="text" id="address_line_2" name="address_line_2" placeholder="Suite, apartment, etc.">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="city">City</label>
+                                <input type="text" id="city" name="city" placeholder="City">
+                            </div>
+                            <div class="form-group">
+                                <label for="state_region">State/Region</label>
+                                <input type="text" id="state_region" name="state_region" placeholder="State">
+                            </div>
+                            <div class="form-group">
+                                <label for="postal_code">Postal Code</label>
+                                <input type="text" id="postal_code" name="postal_code" placeholder="Postal code">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="country">Country</label>
+                                <input type="text" id="country" name="country" placeholder="Country" value="United States">
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save Profile</button>
+                            <button type="button" id="cancel-edit" class="btn btn-secondary">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Orders Section -->
+                <div id="orders-section" class="mini-card">
+                    <h2>Order History</h2>
+                    <div id="orders-container">
+                        <p class="loading">Loading orders...</p>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            <aside class="summary-card">
-                <h2>Quick Actions</h2>
-                <div class="summary-actions">
-                    <a class="commerce-button-link" href="checkout.html">Start checkout</a>
-                    <a class="commerce-button-link" href="cart.html">Open cart</a>
-                    <a class="commerce-button-link" href="account-login.html">Sign in as different user</a>
+            <!-- Sidebar: Quick Actions or Guest Guidance -->
+            <aside class="account-sidebar">
+                <div class="mini-card">
+                    <h3>Quick Actions</h3>
+                    <div class="info-list">
+                        <a href="/cart.html" class="action-link">View Cart</a>
+                        <a href="/catalog.html" class="action-link">Continue Shopping</a>
+                        <button id="sign-out-btn" class="action-link" style="border: none; background: none; cursor: pointer; text-align: left; color: var(--accent);">Sign Out</button>
+                    </div>
                 </div>
-                <h3 style="margin-top: 18px;">About Farmhouse Frames</h3>
-                <p class="helper-text">Farmhouse Frames is built around the quiet beauty of Western Kentucky. We turn local scenic photography into finished pieces designed for warm farmhouse spaces and meaningful gifts.</p>
-                <h3 style="margin-top: 14px;">Why We Love It</h3>
-                <p class="helper-text">We love preserving everyday moments people often pass by: backroads at sunrise, weathered barns, peaceful waterlines, and seasonal light that feels like home. Every finished product starts with that story.</p>
-                <p class="helper-text">Your account only shows customer-facing order data.</p>
+
+                <div class="mini-card">
+                    <h3>Need Help?</h3>
+                    <div class="info-list">
+                        <a href="/legal/shipping.html" class="action-link">Shipping Info</a>
+                        <a href="/contact.html" class="action-link">Contact Us</a>
+                        <a href="/legal/returns.html" class="action-link">Returns</a>
+                    </div>
+                </div>
             </aside>
-        </main>
-    </div>
+        </div>
+    </main>
+
+    <footer class="page-footer">
+        <div class="footer-links">
+            <a href="/legal/privacy.html">Privacy</a>
+            <a href="/legal/terms.html">Terms</a>
+            <a href="/legal/shipping.html">Shipping</a>
+        </div>
+        <p>&copy; 2024-2026 Farmhouse Frames. Handcrafted in MT.</p>
+    </footer>
 
     <script type="module">
         import { publicSupabase } from './js/supabasePublic.js';
@@ -107,64 +200,101 @@
             return data.session?.user || null;
         }
 
-        function renderOrders(orders) {
-            if (!orders.length) {
-                ordersWrap.innerHTML = '<p class="muted">No account-linked orders yet. Place your next order while signed in.</p>';
-                return;
-            }
+        let currentCustomer = null;
+        let currentProfile = null;
 
-            ordersWrap.innerHTML = `
-                <div style="overflow:auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Fulfillment</th>
-                                <th>Total</th>
-                                <th>Order ID</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${orders.map((order) => `
-                                <tr>
-                                    <td>${new Date(order.created_at).toLocaleString()}</td>
-                                    <td>${order.status || 'new'}</td>
-                                    <td>${order.fulfillment_method || 'Pickup'}</td>
-                                    <td>$${Number(order.total || 0).toFixed(2)}</td>
-                                    <td><code>${order.id}</code></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+        // Initialize page
+        async function initPage() {
+            try {
+                const result = await getSignedInCustomerAccount();
+                if (!result.user) {
+                    // Guest user or unauthenticated
+                    showGuestGuidance();
+                    return;
+                }
+
+                currentCustomer = result.user;
+                currentProfile = result.profile || {};
+                
+                renderProfileDisplay();
+                await renderOrders();
+            } catch (error) {
+                console.error('Failed to initialize account page:', error);
+                showGuestGuidance();
+            }
+        }
+
+        function showGuestGuidance() {
+            document.getElementById('profile-section').innerHTML = `
+                <div class="card-header">
+                    <h2>Sign In to Your Account</h2>
                 </div>
+                <div class="info-stack">
+                    <p>Welcome! Sign in to view your saved profile and order history.</p>
+                    <a href="/account-login.html" class="btn btn-primary">Sign In</a>
+                    <p style="font-size: 0.9em; margin-top: 1em;">Don't have an account? <a href="/account-login.html">Create one</a></p>
+                </div>
+            `;
+            
+            document.getElementById('orders-section').innerHTML = `
+                <h2>Order History</h2>
+                <p>Sign in to view your orders.</p>
             `;
         }
 
-        async function loadOrders(user) {
-            const { data, error } = await publicSupabase
-                .from('order_requests')
-                .select('id, created_at, status, fulfillment_method, total')
-                .eq('customer_user_id', user.id)
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                const message = String(error.message || 'Could not load order history.');
-                if (message.toLowerCase().includes('customer_user_id') || message.toLowerCase().includes('does not exist')) {
-                    ordersWrap.innerHTML = '<p class="muted">Account-linked order history is almost ready. Run the latest Supabase SQL migration, then refresh this page.</p>';
-                    return;
-                }
-                ordersWrap.textContent = message;
+        function renderProfileDisplay() {
+            if (!currentProfile || Object.keys(currentProfile).length === 0) {
+                document.getElementById('profile-section').innerHTML = `
+                    <div class="card-header">
+                        <h2>Profile</h2>
+                        <button id="edit-profile-toggle-new" class="action-btn">Create Profile</button>
+                    </div>
+                    <div class="info-stack">
+                        <p>No profile information yet. Create one to save your preferences and address.</p>
+                    </div>
+                `;
+                document.getElementById('edit-profile-toggle-new')?.addEventListener('click', toggleEditMode);
                 return;
             }
 
-            renderOrders(data || []);
+            // Display mode
+            document.getElementById('profile-name').textContent = formatProfileName(currentProfile) || '—';
+            document.getElementById('profile-email').textContent = currentCustomer?.email || '—';
+            document.getElementById('profile-phone').textContent = currentProfile.phone || '—';
+            document.getElementById('profile-address').textContent = hasMailingAddress(currentProfile) 
+                ? formatMailingAddress(currentProfile) 
+                : '—';
+            document.getElementById('profile-fulfillment').textContent = currentProfile.preferred_fulfillment || '—';
+
+            // Fill edit form
+            document.getElementById('first_name').value = currentProfile.first_name || '';
+            document.getElementById('last_name').value = currentProfile.last_name || '';
+            document.getElementById('profile_email').value = currentCustomer?.email || '';
+            document.getElementById('phone').value = currentProfile.phone || '';
+            document.getElementById('preferred_fulfillment').value = currentProfile.preferred_fulfillment || '';
+            document.getElementById('address_line_1').value = currentProfile.address_line_1 || '';
+            document.getElementById('address_line_2').value = currentProfile.address_line_2 || '';
+            document.getElementById('city').value = currentProfile.city || '';
+            document.getElementById('state_region').value = currentProfile.state_region || '';
+            document.getElementById('postal_code').value = currentProfile.postal_code || '';
+            document.getElementById('country').value = currentProfile.country || 'United States';
+
+            document.getElementById('profile-display').style.display = 'block';
+            document.getElementById('profile-form').style.display = 'none';
         }
 
-        signOutBtn.addEventListener('click', async () => {
-            await publicSupabase.auth.signOut();
-            window.location.href = 'account.html';
-        });
+        function toggleEditMode() {
+            const display = document.getElementById('profile-display');
+            const form = document.getElementById('profile-form');
+            
+            if (form.style.display === 'none') {
+                display.style.display = 'none';
+                form.style.display = 'block';
+            } else {
+                display.style.display = 'block';
+                form.style.display = 'none';
+            }
+        }
 
         const user = await getSignedInUser();
         if (!user) {
@@ -177,15 +307,98 @@
                 </div>
             `;
             return;
+        async function handleProfileSave(e) {
+            e.preventDefault();
+
+            const profileData = {
+                first_name: document.getElementById('first_name').value,
+                last_name: document.getElementById('last_name').value,
+                phone: document.getElementById('phone').value,
+                preferred_fulfillment: document.getElementById('preferred_fulfillment').value,
+                address_line_1: document.getElementById('address_line_1').value,
+                address_line_2: document.getElementById('address_line_2').value,
+                city: document.getElementById('city').value,
+                state_region: document.getElementById('state_region').value,
+                postal_code: document.getElementById('postal_code').value,
+                country: document.getElementById('country').value,
+            };
+
+            try {
+                await saveCustomerProfile(profileData);
+                currentProfile = profileData;
+                renderProfileDisplay();
+                alert('Profile saved successfully!');
+            } catch (error) {
+                console.error('Failed to save profile:', error);
+                alert('Failed to save profile. Please try again.');
+            }
         }
 
-        if (user) {
-            signOutBtn.style.display = 'inline-flex';
-            loginLinkTop.style.display = 'none';
-            createLinkTop.style.display = 'none';
-            whoami.textContent = `Signed in as ${user.email}`;
-            await loadOrders(user);
+        async function renderOrders() {
+            if (!currentCustomer) return;
+
+            try {
+                const { data, error } = await supabase
+                    .from('order_requests')
+                    .select('id, created_at, customer_email, fulfillment_method, total_cents, status, order_request_items(id, product_id, quantity, price_cents)')
+                    .eq('customer_user_id', currentCustomer.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const container = document.getElementById('orders-container');
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<p>No orders yet. <a href="/catalog.html">Start shopping</a></p>';
+                    return;
+                }
+
+                let html = '<div class="orders-list">';
+                for (const order of data) {
+                    const date = new Date(order.created_at).toLocaleDateString();
+                    const total = (order.total_cents / 100).toFixed(2);
+                    const items = order.order_request_items || [];
+
+                    html += `
+                        <div class="order-card">
+                            <div class="order-header">
+                                <strong>Order #${order.id.substring(0, 8)}</strong>
+                                <span>${date}</span>
+                            </div>
+                            <div class="order-details">
+                                <p><strong>Method:</strong> ${order.fulfillment_method}</p>
+                                <p><strong>Status:</strong> ${order.status || 'Pending'}</p>
+                                <p><strong>Items:</strong> ${items.length}</p>
+                                <p><strong>Total:</strong> $${total}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Failed to load orders:', error);
+                document.getElementById('orders-container').innerHTML = '<p>Unable to load orders. Please try again later.</p>';
+            }
         }
+
+        // Event listeners
+        document.getElementById('edit-profile-toggle').addEventListener('click', toggleEditMode);
+        document.getElementById('cancel-edit').addEventListener('click', toggleEditMode);
+        document.getElementById('profile-form').addEventListener('submit', handleProfileSave);
+
+        document.getElementById('sign-out-btn').addEventListener('click', async () => {
+            try {
+                await supabase.auth.signOut();
+                window.location.href = '/account-login.html';
+            } catch (error) {
+                console.error('Sign out failed:', error);
+            }
+        });
+
+        // Initialize on page load
+        initPage();
     </script>
 </body>
 </html>

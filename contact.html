@@ -26,7 +26,7 @@
         .contact-card {
             border: 1px solid #d8cfc4;
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.72);
             padding: 20px;
         }
 
@@ -42,6 +42,27 @@
             margin-bottom: 12px;
         }
 
+        .contact-doodles {
+            margin: -2px auto 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            color: #7f6145;
+            opacity: 0.9;
+            flex-wrap: wrap;
+        }
+
+        .contact-doodle {
+            width: 28px;
+            height: 28px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
         .drop-cap {
             font-family: 'Great Vibes', cursive;
             font-size: 1.55em;
@@ -55,6 +76,29 @@
             display: grid;
             gap: 10px;
             margin-top: 12px;
+        }
+
+        .reason-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0 4px;
+        }
+
+        .reason-chip {
+            border: 1px solid #d4c7b8;
+            border-radius: 999px;
+            background: rgba(255, 250, 245, 0.76);
+            color: #6a5846;
+            padding: 7px 11px;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .reason-chip.active {
+            border-color: #b89f85;
+            background: rgba(255, 250, 245, 0.95);
+            color: #5b4735;
         }
 
         .contact-form input,
@@ -103,13 +147,125 @@
             min-height: 120px;
             resize: vertical;
         }
+
+        .faq-section {
+            margin-top: 24px;
+            border: 1px solid rgba(204, 183, 158, 0.9);
+            border-radius: 14px;
+            background: rgba(255, 250, 245, 0.72);
+            padding: 16px;
+        }
+
+        .faq-title {
+            margin: 0 0 8px;
+            color: #5d4a38;
+            text-align: center;
+            font-size: 1.35rem;
+        }
+
+        .faq-search-wrap {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #d4c7b8;
+            border-radius: 999px;
+            background: rgba(255, 250, 245, 0.88);
+            padding: 8px 12px;
+        }
+
+        .faq-search-icon {
+            width: 18px;
+            height: 18px;
+            color: #8b6f52;
+            flex: 0 0 auto;
+        }
+
+        .faq-search {
+            border: 0;
+            background: transparent;
+            color: #5f4d3b;
+            font: inherit;
+            width: 100%;
+        }
+
+        .faq-search:focus {
+            outline: none;
+        }
+
+        .faq-results {
+            margin-top: 12px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .faq-item {
+            border: 1px solid #dfd0bf;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.84);
+            overflow: clip;
+        }
+
+        .faq-item summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 10px 12px;
+            color: #5d4a38;
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .faq-item summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .faq-item summary::after {
+            content: '+';
+            color: #8b6f52;
+            font-size: 1.2rem;
+            line-height: 1;
+            transition: transform 0.2s ease;
+        }
+
+        .faq-item[open] summary::after {
+            content: '-';
+        }
+
+        .faq-item p {
+            margin: 0;
+            padding: 0 12px 12px;
+            color: #6a5846;
+        }
+
+        .faq-empty {
+            margin: 4px 0 0;
+            color: #6a5846;
+            text-align: center;
+            display: none;
+        }
+
+        .faq-empty.active {
+            display: block;
+        }
+
+        .live-help-note {
+            margin: 8px 0 0;
+            color: #6a5846;
+            text-align: center;
+            font-size: 0.95rem;
+        }
     </style>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%22 height=%2732%22 rx=%226%22 fill=%22%234d3425%22/%3E%3Ctext x=%2216%22 y=%2223%22 font-family=%22Georgia,serif%22 font-size=%2220%22 fill=%22%23e8d5be%22 text-anchor=%22middle%22%3EF%3C/text%3E%3C/svg%3E">
 </head>
 <body>
 <nav>
     <a href="index.html">Home</a>
     <a href="gallery.html">Gallery</a>
-    <a href="splits.html">Split Canvas</a>
+    <a href="products/index.html?category=split-canvas">Split Canvas</a>
     <a href="catalog.html">Catalog</a>
     <a href="contact.html" aria-current="page">Contact</a>
     <a href="pickup.html">Pickup & Shipping</a>
@@ -118,8 +274,28 @@
 </nav>
 
 <section class="section">
-    <h2><span class="drop-cap">C</span>ontact</h2>
-    <p class="section-intro">For custom orders, local pickup questions, or print requests, send a direct message.</p>
+    <h2>Contact</h2>
+    <div class="contact-doodles" aria-hidden="true">
+        <svg class="contact-doodle" viewBox="0 0 24 24" focusable="false">
+            <path d="M3 7.5h18v10.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <path d="M3 8l9 6 9-6"/>
+            <path d="M10.2 10.3l1.8-1.8 1.8 1.8"/>
+        </svg>
+        <svg class="contact-doodle" viewBox="0 0 24 24" focusable="false">
+            <path d="M4 12l15-6-6 15-2.7-5.3z"/>
+            <path d="M10.3 15.7l2-2"/>
+        </svg>
+        <svg class="contact-doodle" viewBox="0 0 24 24" focusable="false">
+            <path d="M4 8.5h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
+            <path d="M7.5 6.5h9"/>
+            <circle cx="12" cy="13.5" r="2.1"/>
+        </svg>
+        <svg class="contact-doodle" viewBox="0 0 24 24" focusable="false">
+            <path d="M4 17.5c2.2-3.6 4.6-4.8 7.4-3.4 2.8 1.4 4.8.8 8.6-2.8"/>
+            <path d="M7 9.8c1.1-.9 2.2-.9 3.3 0"/>
+            <path d="M13.7 8.8c.8-.8 1.9-.8 2.7 0"/>
+        </svg>
+    </div>
 
     <article class="contact-card">
         <p>We welcome all feedback, questions, and reviews from our customers. Your thoughts help us grow and continue creating pieces you love. We look forward to hearing from you. Thank you for supporting Farmhouse Frames.</p>
@@ -129,6 +305,14 @@
             <input type="text" name="name" placeholder="Your name" required>
             <input type="email" name="email" placeholder="Your email" required>
             <label for="contactReason">Reason for Contact</label>
+            <div class="reason-chips" id="reasonChips" aria-label="Quick reason buttons">
+                <button class="reason-chip" type="button" data-reason="review">Review</button>
+                <button class="reason-chip" type="button" data-reason="refund">Refund</button>
+                <button class="reason-chip" type="button" data-reason="missing">Missing Item</button>
+                <button class="reason-chip" type="button" data-reason="wrong-product">Wrong Product</button>
+                <button class="reason-chip" type="button" data-reason="product-issue">Product Issue</button>
+                <button class="reason-chip" type="button" data-reason="other">Other</button>
+            </div>
             <select id="contactReason" name="reason" required>
                 <option value="">Select a reason</option>
                 <option value="review">Review Product or Process</option>
@@ -187,12 +371,66 @@
             <textarea name="message" placeholder="How can we help?" required></textarea>
             <button type="submit" class="banner-btn">Send Inquiry</button>
         </form>
+
+        <section class="faq-section" aria-labelledby="faqHeading">
+            <h3 class="faq-title" id="faqHeading">Frequently Asked Questions</h3>
+            <div class="faq-search-wrap">
+                <svg class="faq-search-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                    <path d="M20 20l-4.2-4.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                </svg>
+                <input
+                    id="faqSearch"
+                    class="faq-search"
+                    type="search"
+                    placeholder="Search common questions"
+                    aria-label="Search frequently asked questions"
+                >
+            </div>
+
+            <div class="faq-results" id="faqResults">
+                <details class="faq-item" data-faq="How long does shipping take? Shipping usually takes 5 to 10 business days after your order is placed.">
+                    <summary>How long does shipping take?</summary>
+                    <p>Shipping usually takes 5 to 10 business days after your order is placed.</p>
+                </details>
+
+                <details class="faq-item" data-faq="Do you offer local pickup? Yes. Local pickup is available in Kentucky and we will coordinate a time with you.">
+                    <summary>Do you offer local pickup?</summary>
+                    <p>Yes. Local pickup is available in Kentucky and we will coordinate a time with you.</p>
+                </details>
+
+                <details class="faq-item" data-faq="Can I request a custom photo print? Yes, custom print requests are welcome. Share your details through this form and we will follow up.">
+                    <summary>Can I request a custom photo print?</summary>
+                    <p>Yes, custom print requests are welcome. Share your details through this form and we will follow up.</p>
+                </details>
+
+                <details class="faq-item" data-faq="How do I request a refund or report an issue? Choose the reason in the contact form and complete the follow-up fields so we can help quickly.">
+                    <summary>How do I request a refund or report an issue?</summary>
+                    <p>Choose the reason in the contact form and complete the follow-up fields so we can help quickly.</p>
+                </details>
+            </div>
+
+            <h3 class="faq-title" style="margin-top:16px;">Live Help Answers</h3>
+            <div class="faq-results" id="liveHelpResults"></div>
+            <p class="live-help-note" id="liveHelpNote">Loading current help answers...</p>
+
+            <p class="faq-empty" id="faqEmpty">No matching answer found yet. Send your question through the form and we will help.</p>
+        </section>
     </article>
 </section>
 
-<script>
+<script type="module">
+    import { publicSupabase } from './js/supabasePublic.js';
+
     const reasonSelect = document.getElementById('contactReason');
     const followUpBlocks = document.querySelectorAll('.follow-up-block');
+    const reasonChips = document.querySelectorAll('.reason-chip');
+
+    function updateReasonChips() {
+        reasonChips.forEach((chip) => {
+            chip.classList.toggle('active', chip.dataset.reason === reasonSelect.value);
+        });
+    }
 
     function updateFollowUpFields() {
         const selectedReason = reasonSelect.value;
@@ -207,10 +445,96 @@
                 field.required = isActive && field.dataset.required === 'true';
             });
         });
+
+        updateReasonChips();
     }
 
     reasonSelect.addEventListener('change', updateFollowUpFields);
+    reasonChips.forEach((chip) => {
+        chip.addEventListener('click', () => {
+            reasonSelect.value = chip.dataset.reason || '';
+            reasonSelect.dispatchEvent(new Event('change'));
+            reasonSelect.focus();
+        });
+    });
     updateFollowUpFields();
+
+    const faqSearch = document.getElementById('faqSearch');
+    const faqEmpty = document.getElementById('faqEmpty');
+    const liveHelpResults = document.getElementById('liveHelpResults');
+    const liveHelpNote = document.getElementById('liveHelpNote');
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function filterFaqItems() {
+        const query = faqSearch.value.trim().toLowerCase();
+        let visibleCount = 0;
+        const faqItems = document.querySelectorAll('.faq-item');
+
+        faqItems.forEach((item) => {
+            const searchableText = String(item.dataset.faq || item.textContent || '').toLowerCase();
+            const isVisible = searchableText.includes(query);
+            item.hidden = !isVisible;
+            if (!isVisible) {
+                item.open = false;
+            }
+            if (isVisible) {
+                visibleCount += 1;
+            }
+        });
+
+        faqEmpty.classList.toggle('active', visibleCount === 0);
+    }
+
+    function renderLiveHelpAnswers(items) {
+        if (!items.length) {
+            liveHelpResults.innerHTML = '';
+            liveHelpNote.textContent = 'No live help answers are published yet.';
+            return;
+        }
+
+        liveHelpResults.innerHTML = items.map((item) => {
+            const tags = Array.isArray(item.tags) ? item.tags.join(' ') : '';
+            const faqText = `${item.question || ''} ${item.answer || ''} ${tags}`.trim();
+            return `
+                <details class="faq-item" data-faq="${faqText.replace(/"/g, '&quot;')}">
+                    <summary>${escapeHtml(item.question || 'Common question')}</summary>
+                    <p>${escapeHtml(item.answer || '')}</p>
+                </details>
+            `;
+        }).join('');
+
+        liveHelpNote.textContent = 'Showing current published help answers.';
+        filterFaqItems();
+    }
+
+    async function loadLiveHelpAnswers() {
+        const { data, error } = await publicSupabase
+            .from('contact_help_answers')
+            .select('question, answer, tags')
+            .eq('active', true)
+            .order('display_order', { ascending: true })
+            .limit(8);
+
+        if (error) {
+            liveHelpResults.innerHTML = '';
+            liveHelpNote.textContent = 'Live help answers are temporarily unavailable. You can still search the common FAQ above.';
+            return;
+        }
+
+        renderLiveHelpAnswers(data || []);
+    }
+
+    faqSearch.addEventListener('input', filterFaqItems);
+    filterFaqItems();
+    loadLiveHelpAnswers();
 </script>
 
 <footer>© 2026 Farmhouse Frames</footer>

@@ -5,8 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout | Farmhouse Frames</title>
     <link rel="stylesheet" href="css/commerce.css">
+    <style>
+        body {
+            background:
+                linear-gradient(rgba(246, 240, 232, 0.5), rgba(246, 240, 232, 0.5)),
+                url("images/banner-photo.jpg") center center / cover no-repeat fixed;
+        }
+
+        .commerce-hero,
+        .summary-card,
+        .checkout-form,
+        .empty-card,
+        .mini-card {
+            background: rgba(255, 250, 245, 0.84);
+            border: 1px solid rgba(204, 183, 158, 0.9);
+            box-shadow: 0 14px 28px rgba(76, 52, 34, 0.12);
+            backdrop-filter: blur(4px);
+        }
+
+        .commerce-hero,
+        .checkout-form h2,
+        .summary-card h2,
+        .mini-card h3 {
+            text-align: center;
+        }
+    </style>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%22 height=%2732%22 rx=%226%22 fill=%22%234d3425%22/%3E%3Ctext x=%2216%22 y=%2223%22 font-family=%22Georgia,serif%22 font-size=%2220%22 fill=%22%23e8d5be%22 text-anchor=%22middle%22%3EF%3C/text%3E%3C/svg%3E">
 </head>
 <body>
+    <nav class="site-nav">
+        <a href="index.html">Home</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="products/index.html?category=split-canvas">Split Canvas</a>
+        <a href="catalog.html">Catalog</a>
+        <a href="contact.html">Contact</a>
+        <a href="pickup.html">Pickup & Shipping</a>
+        <a href="account.html">Account</a>
+        <a href="certificates.html">Certificates</a>
+    </nav>
+
     <div class="commerce-shell">
         <header class="commerce-topbar">
             <a href="index.html">Farmhouse Frames</a>
@@ -19,24 +56,20 @@
 
         <section class="commerce-hero">
             <h1>Checkout</h1>
-            <p>This checkout flow is static-hosting safe. It prepares a full order request from the shared cart and sends it to the store email.</p>
+            <p>This guest checkout flow keeps your order details together until payment is completed and a confirmation number is issued. It also routes the order into the Farmhouse Frames admin queue when available.</p>
         </section>
 
         <main id="checkoutRoot" class="commerce-layout"></main>
     </div>
 
     <script type="module">
-        import { calculateCartTotals, clearCart, formatCartSummary, formatCurrency, loadStoreConfig, readCart } from './js/commerce.js';
+        import { calculateCartTotals, clearCart, estimateDestinationTaxRate, formatCartSummary, formatCurrency, loadStoreConfig, quoteCustomerShipping, readCart } from './js/commerce.js';
         import { publicSupabase } from './js/supabasePublic.js';
+        import { formatMailingAddress, formatProfileName, getSignedInCustomerAccount, hasMailingAddress } from './js/customerAccount.js';
 
         const checkoutRoot = document.getElementById('checkoutRoot');
         const config = await loadStoreConfig();
         const paymentLink = String(config.hostedPaymentUrl || config.hosted_payment_url || '').trim();
-
-        async function getSignedInCustomer() {
-            const { data } = await publicSupabase.auth.getSession();
-            return data.session?.user || null;
-        }
 
         async function createOrderRequestWithFallback(payload) {
             const { data, error } = await publicSupabase
@@ -120,13 +153,66 @@
             }
         }
 
+        function buildOrderNotes({ phone, address, notes }) {
+            const lines = [];
+            if (phone) {
+                lines.push(`Phone: ${phone}`);
+            }
+            if (address) {
+                lines.push(`Address: ${address}`);
+            }
+            if (notes) {
+                lines.push(`Customer notes: ${notes}`);
+            }
+            return lines.join('\n\n') || null;
+        }
+
+        async function getCheckoutTotals(items, fulfillment, address) {
+            const baseTotals = calculateCartTotals(items, 0, 0);
+            const shippingQuote = await quoteCustomerShipping({
+                address,
+                fulfillment,
+                itemCount: baseTotals.itemCount,
+                subtotal: baseTotals.subtotal,
+                apiUrl: config.shippingQuoteApiUrl || config.shipping_quote_api_url || '',
+                originZip: config.shippingOriginZip || config.shipping_origin_zip || '42701'
+            });
+            const taxRate = estimateDestinationTaxRate({
+                address,
+                fulfillment,
+                defaultTaxRate: Number(config.tax || 0),
+                taxMode: config.taxMode || config.tax_mode || 'destination_state'
+            });
+
+            const totals = calculateCartTotals(items, taxRate, shippingQuote.amount);
+            return {
+                ...totals,
+                shippingSource: shippingQuote.source,
+                taxRate
+            };
+        }
+
         function renderEmptyCheckout() {
             checkoutRoot.innerHTML = `
                 <section class="empty-card">
                     <h2>Your cart is empty</h2>
                     <p>Add products before going to checkout.</p>
-                    <p><a class="commerce-button-link primary" href="products/index.html">Browse products</a></p>
+                    <p class="helper-text">Guest checkout becomes available as soon as products are added to your cart.</p>
+                    <div class="summary-actions">
+                        <a class="commerce-button-link primary" href="products/index.html">Browse products</a>
+                        <a class="commerce-button-link" href="cart.html">Open cart</a>
+                    </div>
                 </section>
+
+                <aside class="summary-card">
+                    <h2>Guest Checkout</h2>
+                    <ol class="info-list">
+                        <li>Choose finished products from the storefront.</li>
+                        <li>Enter your details here without creating an account.</li>
+                        <li>Complete payment and keep your confirmation number.</li>
+                        <li>Farmhouse Frames uses that information to finalize your order.</li>
+                    </ol>
+                </aside>
             `;
         }
 
@@ -137,12 +223,15 @@
                 return;
             }
 
-            const totals = calculateCartTotals(items, config.tax);
-            getSignedInCustomer().then((customer) => {
-            checkoutRoot.innerHTML = `
+            getSignedInCustomerAccount().then(({ user: customer, profile }) => {
+                const customerName = formatProfileName(profile);
+                const mailingAddress = formatMailingAddress(profile);
+                const addressReady = hasMailingAddress(profile);
+
+                checkoutRoot.innerHTML = `
                 <section class="checkout-form">
                     <h2>Customer details</h2>
-                    ${customer ? `<p class="helper-text">Signed in as ${customer.email}. This order will appear in your account history.</p>` : '<p class="helper-text">Guest checkout is available, or <a href="account-login.html">sign in</a> to track orders in your account.</p>'}
+                    ${customer ? `<p class="helper-text">Signed in as ${customer.email}. This order will appear in your account history and can use your saved account details.</p>` : '<p class="helper-text">Guest checkout is available, or <a href="account-login.html">sign in</a> to track orders in your account.</p>'}
                     <div class="checkout-grid">
                         <label>
                             Full name
@@ -153,23 +242,38 @@
                             <input id="customerEmail" type="email" autocomplete="email" required>
                         </label>
                         <label>
+                            Phone
+                            <input id="customerPhone" type="tel" autocomplete="tel" required>
+                        </label>
+                        <label>
                             Fulfillment
                             <select id="fulfillmentMethod">
                                 <option value="Pickup">Pickup</option>
                                 <option value="Shipping">Shipping</option>
                             </select>
                         </label>
+                        <label class="full-span">
+                            Mailing address
+                            <textarea id="customerAddress" placeholder="Street address, city, state, postal code, country"></textarea>
+                        </label>
                         <label>
                             Notes
                             <textarea id="orderNotes" placeholder="Pickup timing, shipping preferences, frame notes, or anything else useful."></textarea>
                         </label>
                     </div>
+                    ${customer ? `
+                        <div class="status-message" style="margin-top: 14px;">
+                            <strong>Saved account details</strong><br>
+                            Phone: ${profile.phone || 'You can type one below for this order'}<br>
+                            Address: ${addressReady ? mailingAddress.replace(/\n/g, '<br>') : 'You can type a mailing address below for this order'}
+                        </div>
+                    ` : ''}
                     <div class="checkout-actions" style="margin-top: 16px;">
                         <button id="sendOrderButton" class="commerce-button primary" type="button">Prepare order email</button>
                         ${paymentLink ? '<button id="payNowButton" class="commerce-button primary" type="button">Pay now securely</button>' : ''}
                         <button id="clearAfterSendButton" class="commerce-button" type="button">Clear cart</button>
                     </div>
-                    <p id="checkoutStatus" class="status-message">${paymentLink ? 'Payment link is enabled. You can save your order and continue to secure checkout.' : 'Payment link is not configured yet, so this checkout prepares a structured order request email.'}</p>
+                    <p id="checkoutStatus" class="status-message">${paymentLink ? 'Payment link is enabled. You can save your order details here and continue to secure checkout until payment is completed and confirmation is issued.' : 'Payment link is not configured yet, so this checkout prepares a structured order request email while keeping your order details together.'}</p>
                 </section>
 
                 <aside class="summary-card">
@@ -178,65 +282,174 @@
                         ${items.map((item) => `
                             <div class="summary-line"><span>${item.title}${item.size ? ` (${item.size})` : ''} × ${item.quantity}</span><span>${formatCurrency(item.price * item.quantity, config.currency)}</span></div>
                         `).join('')}
-                        <div class="summary-line"><span>Subtotal</span><span>${formatCurrency(totals.subtotal, config.currency)}</span></div>
-                        <div class="summary-line"><span>Estimated tax</span><span>${formatCurrency(totals.tax, config.currency)}</span></div>
-                        <div class="summary-line total"><span>Total</span><span>${formatCurrency(totals.total, config.currency)}</span></div>
+                        <div class="summary-line"><span>Subtotal</span><span id="summarySubtotal">${formatCurrency(0, config.currency)}</span></div>
+                        <div class="summary-line"><span>Estimated tax</span><span id="summaryTax">${formatCurrency(0, config.currency)}</span></div>
+                        <div class="summary-line"><span>Estimated shipping</span><span id="summaryShipping">${formatCurrency(0, config.currency)}</span></div>
+                        <div class="summary-line total"><span>Total</span><span id="summaryTotal">${formatCurrency(0, config.currency)}</span></div>
                     </div>
                     <p class="helper-text">Store contact: ${config.businessEmail}</p>
+                    <p id="quoteSourceText" class="helper-text">Shipping is automatically estimated from studio location to the address entered above.</p>
+                    <p class="helper-text">Guest orders remain tied to the details entered here until payment is completed and a confirmation number is created.</p>
+                    <div class="page-footer-links">
+                        <a href="pickup.html">Pickup & Shipping</a>
+                        <a href="legal/privacy.html">Privacy</a>
+                        <a href="legal/terms.html">Terms</a>
+                    </div>
+                </aside>
+
+                <aside class="summary-card">
+                    <h2>What Happens Next</h2>
+                    <ol class="info-list">
+                        <li>Your order details are saved into the Farmhouse Frames admin queue when available.</li>
+                        <li>You continue to payment or prepare the structured order email fallback.</li>
+                        <li>After payment, keep your confirmation number for pickup or shipping updates.</li>
+                        <li>If you need help, contact Farmhouse Frames before leaving this page.</li>
+                    </ol>
+                    <div class="summary-actions">
+                        <a class="commerce-button-link" href="contact.html">Contact Farmhouse Frames</a>
+                        <a class="commerce-button-link" href="pickup.html">Pickup & Shipping</a>
+                    </div>
                 </aside>
             `;
 
-            const status = document.getElementById('checkoutStatus');
-            if (customer?.email) {
-                const emailInput = document.getElementById('customerEmail');
-                emailInput.value = customer.email;
-            }
-
-            document.getElementById('sendOrderButton').addEventListener('click', async () => {
-                const formValues = {
-                    name: document.getElementById('customerName').value.trim(),
-                    email: document.getElementById('customerEmail').value.trim(),
-                    fulfillment: document.getElementById('fulfillmentMethod').value,
-                    notes: document.getElementById('orderNotes').value.trim()
-                };
-
-                if (!formValues.name || !formValues.email) {
-                    status.textContent = 'Enter your name and email before preparing the order request.';
-                    return;
+                const status = document.getElementById('checkoutStatus');
+                if (customer?.email) {
+                    const emailInput = document.getElementById('customerEmail');
+                    emailInput.value = customer.email;
+                }
+                if (customerName) {
+                    document.getElementById('customerName').value = customerName;
+                }
+                if (profile.preferredFulfillment) {
+                    document.getElementById('fulfillmentMethod').value = profile.preferredFulfillment;
+                }
+                if (profile.phone) {
+                    document.getElementById('customerPhone').value = profile.phone;
+                }
+                if (mailingAddress) {
+                    document.getElementById('customerAddress').value = mailingAddress;
+                }
+                if (profile.savedNotes) {
+                    document.getElementById('orderNotes').value = profile.savedNotes;
                 }
 
-                status.textContent = 'Saving your order request...';
+                let totalsRequestSequence = 0;
 
-                try {
-                    const orderRequest = await saveOrderAndItems({
-                        customer,
-                        name: formValues.name,
-                        email: formValues.email,
-                        fulfillment: formValues.fulfillment,
-                        notes: formValues.notes,
-                        totals,
-                        items
-                    });
+                async function updateSummaryTotals() {
+                    const fulfillment = document.getElementById('fulfillmentMethod').value;
+                    const address = document.getElementById('customerAddress').value.trim();
+                    const quoteSource = document.getElementById('quoteSourceText');
+                    const requestId = ++totalsRequestSequence;
 
-                    status.textContent = `Order saved (ID: ${orderRequest.id}). Opening your email client...`;
-                } catch (error) {
-                    status.textContent = `Could not save order to dashboard queue. Email fallback still works. (${error.message})`;
+                    if (quoteSource && fulfillment === 'Shipping') {
+                        quoteSource.textContent = 'Calculating shipping quote...';
+                    }
+
+                    const totals = await getCheckoutTotals(items, fulfillment, address);
+                    if (requestId !== totalsRequestSequence) {
+                        return totals;
+                    }
+
+                    document.getElementById('summarySubtotal').textContent = formatCurrency(totals.subtotal, config.currency);
+                    document.getElementById('summaryTax').textContent = formatCurrency(totals.tax, config.currency);
+                    document.getElementById('summaryShipping').textContent = formatCurrency(totals.shipping, config.currency);
+                    document.getElementById('summaryTotal').textContent = formatCurrency(totals.total, config.currency);
+
+                    if (quoteSource) {
+                        if (fulfillment !== 'Shipping') {
+                            quoteSource.textContent = 'Pickup selected, so shipping is not added.';
+                        } else if (totals.shippingSource === 'carrier_api') {
+                            quoteSource.textContent = 'Shipping quote source: carrier API.';
+                        } else if (totals.shippingSource === 'estimate_fallback') {
+                            quoteSource.textContent = 'Shipping quote source: fallback estimate (carrier API unavailable).';
+                        } else {
+                            quoteSource.textContent = 'Shipping quote source: studio estimate.';
+                        }
+                    }
+
+                    return totals;
                 }
 
-                const subject = encodeURIComponent(`Farmhouse Frames order request for ${formValues.name}`);
-                const body = formatCartSummary(items, config, formValues);
-                window.location.href = `mailto:${encodeURIComponent(config.businessEmail)}?subject=${subject}&body=${body}`;
-                status.textContent = 'Your email client should open with the prefilled order request. Your order has also been routed to the admin queue when available.';
-            });
+                document.getElementById('fulfillmentMethod').addEventListener('change', () => {
+                    void updateSummaryTotals();
+                });
+
+                let addressDebounce = null;
+                document.getElementById('customerAddress').addEventListener('input', () => {
+                    if (addressDebounce) {
+                        clearTimeout(addressDebounce);
+                    }
+                    addressDebounce = setTimeout(() => {
+                        void updateSummaryTotals();
+                    }, 250);
+                });
+
+                const currentTotals = async () => updateSummaryTotals();
+                void updateSummaryTotals();
+
+                document.getElementById('sendOrderButton').addEventListener('click', async () => {
+                    const formValues = {
+                        name: document.getElementById('customerName').value.trim(),
+                        email: document.getElementById('customerEmail').value.trim(),
+                        phone: document.getElementById('customerPhone').value.trim(),
+                        fulfillment: document.getElementById('fulfillmentMethod').value,
+                        notes: document.getElementById('orderNotes').value.trim(),
+                        address: document.getElementById('customerAddress').value.trim()
+                    };
+
+                    if (!formValues.name || !formValues.email || !formValues.phone) {
+                        status.textContent = 'Enter your name, email, and phone before preparing the order request.';
+                        return;
+                    }
+
+                    if (formValues.fulfillment === 'Shipping' && !formValues.address) {
+                        status.textContent = 'Enter a mailing address before preparing a shipping order.';
+                        return;
+                    }
+
+                    const totals = await currentTotals();
+
+                    status.textContent = 'Saving your order request...';
+
+                    try {
+                        const orderRequest = await saveOrderAndItems({
+                            customer,
+                            name: formValues.name,
+                            email: formValues.email,
+                            fulfillment: formValues.fulfillment,
+                            notes: buildOrderNotes(formValues),
+                            totals,
+                            items
+                        });
+
+                        status.textContent = `Order saved (ID: ${orderRequest.id}). Opening your email client...`;
+                    } catch (error) {
+                        status.textContent = `Could not save order to dashboard queue. Email fallback still works. (${error.message})`;
+                    }
+
+                    const subject = encodeURIComponent(`Farmhouse Frames order request for ${formValues.name}`);
+                    const body = formatCartSummary(items, config, formValues, totals);
+                    window.location.href = `mailto:${encodeURIComponent(config.businessEmail)}?subject=${subject}&body=${body}`;
+                    status.textContent = 'Your email client should open with the prefilled order request. Your order has also been routed to the admin queue when available.';
+                });
 
             if (paymentLink) {
                 document.getElementById('payNowButton')?.addEventListener('click', async () => {
                     const name = document.getElementById('customerName').value.trim();
                     const email = document.getElementById('customerEmail').value.trim();
-                    if (!name || !email) {
-                        status.textContent = 'Enter name and email before continuing to payment.';
+                    const phone = document.getElementById('customerPhone').value.trim();
+                    const address = document.getElementById('customerAddress').value.trim();
+                    if (!name || !email || !phone) {
+                        status.textContent = 'Enter name, email, and phone before continuing to payment.';
                         return;
                     }
+
+                    if (document.getElementById('fulfillmentMethod').value === 'Shipping' && !address) {
+                        status.textContent = 'Enter a mailing address before continuing to payment for shipping.';
+                        return;
+                    }
+
+                    const totals = await currentTotals();
 
                     status.textContent = 'Saving order before payment...';
                     let orderId = '';
@@ -247,7 +460,11 @@
                             name,
                             email,
                             fulfillment: document.getElementById('fulfillmentMethod').value,
-                            notes: document.getElementById('orderNotes').value.trim(),
+                            notes: buildOrderNotes({
+                                phone,
+                                address,
+                                notes: document.getElementById('orderNotes').value.trim()
+                            }),
                             totals,
                             items
                         });
@@ -262,10 +479,10 @@
                 });
             }
 
-            document.getElementById('clearAfterSendButton').addEventListener('click', () => {
-                clearCart();
-                renderEmptyCheckout();
-            });
+                document.getElementById('clearAfterSendButton').addEventListener('click', () => {
+                    clearCart();
+                    renderEmptyCheckout();
+                });
             });
         }
 

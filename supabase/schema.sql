@@ -96,10 +96,57 @@ create table if not exists public.order_requests (
   subtotal numeric not null default 0,
   tax numeric not null default 0,
   total numeric not null default 0,
+  eta_min_date date,
+  eta_max_date date,
+  local_delivery_slots jsonb not null default '[]'::jsonb,
+  local_delivery_response_token text,
+  customer_notification_sent_at timestamptz,
   created_at timestamptz not null default now()
 );
 
 alter table public.order_requests add column if not exists customer_user_id uuid references auth.users(id) on delete set null;
+alter table public.order_requests add column if not exists eta_min_date date;
+alter table public.order_requests add column if not exists eta_max_date date;
+alter table public.order_requests add column if not exists local_delivery_slots jsonb not null default '[]'::jsonb;
+alter table public.order_requests add column if not exists local_delivery_response_token text;
+alter table public.order_requests add column if not exists customer_notification_sent_at timestamptz;
+
+create table if not exists public.customer_profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  first_name text,
+  last_name text,
+  full_name text,
+  date_of_birth date,
+  phone text,
+  address_line_1 text,
+  address_line_2 text,
+  city text,
+  state_region text,
+  postal_code text,
+  country text not null default 'United States',
+  preferred_fulfillment text not null default 'Pickup',
+  saved_notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint customer_profiles_preferred_fulfillment_chk
+    check (preferred_fulfillment in ('Pickup', 'Shipping'))
+);
+
+alter table public.customer_profiles add column if not exists first_name text;
+alter table public.customer_profiles add column if not exists last_name text;
+alter table public.customer_profiles add column if not exists full_name text;
+alter table public.customer_profiles add column if not exists date_of_birth date;
+alter table public.customer_profiles add column if not exists phone text;
+alter table public.customer_profiles add column if not exists address_line_1 text;
+alter table public.customer_profiles add column if not exists address_line_2 text;
+alter table public.customer_profiles add column if not exists city text;
+alter table public.customer_profiles add column if not exists state_region text;
+alter table public.customer_profiles add column if not exists postal_code text;
+alter table public.customer_profiles add column if not exists country text not null default 'United States';
+alter table public.customer_profiles add column if not exists preferred_fulfillment text not null default 'Pickup';
+alter table public.customer_profiles add column if not exists saved_notes text;
+alter table public.customer_profiles add column if not exists created_at timestamptz not null default now();
+alter table public.customer_profiles add column if not exists updated_at timestamptz not null default now();
 
 create table if not exists public.order_request_items (
   id uuid primary key default gen_random_uuid(),
@@ -114,7 +161,7 @@ create table if not exists public.order_request_items (
 
 create table if not exists public.supplier_order_packets (
   id uuid primary key default gen_random_uuid(),
-  order_request_id uuid not null references public.order_requests(id) on delete cascade,
+  order_request_id uuid references public.order_requests(id) on delete cascade,
   supplier_name text not null,
   supplier_url text,
   packet_text text not null,
@@ -127,6 +174,8 @@ create table if not exists public.supplier_order_packets (
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+alter table public.supplier_order_packets alter column order_request_id drop not null;
 
 create table if not exists public.sourcing_records (
   id uuid primary key default gen_random_uuid(),
@@ -237,10 +286,43 @@ create table if not exists public.store_settings (
   id text primary key,
   business_email text,
   tax_rate numeric not null default 0,
+  tax_mode text not null default 'destination_state',
   currency text not null default 'USD',
+  shipping_origin_zip text not null default '42701',
+  shipping_quote_api_url text,
+  outbound_shipping_min_days integer not null default 2,
+  outbound_shipping_max_days integer not null default 5,
   hosted_payment_url text,
   updated_by uuid references auth.users(id) on delete set null,
   updated_at timestamptz not null default now()
+);
+
+alter table public.store_settings add column if not exists tax_mode text not null default 'destination_state';
+alter table public.store_settings add column if not exists shipping_origin_zip text not null default '42701';
+alter table public.store_settings add column if not exists shipping_quote_api_url text;
+alter table public.store_settings add column if not exists outbound_shipping_min_days integer not null default 2;
+alter table public.store_settings add column if not exists outbound_shipping_max_days integer not null default 5;
+alter table public.store_settings drop constraint if exists store_settings_tax_mode_chk;
+alter table public.store_settings
+  add constraint store_settings_tax_mode_chk
+  check (tax_mode in ('destination_state', 'flat'));
+alter table public.store_settings drop constraint if exists store_settings_outbound_shipping_days_chk;
+alter table public.store_settings
+  add constraint store_settings_outbound_shipping_days_chk
+  check (
+    outbound_shipping_min_days >= 0
+    and outbound_shipping_max_days >= outbound_shipping_min_days
+  );
+
+create table if not exists public.delivery_meetup_responses (
+  id uuid primary key default gen_random_uuid(),
+  order_request_id uuid not null references public.order_requests(id) on delete cascade,
+  response_token text not null,
+  customer_email text not null,
+  selected_location text not null,
+  selected_timeframe text not null,
+  notes text,
+  created_at timestamptz not null default now()
 );
 
 create table if not exists public.activity_logs (
@@ -253,19 +335,45 @@ create table if not exists public.activity_logs (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.contact_help_answers (
+  id uuid primary key default gen_random_uuid(),
+  question text not null,
+  answer text not null,
+  tags text[] not null default '{}'::text[],
+  display_order integer not null default 100,
+  active boolean not null default true,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.contact_help_answers add column if not exists question text;
+alter table public.contact_help_answers add column if not exists answer text;
+alter table public.contact_help_answers add column if not exists tags text[] not null default '{}'::text[];
+alter table public.contact_help_answers add column if not exists display_order integer not null default 100;
+alter table public.contact_help_answers add column if not exists active boolean not null default true;
+alter table public.contact_help_answers add column if not exists created_by uuid references auth.users(id) on delete set null;
+alter table public.contact_help_answers add column if not exists created_at timestamptz not null default now();
+alter table public.contact_help_answers add column if not exists updated_at timestamptz not null default now();
+
 create index if not exists idx_uploads_created_at on public.uploads(created_at desc);
 create index if not exists idx_orders_created_at on public.orders(created_at desc);
 create index if not exists idx_products_created_at on public.products(created_at desc);
 create index if not exists idx_order_requests_created_at on public.order_requests(created_at desc);
 create index if not exists idx_order_requests_customer_user_id on public.order_requests(customer_user_id);
+create index if not exists idx_customer_profiles_full_name on public.customer_profiles(full_name);
+create index if not exists idx_customer_profiles_updated_at on public.customer_profiles(updated_at desc);
 create index if not exists idx_order_request_items_order_id on public.order_request_items(order_request_id);
 create index if not exists idx_supplier_order_packets_order_id on public.supplier_order_packets(order_request_id);
 create index if not exists idx_supplier_order_packets_created_at on public.supplier_order_packets(created_at desc);
 create index if not exists idx_sourcing_records_updated_at on public.sourcing_records(updated_at desc);
 create index if not exists idx_activity_logs_created_at on public.activity_logs(created_at desc);
+create index if not exists idx_contact_help_answers_active_order on public.contact_help_answers(active, display_order, created_at desc);
+create unique index if not exists idx_delivery_meetup_responses_order_email on public.delivery_meetup_responses(order_request_id, customer_email);
+create index if not exists idx_delivery_meetup_responses_order_id on public.delivery_meetup_responses(order_request_id);
 
-insert into public.store_settings (id, business_email, tax_rate, currency)
-values ('storefront', 'kristin@farmhouseframes.com', 0.06, 'USD')
+insert into public.store_settings (id, business_email, tax_rate, tax_mode, currency, shipping_origin_zip, outbound_shipping_min_days, outbound_shipping_max_days)
+values ('storefront', 'kristin@farmhouseframes.com', 0.06, 'destination_state', 'USD', '42701', 2, 5)
 on conflict (id) do nothing;
 
 insert into storage.buckets (id, name, public)

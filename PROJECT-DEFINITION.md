@@ -40,7 +40,6 @@ The storefront is designed to stay simple, fast, static-first, and GitHub Pages 
 - [account.html](/workspaces/ff/account.html): customer account and order history page.
 - [products/index.html](/workspaces/ff/products/index.html): product listing entry point (query-parameter driven).
 - [products/product.html](/workspaces/ff/products/product.html): product detail page (query-parameter driven).
-- [COLLECTIONS](/workspaces/ff/COLLECTIONS): themed collection pages (legacy, data-sourced from products.json).
 - [legal](/workspaces/ff/legal): privacy, shipping, and terms pages.
 
 ### Recommended page conventions
@@ -48,7 +47,7 @@ The storefront is designed to stay simple, fast, static-first, and GitHub Pages 
 Use the following naming and behavior conventions as the project grows:
 
 - Homepage: `index.html`
-- Collections landing: `collections.html` or continue using the `COLLECTIONS/` folder with an index page
+- Collections landing: `collections.html`
 - Product categories: keep category pages under `products/`
 - Product detail: use a query-parameter driven page such as `product.html?id=...` when implemented
 - Informational pages: `pickup.html`, `about.html`, `contact.html`, `legal/*.html`
@@ -118,7 +117,7 @@ The admin area is private and should use Supabase for authentication and protect
   - **Orders:** customer order requests, fulfillment status, and supplier packet generation.
   - **Clients:** customer directory and order summary rollups.
   - **Logs:** activity log viewer for admin operations.
-  - **Settings:** storefront email/tax/currency/hosted-payment configuration.
+  - **Settings:** storefront email, tax mode/rate, shipping origin + optional shipping quote API, currency, and hosted-payment configuration.
 - [dashboard/js/auth.js](/workspaces/ff/dashboard/js/auth.js): sign-in, sign-out, current user lookup, and allowlist enforcement.
 - [dashboard/js/supabaseClient.js](/workspaces/ff/dashboard/js/supabaseClient.js): Supabase client bootstrap.
 - [dashboard/css/admin.css](/workspaces/ff/dashboard/css/admin.css): admin styling.
@@ -207,7 +206,6 @@ ff/
 │   ├── products.js
 │   ├── styles.css
 │   └── products.json
-├── COLLECTIONS/
 ├── images/
 ├── js/
 ├── legal/
@@ -309,6 +307,9 @@ Based on [data/config.json](/workspaces/ff/data/config.json):
   "profitMargin": 0.5,
   "currency": "USD",
   "tax": 0.06,
+  "taxMode": "destination_state",
+  "shippingOriginZip": "42701",
+  "shippingQuoteApiUrl": "",
   "collections": ["string"]
 }
 ```

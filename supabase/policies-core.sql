@@ -20,6 +20,7 @@ alter table public.uploads enable row level security;
 alter table public.clients enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_requests enable row level security;
+alter table public.customer_profiles enable row level security;
 alter table public.order_request_items enable row level security;
 alter table public.supplier_order_packets enable row level security;
 alter table public.sourcing_records enable row level security;
@@ -54,8 +55,9 @@ begin
   foreach t in array array[
     'products','product_photos','categories','cases','uploads',
     'clients','orders','order_requests','order_request_items','supplier_order_packets','sourcing_records','store_settings','activity_logs','order_items',
+    'clients','orders','order_requests','customer_profiles','order_request_items','supplier_order_packets','sourcing_records','order_items',
     'hours_log','mileage_log','expenses','payments',
-    'case_files','case_templates','evidence_index'
+    'case_files','case_templates','evidence_index','delivery_meetup_responses'
   ]
   loop
     execute format('drop policy if exists "Admin CRUD %s" on public.%I;', t, t);
@@ -145,3 +147,21 @@ begin
       raise notice 'Skipping storage.objects policy setup (insufficient privilege). Configure Storage policies in Supabase Dashboard if needed.';
   end;
 end $$;
+drop policy if exists "Customers can read own customer profile" on public.customer_profiles;
+create policy "Customers can read own customer profile"
+on public.customer_profiles for select
+to authenticated
+using (user_id = auth.uid());
+
+drop policy if exists "Customers can create own customer profile" on public.customer_profiles;
+create policy "Customers can create own customer profile"
+on public.customer_profiles for insert
+to authenticated
+with check (user_id = auth.uid());
+
+drop policy if exists "Customers can update own customer profile" on public.customer_profiles;
+create policy "Customers can update own customer profile"
+on public.customer_profiles for update
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());

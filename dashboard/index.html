@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Farmhouse Frames Admin</title>
   <link rel="stylesheet" href="./css/admin.css" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%22 height=%2732%22 rx=%226%22 fill=%22%234d3425%22/%3E%3Ctext x=%2216%22 y=%2223%22 font-family=%22Georgia,serif%22 font-size=%2220%22 fill=%22%23e8d5be%22 text-anchor=%22middle%22%3EF%3C/text%3E%3C/svg%3E">
 </head>
 <body>
   <div class="layout">
@@ -18,8 +19,9 @@
         <a href="#dashboard" data-route="dashboard" class="active">Dashboard</a>
         <a href="#products" data-route="products">Products</a>
         <a href="#sourcing" data-route="sourcing">Sourcing</a>
+        <a href="#fulfillment" data-route="fulfillment">Fulfillment</a>
         <a href="#uploads" data-route="uploads">Uploads</a>
-        <a href="../admin/splitter-tool.html">Studio Cutter</a>
+        <a href="../admin-dashboard.html">Studio Cutter</a>
         <a href="../admin/manual-entry.html">Manual Entry</a>
         <a href="#orders" data-route="orders">Orders</a>
         <a href="#clients" data-route="clients">Clients</a>
@@ -71,7 +73,7 @@
               <button class="btn primary" id="seedDemoBtn">Seed demo data</button>
               <button class="btn" id="refreshBtn">Refresh metrics</button>
               <button class="btn" id="openSourcingBtn">Open sourcing workspace</button>
-              <a class="btn quick-link" href="../admin/splitter-tool.html">Open studio cutter</a>
+              <a class="btn quick-link" href="../admin-dashboard.html">Open studio cutter</a>
               <a class="btn quick-link" href="../admin/manual-entry.html">Open manual entry</a>
             </div>
             <p class="muted small">
@@ -226,6 +228,16 @@
                 </select>
               </label>
               <label>
+                <span>Listing status</span>
+                <select id="productListingStatus">
+                  <option value="draft">Draft (not visible)</option>
+                  <option value="pending_approval">Pending approval</option>
+                  <option value="active" selected>Active (visible on storefront)</option>
+                  <option value="inactive">Inactive (hidden)</option>
+                </select>
+              </label>
+              <p class="muted small">Only products saved with <strong>Active</strong> status are shown on storefront product pages.</p>
+              <label>
                 <span>Theme preset for intro style</span>
                 <select id="productThemePreset">
                   <option value="lbl-lake">LBL Lake Morning</option>
@@ -376,6 +388,7 @@
                 <button class="btn" id="openUploadsFromSourcing" type="button">Open uploads</button>
                 <button class="btn" id="openSourcingInCutter" type="button">Open artwork in cutter</button>
                 <button class="btn" id="sendSourcingToProducts" type="button">Send to products form</button>
+                <button class="btn" id="createSourcingPacketBtn" type="button">Create supplier packet</button>
               </div>
             </form>
             <div id="sourcingMessage" class="message" hidden></div>
@@ -442,7 +455,7 @@
         <div id="page-settings" style="display: none;">
           <div class="card">
             <h2>Storefront Settings</h2>
-            <p class="muted">Configure checkout email destination, tax rate, currency, and hosted payment link.</p>
+            <p class="muted">Configure checkout email destination, tax behavior, shipping quote source, currency, and hosted payment link.</p>
           </div>
 
           <div class="card">
@@ -456,8 +469,31 @@
                 <input id="settingTaxRate" type="number" step="0.001" min="0" required>
               </label>
               <label>
+                <span>Tax Mode</span>
+                <select id="settingTaxMode" required>
+                  <option value="destination_state">Destination state (shipping orders)</option>
+                  <option value="flat">Flat rate (all orders)</option>
+                </select>
+              </label>
+              <label>
                 <span>Currency</span>
                 <input id="settingCurrency" type="text" maxlength="3" required>
+              </label>
+              <label>
+                <span>Shipping Origin ZIP</span>
+                <input id="settingShippingOriginZip" type="text" maxlength="10" placeholder="42701">
+              </label>
+              <label>
+                <span>Outbound Shipping Min Days</span>
+                <input id="settingOutboundShippingMinDays" type="number" min="0" step="1" value="2" required>
+              </label>
+              <label>
+                <span>Outbound Shipping Max Days</span>
+                <input id="settingOutboundShippingMaxDays" type="number" min="0" step="1" value="5" required>
+              </label>
+              <label>
+                <span>Shipping Quote API URL (optional)</span>
+                <input id="settingShippingQuoteApiUrl" type="url" placeholder="https://...">
               </label>
               <label>
                 <span>Hosted Payment URL</span>
@@ -469,6 +505,135 @@
               </div>
             </form>
             <div id="settingsMessage" class="message" hidden></div>
+          </div>
+        </div>
+
+        <div id="page-fulfillment" style="display: none;">
+          <div class="card">
+            <h2>Fulfillment Workflow</h2>
+            <p class="muted">Provider to studio to customer workflow foundation for Farmhouse Frames. Use this page to verify that each data stage is in place before moving orders forward.</p>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h3>Provider products</h3>
+              <div id="metricProviderProducts" class="metric">—</div>
+            </div>
+            <div class="card">
+              <h3>Photos</h3>
+              <div id="metricPhotos" class="metric">—</div>
+            </div>
+            <div class="card">
+              <h3>Print-ready derivatives</h3>
+              <div id="metricDerivatives" class="metric">—</div>
+            </div>
+            <div class="card">
+              <h3>In production orders</h3>
+              <div id="metricInProduction" class="metric">—</div>
+            </div>
+            <div class="card">
+              <h3>At studio (unbranded)</h3>
+              <div id="metricAtStudioUnbranded" class="metric">—</div>
+            </div>
+            <div class="card">
+              <h3>Branded ready</h3>
+              <div id="metricBrandedReady" class="metric">—</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Provider Intake</h3>
+            <p class="muted">Capture provider product metadata, costs, and inbound timing so products can map to studio-ready fulfillment.</p>
+            <form id="providerProductForm" class="form">
+              <input id="providerProductOriginalId" type="hidden">
+              <label>
+                <span>Provider Name</span>
+                <input id="providerProductName" type="text" placeholder="Amazon, Walmart, Printify, CanvasChamp" required>
+              </label>
+              <label>
+                <span>Provider Product ID</span>
+                <input id="providerProductId" type="text" placeholder="provider sku / id" required>
+              </label>
+              <label>
+                <span>Provider Product URL</span>
+                <input id="providerProductUrl" type="url" placeholder="https://...">
+              </label>
+              <label>
+                <span>Product Type</span>
+                <input id="providerProductType" type="text" placeholder="framed print, canvas, puzzle">
+              </label>
+              <label>
+                <span>Available Sizes (comma separated)</span>
+                <input id="providerAvailableSizes" type="text" placeholder="8x10, 11x14, 16x20">
+              </label>
+              <label>
+                <span>Available Frame Styles (comma separated)</span>
+                <input id="providerFrameStyles" type="text" placeholder="black, oak, walnut">
+              </label>
+              <label>
+                <span>Paper Type</span>
+                <input id="providerPaperType" type="text" placeholder="matte, luster, archival">
+              </label>
+              <label>
+                <span>Print Method</span>
+                <input id="providerPrintMethod" type="text" placeholder="giclee, UV, dye-sub">
+              </label>
+              <div class="grid sourcing-math-grid">
+                <label>
+                  <span>Base Cost (USD)</span>
+                  <input id="providerBaseCost" type="number" min="0" step="0.01" value="0">
+                </label>
+                <label>
+                  <span>Production Min Days</span>
+                  <input id="providerProductionMinDays" type="number" min="0" step="1" value="0">
+                </label>
+                <label>
+                  <span>Production Max Days</span>
+                  <input id="providerProductionMaxDays" type="number" min="0" step="1" value="0">
+                </label>
+                <label>
+                  <span>Ship to Studio Min Days</span>
+                  <input id="providerShippingMinDays" type="number" min="0" step="1" value="0">
+                </label>
+                <label>
+                  <span>Ship to Studio Max Days</span>
+                  <input id="providerShippingMaxDays" type="number" min="0" step="1" value="0">
+                </label>
+              </div>
+              <label>
+                <span>Provider Notes</span>
+                <textarea id="providerNotes" placeholder="Internal notes about templates, quality checks, and order process."></textarea>
+              </label>
+              <div class="row">
+                <button class="btn primary" type="submit">Save provider product</button>
+                <button class="btn" id="providerProductResetBtn" type="button">Clear form</button>
+                <button class="btn" id="refreshProviderProductsBtn" type="button">Reload provider products</button>
+              </div>
+            </form>
+            <div id="providerProductMessage" class="message" hidden></div>
+          </div>
+
+          <div class="card">
+            <h3>Provider Product Records</h3>
+            <div id="providerProductsWrap" class="muted">Loading provider products…</div>
+          </div>
+
+          <div class="card">
+            <h3>Build Stages</h3>
+            <ol class="info-list">
+              <li>Provider intake: Save provider metadata to <strong>provider_products</strong>.</li>
+              <li>Internal product mapping: Connect storefront products to provider products and derived studio-arrival timeframe.</li>
+              <li>Photo metadata: Track aspect ratio, orientation, review status, and compatibility.</li>
+              <li>Print-ready assets: Generate derivatives for print-ready, provider-specific, and web output.</li>
+              <li>Mockups and imagery: Create mockups and assign them to storefront products.</li>
+              <li>Order execution: Send paid orders to provider with ship-to-studio flow and track inbound shipment.</li>
+              <li>Studio branding: Record inspection and branding completion before pickup or shipping.</li>
+              <li>Delivery completion: Finish via meetup/pickup or studio shipping with final completion audit.</li>
+            </ol>
+            <div class="row">
+              <button class="btn" id="refreshFulfillmentBtn" type="button">Refresh fulfillment metrics</button>
+            </div>
+            <div id="fulfillmentMessage" class="message" hidden></div>
           </div>
         </div>
 
@@ -608,12 +773,15 @@
     const productMsg = $('#productMessage');
     const sourcingMsg = $('#sourcingMessage');
     const settingsMsg = $('#settingsMessage');
+    const fulfillmentMsg = $('#fulfillmentMessage');
+    const providerProductMsg = $('#providerProductMessage');
     const uploadedPhotoById = new Map();
     let currentAdminUserId = null;
     let sourcingCatalog = [];
     let sourcingRecords = {};
     let pendingProductSourcingKey = '';
     const SOURCING_WORKFLOW_ORDER = ['draft', 'artwork-ready', 'mockup-ready', 'approved-for-storefront', 'published', 'retired'];
+    const PRIVATE_SUPPLIER_HOSTS = ['walmart.com', 'amazon.com', 'canvaschamp.com'];
     const THEME_PRESETS = {
       'lbl-lake': {
         intro: 'Inspired by [photo], this [product] brings the calm light and open water mood of Land Between the Lakes into your home.',
@@ -704,6 +872,50 @@
       if (host.includes('amazon')) return 'Amazon';
       if (host.includes('canvaschamp')) return 'CanvasChamp';
       return 'Other';
+    }
+
+    function textContainsPrivateSupplierHost(value) {
+      const text = String(value || '').toLowerCase();
+      if (!text) return false;
+      return PRIVATE_SUPPLIER_HOSTS.some((host) => text.includes(host));
+    }
+
+    function urlPointsToPrivateSupplier(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return false;
+      try {
+        const host = new URL(raw).hostname.toLowerCase();
+        return PRIVATE_SUPPLIER_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`));
+      } catch {
+        return textContainsPrivateSupplierHost(raw);
+      }
+    }
+
+    function validateStorefrontPrivacy(payload, selectedSourcingRecord = null) {
+      const publicFields = [
+        payload.name,
+        payload.category,
+        payload.description,
+        ...(Array.isArray(payload.tags) ? payload.tags : [])
+      ];
+
+      if (publicFields.some((entry) => textContainsPrivateSupplierHost(entry))) {
+        return 'Privacy guard: remove supplier domains from customer-facing fields before saving.';
+      }
+
+      if (urlPointsToPrivateSupplier(payload.image)) {
+        return 'Privacy guard: approved storefront image URL cannot point to a supplier domain.';
+      }
+
+      if (selectedSourcingRecord?.supplierUrl) {
+        const supplierUrl = String(selectedSourcingRecord.supplierUrl).trim().toLowerCase();
+        const description = String(payload.description || '').toLowerCase();
+        if (supplierUrl && description.includes(supplierUrl)) {
+          return 'Privacy guard: storefront description cannot include the supplier URL.';
+        }
+      }
+
+      return '';
     }
 
     function normalizeCatalogEntry(entry, sourceFile) {
@@ -1063,6 +1275,72 @@
       applySourcingRecordToProductForm();
     }
 
+    function buildSourcingPacketText(record, product) {
+      const shippingTotal = toFiniteNumber(record.shippingCost) + toFiniteNumber(record.deliveryFee);
+      return [
+        `SOURCE: Sourcing Workspace`,
+        `Catalog Product: ${record.title || product.title || record.productId || 'Unknown'}`,
+        `Catalog Product ID: ${record.productId || product.id || 'Unknown'}`,
+        `Catalog Key: ${record.productKey || product.key || 'Unknown'}`,
+        `Workflow Status: ${record.workflowStatus || 'draft'}`,
+        `Supplier: ${inferSupplierName(record.supplierUrl)}`,
+        `Supplier Link: ${record.supplierUrl || 'Missing supplier link'}`,
+        `Supplier Item: ${record.supplierItemLabel || record.supplierItemType || 'Not set'}`,
+        `Artwork URL: ${record.artworkUrl || 'Not set'}`,
+        `Mockup URL: ${record.mockupUrl || 'Not set'}`,
+        `Approved Storefront Image: ${record.storefrontImageUrl || 'Not set'}`,
+        `Layout: ${record.layoutName || 'Not set'}`,
+        record.specs ? `Specs: ${record.specs}` : null,
+        record.productionChecklist ? `Production Checklist: ${record.productionChecklist}` : null,
+        record.supplierDescription ? `Supplier Notes: ${record.supplierDescription}` : null,
+        record.notes ? `Internal Notes: ${record.notes}` : null,
+        '',
+        `Cost Basis (Base + Ship + Delivery): ${money(toFiniteNumber(record.baseCost) + shippingTotal)}`,
+        `Shipping + Delivery: ${money(shippingTotal)}`,
+        `Retail Before Shipping: ${money(record.retailBeforeShipping)}`,
+        `Retail After Shipping: ${money(record.retailAfterShipping)}`,
+        `Target Profit: ${money(record.profitAmount)} (${Number(record.profitPercent || 0).toFixed(1)}%)`
+      ].filter(Boolean).join('\n');
+    }
+
+    async function createSourcingSupplierPacket() {
+      const product = getSelectedSourcingProduct();
+      if (!product) {
+        showSourcingMessage('Choose a sourcing product first.', 'error');
+        return;
+      }
+
+      const record = sourcingRecords[product.key];
+      if (!record) {
+        showSourcingMessage('Save this sourcing record first.', 'error');
+        return;
+      }
+
+      if (!record.supplierUrl) {
+        showSourcingMessage('Add a supplier link before creating a supplier packet.', 'error');
+        return;
+      }
+
+      const packetText = buildSourcingPacketText(record, product);
+      const shippingTotal = toFiniteNumber(record.shippingCost) + toFiniteNumber(record.deliveryFee);
+
+      await saveSupplierOrderPacket({
+        order_request_id: null,
+        supplier_name: inferSupplierName(record.supplierUrl),
+        supplier_url: record.supplierUrl,
+        customer_total: toFiniteNumber(record.retailAfterShipping),
+        customer_shipping: shippingTotal,
+        supplier_estimate: toFiniteNumber(record.baseCost) + shippingTotal,
+        internal_shipping: shippingTotal,
+        packet_text: packetText,
+        notes: `source:sourcing:${record.productKey}`,
+        source_key: record.productKey
+      });
+
+      showSourcingMessage('Supplier packet created from sourcing record and saved to supplier order history.', 'ok');
+      navigateToRoute('orders');
+    }
+
     async function hydrateProductSourcingOptions() {
       try {
         await loadSourcingCatalog();
@@ -1220,6 +1498,7 @@
                     <button class="btn" type="button" data-load-sourcing="${escapeHtml(row.productKey)}">Load</button>
                     <button class="btn" type="button" data-open-sourcing-cutter="${escapeHtml(row.productKey)}">Open in cutter</button>
                     <button class="btn" type="button" data-send-sourcing-products="${escapeHtml(row.productKey)}">Send to products</button>
+                    <button class="btn" type="button" data-create-sourcing-packet="${escapeHtml(row.productKey)}">Create supplier packet</button>
                   </div>
                 </td>
               </tr>
@@ -1254,6 +1533,16 @@
           select.value = button.dataset.sendSourcingProducts || '';
           populateSourcingForm(getSelectedSourcingProduct());
           await sendCurrentSourcingToProducts();
+        });
+      });
+
+      wrap.querySelectorAll('button[data-create-sourcing-packet]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const select = $('#sourcingProductSelect');
+          if (!select) return;
+          select.value = button.dataset.createSourcingPacket || '';
+          populateSourcingForm(getSelectedSourcingProduct());
+          await createSourcingSupplierPacket();
         });
       });
     }
@@ -1455,6 +1744,97 @@
       settingsMsg.textContent = text;
     }
 
+    function normalizeOrderWorkflowStatus(status, fulfillmentMethod = '') {
+      const value = String(status || 'new').toLowerCase();
+      if (value === 'ordered') return 'in_production';
+      if (value === 'received') return 'at_studio_unbranded';
+      if (value === 'ready') {
+        const shipping = String(fulfillmentMethod || '').toLowerCase().includes('ship');
+        return shipping ? 'in_transit_to_customer' : 'ready_for_pickup_or_meetup';
+      }
+      return value;
+    }
+
+    function getNextOrderStatus(currentStatus, fulfillmentMethod = '') {
+      const status = normalizeOrderWorkflowStatus(currentStatus, fulfillmentMethod);
+      const shipping = String(fulfillmentMethod || '').toLowerCase().includes('ship');
+      const map = {
+        new: 'in_production',
+        in_production: 'in_transit_to_studio',
+        in_transit_to_studio: 'at_studio_unbranded',
+        at_studio_unbranded: 'branded_ready_for_delivery',
+        branded_ready_for_delivery: shipping ? 'in_transit_to_customer' : 'ready_for_pickup_or_meetup',
+        ready_for_pickup_or_meetup: 'completed',
+        in_transit_to_customer: 'completed'
+      };
+      return map[status] || null;
+    }
+
+    function addDaysFromNow(dayCount) {
+      const date = new Date();
+      date.setDate(date.getDate() + Math.max(0, Number(dayCount || 0)));
+      return date;
+    }
+
+    function toDateOnlyIso(value) {
+      const date = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(date.getTime())) return null;
+      return date.toISOString().slice(0, 10);
+    }
+
+    function formatDateForCustomer(value) {
+      if (!value) return 'TBD';
+      const date = new Date(`${value}T12:00:00Z`);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function parseLineList(value) {
+      return String(value || '')
+        .split(/\n|,/)
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    }
+
+    function generateDeliveryResponseToken() {
+      if (window.crypto?.randomUUID) {
+        return `${window.crypto.randomUUID()}-${Date.now()}`;
+      }
+      return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function buildLocalDeliveryResponseUrl({ orderId, email, token, locations, timeframes }) {
+      const url = new URL('../local-delivery.html', window.location.origin + '/dashboard/index.html');
+      url.searchParams.set('order', String(orderId || ''));
+      url.searchParams.set('email', String(email || ''));
+      url.searchParams.set('token', String(token || ''));
+      locations.forEach((value) => url.searchParams.append('loc', value));
+      timeframes.forEach((value) => url.searchParams.append('time', value));
+      return url.toString();
+    }
+
+    function openCustomerStatusEmail({ order, subject, bodyLines }) {
+      const encodedSubject = encodeURIComponent(subject);
+      const body = encodeURIComponent(bodyLines.join('\n'));
+      window.location.href = `mailto:${encodeURIComponent(order.customer_email)}?subject=${encodedSubject}&body=${body}`;
+    }
+
+    async function logAuditEvent(actionType, targetType, targetId, metadata = {}) {
+      try {
+        await supabase
+          .from('audit_log')
+          .insert({
+            action_type: actionType,
+            actor: currentAdminUserId,
+            target_type: targetType,
+            target_id: String(targetId || ''),
+            metadata
+          });
+      } catch {
+        // Audit logging should never block workflow actions.
+      }
+    }
+
     function parseCsvList(value) {
       return String(value || '')
         .split(',')
@@ -1493,7 +1873,7 @@
         page.style.display = 'none';
       });
 
-      const validRoutes = ['dashboard', 'products', 'sourcing', 'uploads', 'orders', 'clients', 'logs', 'settings'];
+      const validRoutes = ['dashboard', 'products', 'sourcing', 'fulfillment', 'uploads', 'orders', 'clients', 'logs', 'settings'];
       if (validRoutes.includes(route)) {
         const page = $(`#page-${route}`);
         if (page) {
@@ -1505,6 +1885,9 @@
           }
           if (route === 'sourcing') {
             loadSourcingPage();
+          }
+          if (route === 'fulfillment') {
+            loadFulfillmentWorkspace();
           }
           if (route === 'orders') {
             loadOrderRequests();
@@ -1533,6 +1916,7 @@
         dashboard: 'Dashboard',
         products: 'Products',
         sourcing: 'Sourcing',
+        fulfillment: 'Fulfillment',
         uploads: 'Uploads',
         orders: 'Orders',
         clients: 'Clients',
@@ -1560,6 +1944,224 @@
       $('#metricOrders').textContent = ordersCount ?? '0';
       $('#metricUploads').textContent = uploadsCount ?? '0';
 
+      setStatus('Ready', 'ok');
+    }
+
+    function showFulfillmentMessage(text, kind = 'ok') {
+      if (!fulfillmentMsg) return;
+      fulfillmentMsg.hidden = false;
+      fulfillmentMsg.className = `message ${kind}`;
+      fulfillmentMsg.textContent = text;
+    }
+
+    function showProviderProductMessage(text, kind = 'ok') {
+      if (!providerProductMsg) return;
+      providerProductMsg.hidden = false;
+      providerProductMsg.className = `message ${kind}`;
+      providerProductMsg.textContent = text;
+    }
+
+    function resetProviderProductForm() {
+      const form = $('#providerProductForm');
+      if (form) form.reset();
+      $('#providerProductOriginalId').value = '';
+      $('#providerProductId').disabled = false;
+      $('#providerBaseCost').value = '0';
+      $('#providerProductionMinDays').value = '0';
+      $('#providerProductionMaxDays').value = '0';
+      $('#providerShippingMinDays').value = '0';
+      $('#providerShippingMaxDays').value = '0';
+      if (providerProductMsg) providerProductMsg.hidden = true;
+    }
+
+    function populateProviderProductForm(record) {
+      $('#providerProductOriginalId').value = record.provider_product_id || '';
+      $('#providerProductName').value = record.provider_name || '';
+      $('#providerProductId').value = record.provider_product_id || '';
+      $('#providerProductId').disabled = true;
+      $('#providerProductUrl').value = record.provider_product_url || '';
+      $('#providerProductType').value = record.product_type || '';
+      $('#providerAvailableSizes').value = Array.isArray(record.available_sizes) ? record.available_sizes.join(', ') : '';
+      $('#providerFrameStyles').value = Array.isArray(record.available_frame_styles) ? record.available_frame_styles.join(', ') : '';
+      $('#providerPaperType').value = record.paper_type || '';
+      $('#providerPrintMethod').value = record.print_method || '';
+      $('#providerBaseCost').value = String(Number(record.base_cost || 0));
+      $('#providerProductionMinDays').value = String(Number(record.production_time_min_days || 0));
+      $('#providerProductionMaxDays').value = String(Number(record.production_time_max_days || 0));
+      $('#providerShippingMinDays').value = String(Number(record.shipping_time_min_days || 0));
+      $('#providerShippingMaxDays').value = String(Number(record.shipping_time_max_days || 0));
+      $('#providerNotes').value = record.provider_notes || '';
+      showProviderProductMessage(`Editing provider product: ${record.provider_product_id}`, 'ok');
+    }
+
+    async function loadProviderProductsTable() {
+      const wrap = $('#providerProductsWrap');
+      if (!wrap) return;
+      wrap.textContent = 'Loading provider products…';
+
+      const { data, error } = await supabase
+        .from('provider_products')
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        const message = String(error.message || 'Could not load provider products.');
+        if (message.toLowerCase().includes('does not exist')) {
+          wrap.innerHTML = '<div class="message error">Provider products table is not migrated yet. Apply the latest Supabase SQL and refresh.</div>';
+          return;
+        }
+        wrap.innerHTML = `<div class="message error">${escapeHtml(message)}</div>`;
+        return;
+      }
+
+      if (!data || !data.length) {
+        wrap.innerHTML = '<p class="muted">No provider products saved yet.</p>';
+        return;
+      }
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Provider Product ID</th>
+              <th>Type</th>
+              <th>Sizes</th>
+              <th>Base Cost</th>
+              <th>Studio Arrival Est.</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map((row) => {
+              const sizes = Array.isArray(row.available_sizes) && row.available_sizes.length ? row.available_sizes.join(', ') : '—';
+              const minDays = Number(row.production_time_min_days || 0) + Number(row.shipping_time_min_days || 0);
+              const maxDays = Number(row.production_time_max_days || 0) + Number(row.shipping_time_max_days || 0);
+              return `
+                <tr>
+                  <td>${escapeHtml(row.provider_name || '—')}</td>
+                  <td><code>${escapeHtml(row.provider_product_id || '—')}</code></td>
+                  <td>${escapeHtml(row.product_type || '—')}</td>
+                  <td>${escapeHtml(sizes)}</td>
+                  <td>${money(row.base_cost)}</td>
+                  <td>${minDays}-${maxDays} days</td>
+                  <td>
+                    <div style="display:grid; gap:8px; min-width:160px;">
+                      <button class="btn" data-edit-provider-product="${escapeHtml(row.provider_product_id)}">Edit</button>
+                      ${row.provider_product_url ? `<a href="${escapeHtml(row.provider_product_url)}" target="_blank" rel="noopener">Open provider page</a>` : '<span class="muted">No URL</span>'}
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+
+      const byId = new Map((data || []).map((row) => [row.provider_product_id, row]));
+      wrap.querySelectorAll('button[data-edit-provider-product]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const record = byId.get(button.dataset.editProviderProduct);
+          if (!record) return;
+          populateProviderProductForm(record);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      });
+    }
+
+    async function saveProviderProduct(event) {
+      event.preventDefault();
+      if (providerProductMsg) providerProductMsg.hidden = true;
+
+      const originalId = $('#providerProductOriginalId').value.trim();
+      const providerProductId = $('#providerProductId').value.trim();
+      const providerName = $('#providerProductName').value.trim();
+      const payload = {
+        provider_product_id: providerProductId,
+        provider_name: providerName,
+        provider_product_url: $('#providerProductUrl').value.trim() || null,
+        product_type: $('#providerProductType').value.trim() || null,
+        available_sizes: parseCsvList($('#providerAvailableSizes').value),
+        available_frame_styles: parseCsvList($('#providerFrameStyles').value),
+        paper_type: $('#providerPaperType').value.trim() || null,
+        print_method: $('#providerPrintMethod').value.trim() || null,
+        base_cost: Number($('#providerBaseCost').value || 0),
+        production_time_min_days: Number($('#providerProductionMinDays').value || 0),
+        production_time_max_days: Number($('#providerProductionMaxDays').value || 0),
+        shipping_time_min_days: Number($('#providerShippingMinDays').value || 0),
+        shipping_time_max_days: Number($('#providerShippingMaxDays').value || 0),
+        fulfillment_method: 'ship_to_studio',
+        provider_notes: $('#providerNotes').value.trim() || null,
+        updated_at: new Date().toISOString()
+      };
+
+      if (!providerProductId || !providerName) {
+        showProviderProductMessage('Provider name and provider product ID are required.', 'error');
+        return;
+      }
+
+      if (payload.production_time_max_days < payload.production_time_min_days || payload.shipping_time_max_days < payload.shipping_time_min_days) {
+        showProviderProductMessage('Max days must be greater than or equal to min days.', 'error');
+        return;
+      }
+
+      const result = originalId
+        ? await supabase.from('provider_products').update(payload).eq('provider_product_id', originalId)
+        : await supabase.from('provider_products').insert(payload);
+
+      if (result.error) {
+        showProviderProductMessage(result.error.message, 'error');
+        return;
+      }
+
+      showProviderProductMessage('Provider product saved.', 'ok');
+      await logActivity('provider_product_saved', 'provider_products', providerProductId, {
+        provider_name: providerName,
+        product_type: payload.product_type,
+        base_cost: payload.base_cost
+      });
+      resetProviderProductForm();
+      await loadProviderProductsTable();
+      await loadFulfillmentWorkspace();
+    }
+
+    async function loadFulfillmentWorkspace() {
+      if (fulfillmentMsg) fulfillmentMsg.hidden = true;
+      setStatus('Loading fulfillment workspace…', 'neutral');
+
+      const results = await Promise.allSettled([
+        supabase.from('provider_products').select('*', { count: 'exact', head: true }),
+        supabase.from('photos').select('*', { count: 'exact', head: true }),
+        supabase.from('photo_derivatives').select('*', { count: 'exact', head: true }).eq('type', 'print_ready'),
+        supabase.from('order_requests').select('*', { count: 'exact', head: true }).eq('status', 'in_production'),
+        supabase.from('order_requests').select('*', { count: 'exact', head: true }).eq('status', 'at_studio_unbranded'),
+        supabase.from('order_requests').select('*', { count: 'exact', head: true }).eq('status', 'branded_ready_for_delivery')
+      ]);
+
+      const safeCount = (result) => {
+        if (result.status !== 'fulfilled') return '—';
+        const value = result.value;
+        if (!value || value.error) return '—';
+        return String(value.count ?? 0);
+      };
+
+      $('#metricProviderProducts').textContent = safeCount(results[0]);
+      $('#metricPhotos').textContent = safeCount(results[1]);
+      $('#metricDerivatives').textContent = safeCount(results[2]);
+      $('#metricInProduction').textContent = safeCount(results[3]);
+      $('#metricAtStudioUnbranded').textContent = safeCount(results[4]);
+      $('#metricBrandedReady').textContent = safeCount(results[5]);
+
+      const hasMissingTables = results.some((result) => result.status !== 'fulfilled' || result.value?.error);
+      if (hasMissingTables) {
+        showFulfillmentMessage('Some fulfillment tables are not available yet. Apply latest Supabase migration, then refresh this page.', 'error');
+        setStatus('Fulfillment partial', 'error');
+        await loadProviderProductsTable();
+        return;
+      }
+
+      await loadProviderProductsTable();
+      showFulfillmentMessage('Fulfillment workspace is connected and metrics are up to date.', 'ok');
       setStatus('Ready', 'ok');
     }
 
@@ -1736,6 +2338,7 @@
               <th>Image</th>
               <th>Name</th>
               <th>Category</th>
+              <th>Status</th>
               <th>Customer Price</th>
               <th>Internal Cost</th>
               <th>Cust. Ship</th>
@@ -1751,6 +2354,7 @@
                 <td>${product.image ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || 'Product image')}" style="width:56px; height:56px; object-fit:cover; border-radius:10px;">` : '—'}</td>
                 <td>${product.name || '—'}</td>
                 <td>${product.category || '—'}</td>
+                <td>${product.status || (product.active ? 'active' : 'inactive')}</td>
                 <td>$${Number(product.price || 0).toFixed(2)}</td>
                 <td>$${Number(product.internal_cost || 0).toFixed(2)}</td>
                 <td>$${Number(product.customer_shipping || 0).toFixed(2)}</td>
@@ -1795,6 +2399,19 @@
         return;
       }
 
+      if (approvedImageUrl) {
+        try {
+          const parsed = new URL(approvedImageUrl);
+          if (!['http:', 'https:'].includes(parsed.protocol)) {
+            showProductMessage('Approved storefront image URL must start with https://.', 'error');
+            return;
+          }
+        } catch {
+          showProductMessage('Approved storefront image URL is not a valid URL.', 'error');
+          return;
+        }
+      }
+
       const payload = {
         name: $('#productName').value.trim(),
         category: $('#productCategory').value.trim() || null,
@@ -1810,6 +2427,7 @@
         internal_cost: Number($('#productInternalCost').value || 0),
         internal_shipping: Number($('#productInternalShipping').value || 0),
         customer_shipping: Number($('#productCustomerShipping').value || 0),
+        status: $('#productListingStatus').value || 'draft',
         description: buildStructuredProductDescription({
           intro: introInput?.value.trim() || '',
           mockup: mockupInput?.value.trim() || '',
@@ -1817,8 +2435,15 @@
           dimensions: dimensionsInput?.value.trim() || '',
           care: careInput?.value.trim() || ''
         }) || null,
-        active: true
+        active: ($('#productListingStatus').value || 'draft') === 'active'
       };
+
+      const selectedSourcingRecord = getSelectedProductSourcingRecord();
+      const privacyError = validateStorefrontPrivacy(payload, selectedSourcingRecord);
+      if (privacyError) {
+        showProductMessage(privacyError, 'error');
+        return;
+      }
 
       if (!payload.name || !payload.supplier_url || payload.price < 0) {
         showProductMessage('Enter a product name, supplier link, and valid price.', 'error');
@@ -1843,7 +2468,7 @@
       await refreshMetrics();
     }
 
-    async function updateOrderRequestStatus(orderId, status) {
+    async function updateOrderRequestStatus(orderId, status, metadata = {}) {
       const { error } = await supabase
         .from('order_requests')
         .update({ status })
@@ -1856,7 +2481,12 @@
 
       await loadOrderRequests();
       await refreshMetrics();
+      await loadFulfillmentWorkspace();
       await logActivity('order_status_updated', 'order_requests', orderId, { status });
+      await logAuditEvent('order_status_updated', 'order_request', orderId, {
+        status,
+        ...metadata
+      });
     }
 
     async function saveSupplierOrderPacket(record) {
@@ -1864,7 +2494,7 @@
       const { error } = await supabase
         .from('supplier_order_packets')
         .insert({
-          order_request_id: record.order_request_id,
+          order_request_id: record.order_request_id || null,
           supplier_name: record.supplier_name,
           supplier_url: record.supplier_url || null,
           packet_text: record.packet_text,
@@ -1873,6 +2503,7 @@
           supplier_estimate: Number(record.supplier_estimate || 0),
           internal_shipping: Number(record.internal_shipping || 0),
           status: 'prepared',
+          notes: record.notes || null,
           created_by: user?.id || null
         });
 
@@ -1882,9 +2513,10 @@
       }
 
       showMessage(`Supplier PO saved for ${record.supplier_name}.`, 'ok');
-      await logActivity('supplier_packet_saved', 'supplier_order_packets', record.order_request_id, {
+      await logActivity('supplier_packet_saved', 'supplier_order_packets', record.order_request_id || record.source_key || record.supplier_name, {
         supplier_name: record.supplier_name,
-        supplier_estimate: record.supplier_estimate
+        supplier_estimate: record.supplier_estimate,
+        source: record.order_request_id ? 'order-request' : 'sourcing-workspace'
       });
       await loadSupplierOrderHistory();
     }
@@ -1932,7 +2564,7 @@
                   ${escapeHtml(row.supplier_name || '—')}<br>
                   ${row.supplier_url ? `<a href="${escapeHtml(row.supplier_url)}" target="_blank" rel="noopener">Open Link</a>` : '<span class="muted">No link</span>'}
                 </td>
-                <td><code>${escapeHtml(row.order_request_id)}</code></td>
+                <td>${row.order_request_id ? `<code>${escapeHtml(row.order_request_id)}</code>` : `<span class="muted">${escapeHtml(String(row.notes || 'Sourcing packet').replace('source:sourcing:', 'Sourcing: '))}</span>`}</td>
                 <td>${money(row.customer_total)}</td>
                 <td>${money(row.customer_shipping)}</td>
                 <td>${money(row.supplier_estimate)}</td>
@@ -2165,6 +2797,17 @@
         return;
       }
 
+      const statusOptions = [
+        'new',
+        'in_production',
+        'in_transit_to_studio',
+        'at_studio_unbranded',
+        'branded_ready_for_delivery',
+        'ready_for_pickup_or_meetup',
+        'in_transit_to_customer',
+        'completed'
+      ];
+
       wrap.innerHTML = `
         <table>
           <thead>
@@ -2179,6 +2822,20 @@
           </thead>
           <tbody>
             ${data.map((order) => `
+              ${(() => {
+                const normalizedStatus = normalizeOrderWorkflowStatus(order.status, order.fulfillment_method);
+                const nextStatus = getNextOrderStatus(normalizedStatus, order.fulfillment_method);
+                const shipping = String(order.fulfillment_method || '').toLowerCase().includes('ship');
+                const statusSelect = `
+                    <select data-order-status="${order.id}">
+                      ${statusOptions.map((opt) => `<option value="${opt}" ${normalizedStatus === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                    </select>
+                `;
+                const buttons = `
+                    ${nextStatus ? `<button class="btn" data-advance-order="${order.id}" data-next-status="${nextStatus}">Advance to ${nextStatus}</button>` : '<span class="muted">Final stage</span>'}
+                    ${normalizedStatus === 'branded_ready_for_delivery' ? `<button class="btn" data-order-path="${order.id}" data-path-status="${shipping ? 'in_transit_to_customer' : 'ready_for_pickup_or_meetup'}">${shipping ? 'Start studio shipping' : 'Ready for pickup/meetup'}</button>` : ''}
+                  `;
+                return `
               <tr>
                 <td>${new Date(order.created_at).toLocaleString()}</td>
                 <td>
@@ -2187,20 +2844,17 @@
                 </td>
                 <td>${order.fulfillment_method || 'Pickup'}</td>
                 <td>$${Number(order.total || 0).toFixed(2)}</td>
-                <td>${order.status || 'new'}</td>
+                <td>${normalizedStatus}</td>
                 <td>
                   <div style="display:grid; gap:8px; min-width: 180px;">
-                    <select data-order-status="${order.id}">
-                      <option value="new" ${order.status === 'new' ? 'selected' : ''}>New</option>
-                      <option value="ordered" ${order.status === 'ordered' ? 'selected' : ''}>Ordered</option>
-                      <option value="received" ${order.status === 'received' ? 'selected' : ''}>Received</option>
-                      <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Ready</option>
-                      <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
-                    </select>
+                    ${statusSelect}
+                    ${buttons}
                     <button class="btn" data-generate-packet="${order.id}">Generate Supplier Packet</button>
                   </div>
                 </td>
               </tr>
+            `;
+              })()}
             `).join('')}
           </tbody>
         </table>
@@ -2208,7 +2862,25 @@
 
       wrap.querySelectorAll('select[data-order-status]').forEach((select) => {
         select.addEventListener('change', async () => {
-          await updateOrderRequestStatus(select.dataset.orderStatus, select.value);
+          await updateOrderRequestStatus(select.dataset.orderStatus, select.value, {
+            source: 'manual-status-select'
+          });
+        });
+      });
+
+      wrap.querySelectorAll('button[data-advance-order]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          await updateOrderRequestStatus(button.dataset.advanceOrder, button.dataset.nextStatus, {
+            source: 'advance-button'
+          });
+        });
+      });
+
+      wrap.querySelectorAll('button[data-order-path]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          await updateOrderRequestStatus(button.dataset.orderPath, button.dataset.pathStatus, {
+            source: 'delivery-path-button'
+          });
         });
       });
 
@@ -2400,13 +3072,23 @@
       const settings = data || {
         business_email: 'kristin@farmhouseframes.com',
         tax_rate: 0.06,
+        tax_mode: 'destination_state',
         currency: 'USD',
-        hosted_payment_url: ''
+        hosted_payment_url: '',
+        shipping_origin_zip: '42701',
+        shipping_quote_api_url: '',
+        outbound_shipping_min_days: 2,
+        outbound_shipping_max_days: 5
       };
 
       $('#settingBusinessEmail').value = settings.business_email || '';
       $('#settingTaxRate').value = String(Number(settings.tax_rate ?? 0));
+      $('#settingTaxMode').value = settings.tax_mode || 'destination_state';
       $('#settingCurrency').value = String(settings.currency || 'USD').toUpperCase();
+      $('#settingShippingOriginZip').value = settings.shipping_origin_zip || '42701';
+      $('#settingOutboundShippingMinDays').value = String(Number(settings.outbound_shipping_min_days ?? 2));
+      $('#settingOutboundShippingMaxDays').value = String(Number(settings.outbound_shipping_max_days ?? 5));
+      $('#settingShippingQuoteApiUrl').value = settings.shipping_quote_api_url || '';
       $('#settingHostedPaymentUrl').value = settings.hosted_payment_url || '';
     }
 
@@ -2418,7 +3100,12 @@
         id: 'storefront',
         business_email: $('#settingBusinessEmail').value.trim(),
         tax_rate: Number($('#settingTaxRate').value || 0),
+        tax_mode: $('#settingTaxMode').value,
         currency: $('#settingCurrency').value.trim().toUpperCase(),
+        shipping_origin_zip: $('#settingShippingOriginZip').value.trim() || '42701',
+        outbound_shipping_min_days: Number($('#settingOutboundShippingMinDays').value || 2),
+        outbound_shipping_max_days: Number($('#settingOutboundShippingMaxDays').value || 5),
+        shipping_quote_api_url: $('#settingShippingQuoteApiUrl').value.trim() || null,
         hosted_payment_url: $('#settingHostedPaymentUrl').value.trim() || null,
         updated_by: currentAdminUserId,
         updated_at: new Date().toISOString()
@@ -2426,6 +3113,19 @@
 
       if (!payload.business_email || payload.tax_rate < 0 || !payload.currency) {
         showSettingsMessage('Enter a valid business email, tax rate, and currency.', 'error');
+        return;
+      }
+
+      if (!['destination_state', 'flat'].includes(payload.tax_mode)) {
+        showSettingsMessage('Choose a valid tax mode.', 'error');
+        return;
+      }
+
+      if (!Number.isFinite(payload.outbound_shipping_min_days)
+        || !Number.isFinite(payload.outbound_shipping_max_days)
+        || payload.outbound_shipping_min_days < 0
+        || payload.outbound_shipping_max_days < payload.outbound_shipping_min_days) {
+        showSettingsMessage('Enter a valid outbound shipping day range.', 'error');
         return;
       }
 
@@ -2442,7 +3142,12 @@
       await logActivity('settings_saved', 'store_settings', 'storefront', {
         business_email: payload.business_email,
         tax_rate: payload.tax_rate,
+        tax_mode: payload.tax_mode,
         currency: payload.currency,
+        shipping_origin_zip: payload.shipping_origin_zip,
+        outbound_shipping_min_days: payload.outbound_shipping_min_days,
+        outbound_shipping_max_days: payload.outbound_shipping_max_days,
+        shipping_quote_api_url_configured: Boolean(payload.shipping_quote_api_url),
         hosted_payment_url_configured: Boolean(payload.hosted_payment_url)
       });
     }
@@ -2497,6 +3202,7 @@
     $('#openUploadsFromSourcing')?.addEventListener('click', () => navigateToRoute('uploads'));
     $('#openSourcingInCutter')?.addEventListener('click', openCurrentSourcingInCutter);
     $('#sendSourcingToProducts')?.addEventListener('click', sendCurrentSourcingToProducts);
+    $('#createSourcingPacketBtn')?.addEventListener('click', createSourcingSupplierPacket);
     $('#refreshClientsBtn')?.addEventListener('click', loadClientsPage);
     $('#refreshLogsBtn')?.addEventListener('click', loadActivityLogs);
     $('#productSourcePhoto')?.addEventListener('change', updateSourcePhotoPreview);
@@ -2507,6 +3213,10 @@
     });
     $('#applySourcingToProduct')?.addEventListener('click', applySourcingRecordToProductForm);
     $('#openSourcingBtn')?.addEventListener('click', () => navigateToRoute('sourcing'));
+    $('#refreshFulfillmentBtn')?.addEventListener('click', loadFulfillmentWorkspace);
+    $('#providerProductForm')?.addEventListener('submit', saveProviderProduct);
+    $('#providerProductResetBtn')?.addEventListener('click', resetProviderProductForm);
+    $('#refreshProviderProductsBtn')?.addEventListener('click', loadProviderProductsTable);
     $('#openSourceInCutter')?.addEventListener('click', openSelectedSourceInCutter);
     $('#generateRusticCopy')?.addEventListener('click', () => {
       const generated = generateRusticIntroCopy();
