@@ -110,22 +110,42 @@
         try {
             const user = await getCurrentUser();
 
-            const payload = {
-                customer_name: document.getElementById('customerName').value.trim(),
-                customer_email: document.getElementById('customerEmail').value.trim(),
-                product: document.getElementById('productName').value.trim(),
-                amount: Number(document.getElementById('amount').value || 0),
-                status: 'pending',
-                notes: document.getElementById('notes').value.trim(),
-                created_by: user ? user.id : null
-            };
+            const customerName = document.getElementById('customerName').value.trim();
+            const customerEmail = document.getElementById('customerEmail').value.trim();
+            const productName = document.getElementById('productName').value.trim();
+            const amount = Number(document.getElementById('amount').value || 0);
+            const notes = document.getElementById('notes').value.trim();
 
-            const { error } = await supabase
-                .from('orders')
-                .insert(payload);
+            const { data: orderRequest, error: orderError } = await supabase
+                .from('order_requests')
+                .insert({
+                    customer_name: customerName,
+                    customer_email: customerEmail,
+                    fulfillment_method: 'Pickup',
+                    notes: notes ? `Manual entry: ${notes}` : 'Manual entry',
+                    status: 'new',
+                    subtotal: amount,
+                    tax: 0,
+                    total: amount
+                })
+                .select('id')
+                .single();
 
-            if (error) {
-                throw error;
+            if (orderError) {
+                throw orderError;
+            }
+
+            const { error: itemError } = await supabase
+                .from('order_request_items')
+                .insert({
+                    order_request_id: orderRequest.id,
+                    title: productName,
+                    quantity: 1,
+                    unit_price: amount
+                });
+
+            if (itemError) {
+                throw itemError;
             }
 
             form.reset();

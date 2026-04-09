@@ -1,3 +1,65 @@
+/* Dropdown Navigation Styles */
+.main-nav {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	background: linear-gradient(180deg, #e5d5c2, #dcc8b2);
+	padding: 14px 10px;
+	font-size: 18px;
+}
+.main-nav .brand-link {
+	font-family: "Great Vibes", cursive;
+	font-size: 2em;
+	color: var(--barnwood-dark);
+	margin-right: 18px;
+	text-decoration: none;
+}
+.main-nav a {
+	color: var(--barnwood-dark);
+	font-weight: bold;
+	text-decoration: none;
+	letter-spacing: 0.02em;
+	position: relative;
+	padding-bottom: 6px;
+	transition: color 0.2s, transform 0.2s, font-size 0.2s;
+}
+.main-nav .dropdown {
+	position: relative;
+}
+.main-nav .dropdown-toggle {
+	cursor: pointer;
+}
+.main-nav .dropdown-menu {
+	display: none;
+	position: absolute;
+	left: 0;
+	top: 100%;
+	background: #fffdfa;
+	border: 1px solid var(--border-soft);
+	border-radius: 8px;
+	min-width: 180px;
+	box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+	z-index: 100;
+	padding: 8px 0;
+}
+.main-nav .dropdown:hover .dropdown-menu,
+.main-nav .dropdown:focus-within .dropdown-menu {
+	display: block;
+}
+.main-nav .dropdown-menu a {
+	display: block;
+	padding: 10px 22px;
+	color: var(--barnwood-dark);
+	text-decoration: none;
+	font-weight: normal;
+	font-size: 1em;
+	background: none;
+	transition: background 0.15s, color 0.15s;
+}
+.main-nav .dropdown-menu a:hover {
+	background: #f6f0e8;
+	color: var(--barnwood);
+}
 @import url('../../css/style.css');
 
 /* Blueprint canonical stylesheet entry point. */

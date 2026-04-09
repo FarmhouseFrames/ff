@@ -184,14 +184,21 @@
     </footer>
 
     <script type="module">
-        import { 
-            getSignedInCustomerAccount, 
-            formatProfileName, 
-            formatMailingAddress, 
-            hasMailingAddress,
-            saveCustomerProfile 
-        } from './js/customerAccount.js';
-        import { supabase } from './js/supabasePublic.js';
+        import { publicSupabase } from './js/supabasePublic.js';
+
+        const whoami = document.getElementById('whoami');
+        const ordersWrap = document.getElementById('ordersWrap');
+        const signOutBtn = document.getElementById('signOutBtn');
+        const loginLinkTop = document.getElementById('loginLinkTop');
+        const createLinkTop = document.getElementById('createLinkTop');
+
+        async function getSignedInUser() {
+            const { data, error } = await publicSupabase.auth.getSession();
+            if (error) {
+                throw error;
+            }
+            return data.session?.user || null;
+        }
 
         let currentCustomer = null;
         let currentProfile = null;
@@ -289,6 +296,17 @@
             }
         }
 
+        const user = await getSignedInUser();
+        if (!user) {
+            whoami.textContent = 'You are not signed in yet.';
+            ordersWrap.innerHTML = `
+                <p class="muted">Create your account or log in to keep your orders separated and viewable only by your account.</p>
+                <div class="checkout-actions" style="margin-top: 12px;">
+                    <a class="commerce-button-link primary" href="account-login.html?mode=signup">Create customer account</a>
+                    <a class="commerce-button-link" href="account-login.html?mode=signin">Log in to existing account</a>
+                </div>
+            `;
+            return;
         async function handleProfileSave(e) {
             e.preventDefault();
 
